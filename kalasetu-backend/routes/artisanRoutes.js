@@ -10,4 +10,8 @@ router.post('/register', registerArtisan);
 // When a POST request comes to /api/artisans/login, call the loginArtisan function
 router.post('/login', loginArtisan);
 
+// --- Public Data Routes ---
+router.get('/', getAllArtisans);
+router.get('/:id', getArtisanById);
+
 export default router;
