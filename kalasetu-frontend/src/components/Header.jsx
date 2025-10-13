@@ -1,9 +1,15 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx'; // We use this to check if a user is logged in
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const Header = () => {
-    const { user, logout } = useAuth(); // Get the user and the logout function
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout();
+        navigate('/'); // Redirect to homepage after logout
+    };
 
     return (
         <header className="bg-[#1A1A1A] text-white py-4 px-8 shadow-md sticky top-0 z-50">
@@ -22,12 +28,12 @@ const Header = () => {
                 <div className="flex items-center space-x-4">
                     {user ? (
                         // --- IF A USER IS LOGGED IN ---
-                        // We show their name (as a link to their profile) AND a logout button.
+                        // We show their name (as a link to their public profile) AND a logout button.
                         <>
                             <Link to={`/${user.publicId}`} className="font-semibold hidden sm:block hover:text-[#A55233] transition-colors">
                                 Welcome, {user.fullName.split(' ')[0]}
                             </Link>
-                            <button onClick={logout} className="bg-red-600 px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm font-bold">
+                            <button onClick={handleLogout} className="bg-red-600 px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm font-bold">
                                 Logout
                             </button>
                         </>
