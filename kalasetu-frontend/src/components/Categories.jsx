@@ -1,5 +1,6 @@
 import React from 'react';
-import { mockCategories } from '../data/mockData';
+// THE FIX: Added the .js extension to the import path.
+import { mockCategories } from '../data/mockData.js';
 
 const Categories = () => (
     <section className="bg-[#F5F5F5] py-16 px-4 sm:px-8">
@@ -21,3 +22,4 @@ const Categories = () => (
 );
 
 export default Categories;
+

@@ -1,5 +1,6 @@
 import React from 'react';
-import { mockFeaturedArtisans } from '../data/mockData';
+// THE FIX: Added the .js extension to the import path below.
+import { mockFeaturedArtisans } from '../data/mockData.js';
 
 const FeaturedArtisans = () => (
     <section className="bg-white py-16 px-4 sm:px-8">
