@@ -26,9 +26,11 @@ app.get('/', (req, res) => {
     res.send('KalaSetu API is running...');
 });
 
+app.use('/api/artisans', artisanRoutes); 
+
+
 // --- Start the Server ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
 
-app.use('/api/artisans', artisanRoutes); 
 
