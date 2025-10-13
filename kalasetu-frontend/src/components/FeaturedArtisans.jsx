@@ -1,10 +1,11 @@
 import React from 'react';
-// THE FIX: Added the .js extension to the import path below.
+// THE FIX: Added .js extension to the data import
 import { mockFeaturedArtisans } from '../data/mockData.js';
 
 const FeaturedArtisans = () => (
     <section className="bg-white py-16 px-4 sm:px-8">
         <div className="container mx-auto max-w-7xl">
+            {/* ... rest of the component code is the same ... */}
             <h3 className="text-3xl font-bold text-center text-[#1A1A1A] mb-2">Featured Local Talent</h3>
             <p className="text-center text-gray-600 mb-10">Meet some of the top-rated professionals on KalaSetu.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">

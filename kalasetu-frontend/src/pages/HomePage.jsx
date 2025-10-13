@@ -1,12 +1,11 @@
 import React from 'react';
 
-// Import all the components we just created
-import HeroSearch from '../components/HeroSearch';
-import Categories from '../components/Categories';
-import FeaturedArtisans from '../components/FeaturedArtisans';
-import HowItWorks from '../components/HowItWorks';
+// THE FIX: Added .jsx extensions to all local imports
+import HeroSearch from '../components/HeroSearch.jsx';
+import Categories from '../components/Categories.jsx';
+import FeaturedArtisans from '../components/FeaturedArtisans.jsx';
+import HowItWorks from '../components/HowItWorks.jsx';
 
-// The HomePage component's only job is to assemble the other components in order.
 const HomePage = () => {
     return (
         <>
