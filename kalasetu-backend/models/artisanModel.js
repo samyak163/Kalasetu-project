@@ -1,8 +1,21 @@
 import mongoose from 'mongoose';
+import { customAlphabet } from 'nanoid';
+
+// We create a generator for short, URL-friendly, unique IDs (like YouTube's).
+// This will generate an 8-character ID using numbers and lowercase letters.
+const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 8);
 
 const artisanSchema = new mongoose.Schema({
+    // THE UPGRADE: Add the publicId field.
+    publicId: {
+        type: String,
+        default: () => `ks_${nanoid()}`, // It will automatically generate an ID like "ks_a1b2c3d4"
+        unique: true, // Guarantees no two artisans have the same public ID
+        index: true, // Makes searching by this ID very fast
+    },
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    phoneNumber: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     craft: { type: String, required: true },
     location: { type: String, required: true },

@@ -1,30 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom'; // Import Link for navigation
-
-// We are no longer importing mockFeaturedArtisans.
-// The data will now come from our API.
+import { Link } from 'react-router-dom';
 
 const FeaturedArtisans = () => {
-    // 1. Create a state variable to hold our artisans. Starts as an empty array.
     const [artisans, setArtisans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // 2. Use the useEffect hook to fetch data when the component loads.
     useEffect(() => {
         const fetchArtisans = async () => {
             try {
-                // Get the backend URL from our .env file
                 const apiUrl = import.meta.env.VITE_API_URL;
-                
-                // Make the "phone call" to our backend API
                 const response = await fetch(`${apiUrl}/api/artisans`);
-                if (!response.ok) {
-                    throw new Error('Data could not be fetched!');
-                }
+                if (!response.ok) throw new Error('Data could not be fetched!');
                 const data = await response.json();
-                
-                // 3. Put the received data into our state variable.
                 setArtisans(data);
             } catch (error) {
                 setError(error.message);
@@ -32,17 +20,11 @@ const FeaturedArtisans = () => {
                 setLoading(false);
             }
         };
-
         fetchArtisans();
-    }, []); // The empty array [] means this effect runs only once.
+    }, []);
 
-    if (loading) {
-        return <div className="text-center py-16">Loading artisans...</div>;
-    }
-
-    if (error) {
-        return <div className="text-center py-16 text-red-500">Error: {error}</div>;
-    }
+    if (loading) { return <div className="text-center py-16">Loading artisans...</div>; }
+    if (error) { return <div className="text-center py-16 text-red-500">Error: {error}</div>; }
 
     return (
         <section className="bg-white py-16 px-4 sm:px-8">
@@ -51,8 +33,8 @@ const FeaturedArtisans = () => {
                 <p className="text-center text-gray-600 mb-10">Meet some of the top-rated professionals on KalaSetu.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                     {artisans.map(artisan => (
-                        // Each card is now a Link to the artisan's profile page
-                        <Link to={`/artisan/${artisan._id}`} key={artisan._id} className="bg-white rounded-lg overflow-hidden shadow-xl border border-gray-200 group cursor-pointer transition-transform duration-300 transform hover:-translate-y-2">
+                        // THE FINAL UPGRADE: The Link now points to the clean publicId URL
+                        <Link to={`/${artisan.publicId}`} key={artisan.publicId} className="bg-white rounded-lg overflow-hidden shadow-xl border border-gray-200 group cursor-pointer transition-transform duration-300 transform hover:-translate-y-2">
                             <div className="relative h-56">
                                 <img src={artisan.coverImageUrl} alt={artisan.craft} className="w-full h-full object-cover" />
                             </div>
@@ -66,7 +48,6 @@ const FeaturedArtisans = () => {
                                </div>
                                <div className="mt-6 flex justify-between items-center text-sm border-t pt-4">
                                    <p className="text-gray-600">{artisan.location}</p>
-                                   {/* We will add rating back later when we have reviews */}
                                </div>
                             </div>
                         </Link>
@@ -78,4 +59,3 @@ const FeaturedArtisans = () => {
 };
 
 export default FeaturedArtisans;
-
