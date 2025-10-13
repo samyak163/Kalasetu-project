@@ -1,26 +1,25 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
-// Import our new components and pages
-import Layout from './components/Layout';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import ArtisanProfilePage from './pages/ArtisanProfilePage';
+// Import our layout and all the pages
+import Layout from './components/Layout.jsx';
+import HomePage from './pages/HomePage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import ArtisanProfilePage from './pages/ArtisanProfilePage.jsx';
 
+// This component is the master "switchboard". It defines all the URL paths
+// and which page component to show for each path.
 function App() {
   return (
     <Routes>
-      {/* All pages will now use the main Layout (Header and Footer) */}
+      {/* This parent route uses the Layout component, which includes the Header and Footer. */}
       <Route path="/" element={<Layout />}>
-        {/* The Outlet in Layout will render these child routes */}
+        {/* The 'index' route is the default page shown inside the Layout's <Outlet> */}
         <Route index element={<HomePage />} />
-        <Route path="login" element={<LoginPage />} />
         
-        {/* This is a dynamic route. ':id' is a placeholder for the artisan's unique ID. */}
+        {/* Other pages that will also appear inside the Layout */}
+        <Route path="login" element={<LoginPage />} />
         <Route path="artisan/:id" element={<ArtisanProfilePage />} />
-
-        {/* You can add more placeholder routes for other pages here */}
-        {/* e.g., <Route path="about" element={<div>About Us Page</div>} /> */}
       </Route>
     </Routes>
   );
