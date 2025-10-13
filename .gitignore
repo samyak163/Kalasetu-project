@@ -1,14 +1,22 @@
-# Ignore dependencies from both projects
+# Dependencies
+node_modules/
 kalasetu-frontend/node_modules
 kalasetu-backend/node_modules
 
-# Ignore production build folders
-kalasetu-frontend/dist
+# Build folders
+dist/
+kalasetu-frontend/dist/
 
-# Ignore all environment files (CRITICAL for security)
-# This will ignore any file ending in .env in any folder
+# Environment files (CRITICAL)
+.env
+.env.*
 *.env
 
-# Ignore IDE and OS specific files
-.vscode/
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS and IDE files
 .DS_Store
+.vscode/
