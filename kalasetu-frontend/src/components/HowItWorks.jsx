@@ -1,6 +1,8 @@
 import React from 'react';
-import { FindIcon, ConnectIcon, ReviewIcon } from './Icons';
+// THE FIX: Added .jsx extension to the local import
+import { FindIcon, ConnectIcon, ReviewIcon } from './Icons.jsx';
 
+// ... (rest of the component is the same)
 const HowItWorks = () => (
     <section className="bg-[#F5F5F5] py-16 px-4 sm:px-8">
         <div className="container mx-auto text-center max-w-7xl">

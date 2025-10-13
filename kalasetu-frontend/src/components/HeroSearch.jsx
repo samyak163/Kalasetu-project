@@ -1,6 +1,8 @@
 import React from 'react';
-import { SearchIcon, LocationIcon, CurrentLocationIcon } from './Icons';
+// THE FIX: Added .jsx extension to the local import
+import { SearchIcon, LocationIcon, CurrentLocationIcon } from './Icons.jsx';
 
+// ... (rest of the component is the same)
 const HeroSearch = () => (
     <section className="relative text-white py-20 md:py-32 px-4 sm:px-8">
         <div className="absolute inset-0">
