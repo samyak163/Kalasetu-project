@@ -3,14 +3,14 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext.jsx'; // <-- Import our AuthProvider
 
-
-// This file wraps your entire application in the BrowserRouter,
-// which enables routing capabilities for all components.
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider> {/* <-- Wrap the App with the AuthProvider */}
+        <App />
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

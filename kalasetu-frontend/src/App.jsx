@@ -1,11 +1,11 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
-// Import components and pages
-import Layout from './components/Layout';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import ArtisanProfilePage from './pages/ArtisanProfilePage';
+import Layout from './components/Layout.jsx';
+import HomePage from './pages/HomePage.jsx';
+import LoginPage from './pages/LoginPage.jsx';
+import RegisterPage from './pages/RegisterPage.jsx'; // <-- Import the new page
+import ArtisanProfilePage from './pages/ArtisanProfilePage.jsx';
 
 function App() {
   return (
@@ -13,6 +13,7 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} /> {/* <-- Add the new route */}
         <Route path="artisan/:id" element={<ArtisanProfilePage />} />
       </Route>
     </Routes>

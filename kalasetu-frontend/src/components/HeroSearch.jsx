@@ -6,7 +6,7 @@ import { SearchIcon, LocationIcon, CurrentLocationIcon } from './Icons.jsx';
 const HeroSearch = () => (
     <section className="relative text-white py-20 md:py-32 px-4 sm:px-8">
         <div className="absolute inset-0">
-            <img src="https://images.unsplash.com/photo-1599580506433-e6a8d67f1de2?q=80&w=1920&auto=format&fit=crop" className="w-full h-full object-cover" alt="Artisan marketplace" />
+            <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1920&auto=format&fit=crop" className="w-full h-full object-cover" alt="Artisan marketplace" />
             <div className="absolute inset-0 bg-black opacity-60"></div>
         </div>
         <div className="relative container mx-auto text-center z-10 max-w-4xl">
