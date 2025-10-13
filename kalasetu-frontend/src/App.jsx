@@ -1,11 +1,11 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
-// THE FIX: Added .jsx extensions to all local imports
-import Layout from './components/Layout.jsx';
-import HomePage from './pages/HomePage.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import ArtisanProfilePage from './pages/ArtisanProfilePage.jsx';
+// Import components and pages
+import Layout from './components/Layout';
+import HomePage from './pages/HomePage';
+import LoginPage from './pages/LoginPage';
+import ArtisanProfilePage from './pages/ArtisanProfilePage';
 
 function App() {
   return (
