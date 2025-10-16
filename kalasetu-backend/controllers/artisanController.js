@@ -1,5 +1,5 @@
 import Artisan from '../models/artisanModel.js';
-import generateToken from '../utils/generateToken.js';
+import { signJwt } from '../utils/generateToken.js';
 import bcrypt from 'bcryptjs';
 
 const registerArtisan = async (req, res) => {
@@ -27,7 +27,7 @@ const registerArtisan = async (req, res) => {
                 fullName: artisan.fullName,
                 email: artisan.email,
                 publicId: artisan.publicId,
-                token: generateToken(artisan._id),
+                token: signJwt(artisan._id),
             });
         } else {
             res.status(400);
@@ -54,7 +54,7 @@ const loginArtisan = async (req, res) => {
                 fullName: artisan.fullName,
                 email: artisan.email,
                 publicId: artisan.publicId,
-                token: generateToken(artisan._id),
+                token: signJwt(artisan._id),
             });
         } else {
             res.status(401).json({ message: 'Invalid credentials' });
