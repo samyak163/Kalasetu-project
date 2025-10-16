@@ -22,13 +22,11 @@ export const register = async (req, res, next) => {
         const { fullName, email, phoneNumber, password, craft, location } = registerSchema.parse(req.body);
         const existingEmail = await Artisan.findOne({ email });
         if (existingEmail) {
-            res.status(400);
-            throw new Error('This email is already registered');
+            return res.status(400).json({ message: 'This email is already registered' });
         }
         const existingPhone = await Artisan.findOne({ phoneNumber });
         if (existingPhone) {
-            res.status(400);
-            throw new Error('This phone number is already registered');
+            return res.status(400).json({ message: 'This phone number is already registered' });
         }
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -43,8 +41,7 @@ export const register = async (req, res, next) => {
         });
     } catch (err) {
         if (err instanceof z.ZodError) {
-            res.status(400);
-            return next(new Error(err.issues.map(i => i.message).join(', ')));
+            return res.status(400).json({ message: err.issues.map(i => i.message).join(', ') });
         }
         next(err);
     }
@@ -57,8 +54,7 @@ export const login = async (req, res, next) => {
         const query = isEmail ? { email: loginIdentifier.toLowerCase().trim() } : { phoneNumber: loginIdentifier };
         const artisan = await Artisan.findOne(query);
         if (!artisan || !(await bcrypt.compare(password, artisan.password))) {
-            res.status(401);
-            throw new Error('Invalid credentials');
+            return res.status(401).json({ message: 'Invalid credentials' });
         }
         const token = signJwt(artisan._id);
         setAuthCookie(res, token);
@@ -70,8 +66,7 @@ export const login = async (req, res, next) => {
         });
     } catch (err) {
         if (err instanceof z.ZodError) {
-            res.status(400);
-            return next(new Error(err.issues.map(i => i.message).join(', ')));
+            return res.status(400).json({ message: err.issues.map(i => i.message).join(', ') });
         }
         next(err);
     }

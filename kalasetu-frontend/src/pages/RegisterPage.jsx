@@ -19,7 +19,22 @@ const RegisterPage = () => {
             await register(formData);
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || err.message || 'Registration failed');
+            console.error('Registration error:', err);
+            let errorMessage = 'Registration failed';
+            
+            if (err.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err.response?.status === 400) {
+                errorMessage = 'Invalid input data. Please check all fields.';
+            } else if (err.response?.status === 409) {
+                errorMessage = 'Email or phone number already exists.';
+            } else if (err.response?.status === 0) {
+                errorMessage = 'Cannot connect to server. Please check your internet connection.';
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+            
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
