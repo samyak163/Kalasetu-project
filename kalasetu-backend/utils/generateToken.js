@@ -1,14 +1,27 @@
 import jwt from 'jsonwebtoken';
 
-// This function is our "Security Badge Maker".
-// It takes a user's or artisan's unique ID from the database.
-const generateToken = (id) => {
-    // We use the jwt.sign() method to create the token.
-    // It combines the user's ID with our secret key from the .env file.
-    // The 'expiresIn' option means the badge will be valid for 30 days.
+// Generates a JWT for a given user id
+export const signJwt = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '30d',
+        expiresIn: '7d',
     });
 };
 
-export default generateToken;
+// Sets the JWT in an HTTP-only cookie
+export const setAuthCookie = (res, token) => {
+    res.cookie(process.env.COOKIE_NAME || 'ks_auth', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+};
+
+// Clears the auth cookie
+export const clearAuthCookie = (res) => {
+    res.clearCookie(process.env.COOKIE_NAME || 'ks_auth', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
+    });
+};
