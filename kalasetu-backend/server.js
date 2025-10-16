@@ -48,8 +48,18 @@ app.use('/api', apiLimiter);
 const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin) return callback(null, true); // allow same-origin / server-to-server
+        // Allow requests with no origin (like Postman, mobile apps, server-to-server)
+        if (!origin) return callback(null, true);
+        
+        // Allow specific origins from environment
         if (allowedOrigins.includes(origin)) return callback(null, true);
+        
+        // In development, allow localhost origins
+        if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
+            return callback(null, true);
+        }
+        
+        // Block everything else
         return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
@@ -59,6 +69,11 @@ app.use(cors({
 // This is a basic "health check" to make sure our server is alive.
 app.get('/', (req, res) => {
     res.send('KalaSetu API is running...');
+});
+
+// Test CORS endpoint
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'CORS is working!', timestamp: new Date().toISOString() });
 });
 
 app.use('/api/artisans', artisanRoutes); 
