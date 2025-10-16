@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext.jsx';
 
 const Header = () => {
-    const { user, logout } = useAuth();
+    const { currentUser, logout } = useContext(AuthContext);
     const navigate = useNavigate();
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         navigate('/'); // Redirect to homepage after logout
     };
 
@@ -27,18 +28,18 @@ const Header = () => {
                 {/* Dynamic Auth Section */}
                 <div className="flex items-center space-x-4">
                     {/* THE FIX: The "For Artisans" button is now always visible to non-logged-in users */}
-                    {!user && (
+                    {!currentUser && (
                          <Link to="/for-artisans" className="hidden md:block border border-white px-4 py-2 rounded-md hover:bg-white hover:text-[#1A1A1A] transition-colors text-sm">
                             For Artisans
                         </Link>
                     )}
                     
-                    {user ? (
+                    {currentUser ? (
                         // --- IF A USER IS LOGGED IN ---
                         // We show their name (link to dashboard) AND a logout button.
                         <>
                             <Link to="/dashboard" className="font-semibold hover:text-[#A55233] transition-colors">
-                                Welcome, {user.fullName.split(' ')[0]}
+                                Welcome, {currentUser.fullName.split(' ')[0]}
                             </Link>
                             <button onClick={handleLogout} className="bg-red-600 px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm font-bold">
                                 Logout

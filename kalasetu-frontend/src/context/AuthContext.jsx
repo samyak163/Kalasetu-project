@@ -1,38 +1,61 @@
-import axios from "axios";
 import { createContext, useEffect, useState } from "react";
+import api from "../lib/axios.js";
 
 export const AuthContext = createContext();
 
 export const AuthContextProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(
-    JSON.parse(localStorage.getItem("user")) || null
-  );
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Bootstrap user session on mount
+  useEffect(() => {
+    const bootstrapAuth = async () => {
+      try {
+        const res = await api.get("/api/auth/me");
+        setCurrentUser(res.data);
+      } catch (error) {
+        // User not authenticated, clear any stale data
+        setCurrentUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    bootstrapAuth();
+  }, []);
 
   const login = async (inputs) => {
-    // The API endpoint is now relative, which works for both localhost and Vercel.
-    const res = await axios.post("/api/artisans/login", inputs);
-    setCurrentUser(res.data);
-    return res.data; // Return the user data so the calling component can use it.
+    try {
+      const res = await api.post("/api/auth/login", inputs);
+      setCurrentUser(res.data);
+      return res.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const register = async (inputs) => {
+    try {
+      const res = await api.post("/api/auth/register", inputs);
+      setCurrentUser(res.data);
+      return res.data;
+    } catch (error) {
+      throw error;
+    }
   };
 
   const logout = async () => {
-    // Use a relative path for logout as well.
-    await axios.post("/api/artisans/logout");
-    setCurrentUser(null);
+    try {
+      await api.post("/api/auth/logout");
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setCurrentUser(null);
+    }
   };
 
-  useEffect(() => {
-    // This effect runs whenever the currentUser state changes.
-    // It keeps localStorage in sync with the user's authentication state.
-    if (currentUser) {
-      localStorage.setItem("user", JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem("user");
-    }
-  }, [currentUser]);
-
   return (
-    <AuthContext.Provider value={{ currentUser, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, login, register, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

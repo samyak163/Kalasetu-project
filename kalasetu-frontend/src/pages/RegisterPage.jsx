@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
+import { AuthContext } from '../context/AuthContext.jsx';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({ fullName: '', email: '', phoneNumber: '', password: '', craft: '', location: '' });
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { register } = useContext(AuthContext);
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
 
@@ -16,19 +16,10 @@ const RegisterPage = () => {
         setLoading(true);
         setError(null);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL;
-            const response = await fetch(`${apiUrl}/api/artisans/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to register');
-            
-            login(data);
+            await register(formData);
             navigate('/');
         } catch (err) {
-            setError(err.message);
+            setError(err.response?.data?.message || err.message || 'Registration failed');
         } finally {
             setLoading(false);
         }
