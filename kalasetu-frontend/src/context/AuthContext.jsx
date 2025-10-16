@@ -1,31 +1,39 @@
-import React, { createContext, useState, useContext } from 'react';
+import axios from "axios";
+import { createContext, useEffect, useState } from "react";
 
-// Create the context itself
-const AuthContext = createContext(null);
+export const AuthContext = createContext();
 
-// Create a provider component. This is the component that will "hold" the global state.
-export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null); // By default, no one is logged in.
+export const AuthContextProvider = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState(
+    JSON.parse(localStorage.getItem("user")) || null
+  );
 
-    // The login function that our LoginPage will call
-    const login = (userData) => {
-        // In a real app, you would also save the token to localStorage here
-        setUser(userData);
-    };
+  const login = async (inputs) => {
+    // The API endpoint is now relative, which works for both localhost and Vercel.
+    const res = await axios.post("/api/artisans/login", inputs);
+    setCurrentUser(res.data);
+    return res.data; // Return the user data so the calling component can use it.
+  };
 
-    // The logout function
-    const logout = () => {
-        // In a real app, you would also remove the token from localStorage
-        setUser(null);
-    };
+  const logout = async () => {
+    // Use a relative path for logout as well.
+    await axios.post("/api/artisans/logout");
+    setCurrentUser(null);
+  };
 
-    // The value that will be shared with all child components
-    const value = { user, login, logout };
+  useEffect(() => {
+    // This effect runs whenever the currentUser state changes.
+    // It keeps localStorage in sync with the user's authentication state.
+    if (currentUser) {
+      localStorage.setItem("user", JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem("user");
+    }
+  }, [currentUser]);
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-// Create a custom hook to make it easy for other components to access the context
-export const useAuth = () => {
-    return useContext(AuthContext);
+  return (
+    <AuthContext.Provider value={{ currentUser, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
