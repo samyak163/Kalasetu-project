@@ -79,6 +79,19 @@ app.get('/api/test', (req, res) => {
 app.use('/api/artisans', artisanRoutes); 
 app.use('/api/auth', authRoutes);
 
+// Debug: Log all registered routes
+console.log('Registered routes:');
+console.log('- GET /');
+console.log('- GET /api/test');
+console.log('- POST /api/artisans/register');
+console.log('- POST /api/artisans/login');
+console.log('- GET /api/artisans');
+console.log('- GET /api/artisans/:publicId');
+console.log('- POST /api/auth/register');
+console.log('- POST /api/auth/login');
+console.log('- POST /api/auth/logout');
+console.log('- GET /api/auth/me');
+
 
 // --- Start the Server ---
 const PORT = process.env.PORT || 5000;
