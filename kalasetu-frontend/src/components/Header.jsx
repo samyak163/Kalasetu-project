@@ -27,13 +27,6 @@ const Header = () => {
                 
                 {/* Dynamic Auth Section */}
                 <div className="flex items-center space-x-4">
-                    {/* THE FIX: The "For Artisans" button is now always visible to non-logged-in users */}
-                    {!currentUser && (
-                         <Link to="/for-artisans" className="hidden md:block border border-white px-4 py-2 rounded-md hover:bg-white hover:text-[#1A1A1A] transition-colors text-sm">
-                            For Artisans
-                        </Link>
-                    )}
-                    
                     {currentUser ? (
                         // --- IF A USER IS LOGGED IN ---
                         // We show their name (link to dashboard) AND a logout button.
@@ -47,10 +40,15 @@ const Header = () => {
                         </>
                     ) : (
                         // --- IF NO USER IS LOGGED IN ---
-                        // We show the original "Login / Sign Up" button.
-                        <Link to="/login" className="bg-[#A55233] px-4 py-2 rounded-md hover:bg-[#8e462b] transition-colors text-sm">
-                            Login / Sign Up
-                        </Link>
+                        // Show separate Login and Sign Up buttons for artisans
+                        <>
+                            <Link to="/login" className="text-white hover:text-[#A55233] transition-colors text-sm font-medium">
+                                Login
+                            </Link>
+                            <Link to="/register" className="bg-[#A55233] px-4 py-2 rounded-md hover:bg-[#8e462b] transition-colors text-sm font-medium">
+                                Sign Up
+                            </Link>
+                        </>
                     )}
                 </div>
             </div>

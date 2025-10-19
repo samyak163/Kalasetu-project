@@ -5,11 +5,12 @@ import { signJwt, setAuthCookie, clearAuthCookie } from '../utils/generateToken.
 
 const registerSchema = z.object({
     fullName: z.string().min(2),
-    email: z.string().email().transform((v) => v.toLowerCase().trim()),
-    phoneNumber: z.string().min(7).max(20),
+    email: z.string().email().transform((v) => v.toLowerCase().trim()).optional(),
+    phoneNumber: z.string().min(7).max(20).optional(),
     password: z.string().min(8),
-    craft: z.string().min(2),
-    location: z.string().min(2),
+}).refine((data) => data.email || data.phoneNumber, {
+    message: "Either email or phone number must be provided",
+    path: ["email", "phoneNumber"]
 });
 
 const loginSchema = z.object({
@@ -19,24 +20,41 @@ const loginSchema = z.object({
 
 export const register = async (req, res, next) => {
     try {
-        const { fullName, email, phoneNumber, password, craft, location } = registerSchema.parse(req.body);
-        const existingEmail = await Artisan.findOne({ email });
-        if (existingEmail) {
-            return res.status(400).json({ message: 'This email is already registered' });
+        const { fullName, email, phoneNumber, password } = registerSchema.parse(req.body);
+        
+        // Check for existing email if provided
+        if (email) {
+            const existingEmail = await Artisan.findOne({ email });
+            if (existingEmail) {
+                return res.status(400).json({ message: 'This email is already registered' });
+            }
         }
-        const existingPhone = await Artisan.findOne({ phoneNumber });
-        if (existingPhone) {
-            return res.status(400).json({ message: 'This phone number is already registered' });
+        
+        // Check for existing phone if provided
+        if (phoneNumber) {
+            const existingPhone = await Artisan.findOne({ phoneNumber });
+            if (existingPhone) {
+                return res.status(400).json({ message: 'This phone number is already registered' });
+            }
         }
+        
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        const artisan = await Artisan.create({ fullName, email, phoneNumber, password: hashedPassword, craft, location });
+        
+        // Create artisan with only provided fields
+        const artisanData = { fullName, password: hashedPassword };
+        if (email) artisanData.email = email;
+        if (phoneNumber) artisanData.phoneNumber = phoneNumber;
+        
+        const artisan = await Artisan.create(artisanData);
         const token = signJwt(artisan._id);
         setAuthCookie(res, token);
+        
         res.status(201).json({
             _id: artisan._id,
             fullName: artisan.fullName,
             email: artisan.email,
+            phoneNumber: artisan.phoneNumber,
             publicId: artisan.publicId,
         });
     } catch (err) {

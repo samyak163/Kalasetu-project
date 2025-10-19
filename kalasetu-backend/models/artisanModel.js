@@ -14,11 +14,11 @@ const artisanSchema = new mongoose.Schema({
         index: true, // Makes searching by this ID very fast
     },
     fullName: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    phoneNumber: { type: String, required: true, unique: true },
+    email: { type: String, unique: true, sparse: true }, // sparse: true allows multiple null values
+    phoneNumber: { type: String, unique: true, sparse: true }, // sparse: true allows multiple null values
     password: { type: String, required: true },
-    craft: { type: String, required: true },
-    location: { type: String, required: true },
+    craft: { type: String, default: '' },
+    location: { type: String, default: '' },
     bio: { type: String, default: 'A passionate local artisan.' },
     profileImageUrl: { type: String, default: 'https://placehold.co/100x100/A55233/FFFFFF?text=Profile' },
     coverImageUrl: { type: String, default: 'https://placehold.co/800x300/A55233/FFFFFF?text=KalaSetu' },
