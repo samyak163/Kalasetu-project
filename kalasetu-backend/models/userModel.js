@@ -23,6 +23,10 @@ const userSchema = new mongoose.Schema({
         minlength: [8, 'Password must be at least 8 characters long'],
         select: false // This will hide the password from default queries
     },
+    lockUntil: { type: Date },
+    loginAttempts: { type: Number, default: 0 },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
 }, { timestamps: true });
 
 // --- Mongoose Middleware (Robust "pre-save" hook) ---
@@ -46,6 +50,31 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.matchPassword = async function (enteredPassword) {
     // 'this.password' refers to the hashed password in the database
     return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Add helpers to model for login lockout
+userSchema.methods.incLoginAttempts = async function () {
+  // If the lock has expired, reset attempts
+  if (this.lockUntil && this.lockUntil < Date.now()) {
+    this.loginAttempts = 1;
+    this.lockUntil = undefined;
+  } else {
+    this.loginAttempts += 1;
+    if (this.loginAttempts >= 5 && !this.isLocked()) {
+      this.lockUntil = Date.now() + 15 * 60 * 1000; // 15 minutes
+    }
+  }
+  await this.save({ validateBeforeSave: false });
+};
+
+userSchema.methods.resetLoginAttempts = async function () {
+  this.loginAttempts = 0;
+  this.lockUntil = undefined;
+  await this.save({ validateBeforeSave: false });
+};
+
+userSchema.methods.isLocked = function () {
+  return this.lockUntil && this.lockUntil > Date.now();
 };
 
 

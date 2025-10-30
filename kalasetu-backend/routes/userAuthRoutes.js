@@ -4,6 +4,8 @@ import {
   loginUser,
   logoutUser,
   getMe,
+  forgotPassword,
+  resetPassword,
 } from '../controllers/userAuthController.js';
 import { userProtect } from '../middleware/userProtectMiddleware.js';
 
@@ -13,6 +15,8 @@ const router = express.Router();
 router.post('/register', registerUser);
 router.post('/login', loginUser);
 router.post('/logout', logoutUser);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 // Private route
 // This uses our new 'userProtect' middleware

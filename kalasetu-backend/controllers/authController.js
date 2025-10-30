@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import Artisan from '../models/artisanModel.js';
 import { signJwt, setAuthCookie, clearAuthCookie } from '../utils/generateToken.js';
+import crypto from 'crypto';
 
 const registerSchema = z.object({
     fullName: z.string().min(2),
@@ -70,10 +71,21 @@ export const login = async (req, res, next) => {
         const { loginIdentifier, password } = loginSchema.parse(req.body);
         const isEmail = loginIdentifier.includes('@');
         const query = isEmail ? { email: loginIdentifier.toLowerCase().trim() } : { phoneNumber: loginIdentifier };
-        const artisan = await Artisan.findOne(query);
-        if (!artisan || !(await bcrypt.compare(password, artisan.password))) {
+        const artisan = await Artisan.findOne(query).select('+password +lockUntil +loginAttempts');
+        if (!artisan) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
+        if (artisan.isLocked && artisan.isLocked()) {
+            const unlockAt = new Date(artisan.lockUntil).toLocaleTimeString();
+            return res.status(423).json({ message: `Account is temporarily locked due to too many failed login attempts. Try again after ${unlockAt}.` });
+        }
+        const valid = await bcrypt.compare(password, artisan.password);
+        if (!valid) {
+            await artisan.incLoginAttempts();
+            const remaining = 5 - artisan.loginAttempts;
+            return res.status(401).json({ message: `Invalid credentials. ${remaining > 0 ? `${remaining} login attempt(s) left before lockout.` : 'Account locked.'}` });
+        }
+        await artisan.resetLoginAttempts();
         const token = signJwt(artisan._id);
         setAuthCookie(res, token);
         res.json({
@@ -105,6 +117,43 @@ export const logout = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
+};
+
+// --- Forgot Password ---
+// @route POST /api/auth/forgot-password
+export const forgotPassword = async (req, res, next) => {
+  const { loginIdentifier } = req.body;
+  const query = loginIdentifier.includes('@') ? { email: loginIdentifier.toLowerCase().trim() } : { phoneNumber: loginIdentifier };
+  const artisan = await Artisan.findOne(query);
+  if (!artisan) {
+    return res.status(200).json({ message: 'If the account exists, you will receive a reset link.' });
+  }
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  artisan.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  artisan.resetPasswordExpires = Date.now() + 3600000;
+  await artisan.save({ validateBeforeSave: false });
+  const resetUrl = `${process.env.FRONTEND_BASE_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+  console.log(`Artisan password reset link for ${artisan.email || artisan.phoneNumber}: ${resetUrl}`);
+  res.status(200).json({ message: 'If the account exists, you will receive a reset link.' });
+};
+
+// --- Reset Password ---
+// @route POST /api/auth/reset-password
+export const resetPassword = async (req, res, next) => {
+  const { token, newPassword } = req.body;
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+  const artisan = await Artisan.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpires: { $gt: Date.now() },
+  });
+  if (!artisan) {
+    return res.status(400).json({ message: 'Invalid or expired password reset token.' });
+  }
+  artisan.password = await bcrypt.hash(newPassword, 10);
+  artisan.resetPasswordToken = undefined;
+  artisan.resetPasswordExpires = undefined;
+  await artisan.save();
+  res.status(200).json({ message: 'Password reset successful. You can now log in.' });
 };
 
 

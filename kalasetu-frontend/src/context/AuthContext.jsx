@@ -1,62 +1,122 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState, useCallback } from "react";
+// FIX: Using relative path from context/ to lib/
 import api from "../lib/axios.js";
 
 export const AuthContext = createContext();
 
+// This is the new "empty" auth state
+const initialAuthState = {
+  user: null,
+  userType: null, // 'artisan' or 'user'
+};
+
 export const AuthContextProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [auth, setAuth] = useState(initialAuthState);
   const [loading, setLoading] = useState(true);
 
-  // Bootstrap user session on mount
-  useEffect(() => {
-    const bootstrapAuth = async () => {
+  // This function now checks for BOTH user types when the app loads
+  const bootstrapAuth = useCallback(async () => {
+    setLoading(true);
+    try {
+      // 1. First, try to get a CUSTOMER user
+      const userRes = await api.get("/api/users/me");
+      setAuth({ user: userRes.data, userType: 'user' });
+    } catch (userErr) {
+      // 2. If no customer, try to get an ARTISAN user
       try {
-        const res = await api.get("/api/auth/me");
-        setCurrentUser(res.data);
-      } catch (error) {
-        // User not authenticated, clear any stale data
-        setCurrentUser(null);
-      } finally {
-        setLoading(false);
+        const artisanRes = await api.get("/api/auth/me");
+        setAuth({ user: artisanRes.data, userType: 'artisan' });
+      } catch (artisanErr) {
+        // 3. If neither, we are logged out.
+        setAuth(initialAuthState);
       }
-    };
-
-    bootstrapAuth();
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const login = async (inputs) => {
+  // Run bootstrap on initial mount
+  useEffect(() => {
+    bootstrapAuth();
+  }, [bootstrapAuth]);
+
+  // --- Artisan Auth Functions ---
+  const artisanLogin = async (inputs) => {
     try {
       const res = await api.post("/api/auth/login", inputs);
-      setCurrentUser(res.data);
+      setAuth({ user: res.data, userType: 'artisan' });
       return res.data;
     } catch (error) {
+      setAuth(initialAuthState); // Clear auth on failed login
       throw error;
     }
   };
 
-  const register = async (inputs) => {
+  const artisanRegister = async (inputs) => {
     try {
       const res = await api.post("/api/auth/register", inputs);
-      setCurrentUser(res.data);
+      setAuth({ user: res.data, userType: 'artisan' });
       return res.data;
     } catch (error) {
+      setAuth(initialAuthState); // Clear auth on failed register
       throw error;
     }
   };
 
+  // --- Customer Auth Functions (NEW) ---
+  const userLogin = async (inputs) => {
+    try {
+      const res = await api.post("/api/users/login", inputs);
+      setAuth({ user: res.data, userType: 'user' });
+      return res.data;
+    } catch (error) {
+      setAuth(initialAuthState); // Clear auth on failed login
+      throw error;
+    }
+  };
+
+  const userRegister = async (inputs) => {
+    try {
+      const res = await api.post("/api/users/register", inputs);
+      setAuth({ user: res.data, userType: 'user' });
+      return res.data;
+    } catch (error) {
+      setAuth(initialAuthState); // Clear auth on failed register
+      throw error;
+    }
+  };
+
+  // --- Universal Logout Function ---
   const logout = async () => {
     try {
-      await api.post("/api/auth/logout");
+      // Call the correct logout endpoint based on user type
+      if (auth.userType === 'artisan') {
+        await api.post("/api/auth/logout");
+      } else if (auth.userType === 'user') {
+        await api.post("/api/users/logout");
+      }
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      setCurrentUser(null);
+      setAuth(initialAuthState); // Reset auth state regardless of error
     }
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, login, register, logout, loading }}>
-      {children}
+    <AuthContext.Provider 
+      value={{ 
+        auth, // The main auth object { user, userType }
+        artisanLogin,
+        artisanRegister,
+        userLogin,
+        userRegister,
+        logout, 
+        loading 
+      }}
+    >
+      {/* Render children only when auth check is complete */}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
+

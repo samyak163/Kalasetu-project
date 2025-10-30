@@ -14,6 +14,7 @@ import ArtisanDashboardPage from './pages/ArtisanDashboardPage.jsx';
 // --- NEW CUSTOMER PAGES ---
 import CustomerLoginPage from './pages/CustomerLoginPage.jsx';
 import CustomerRegisterPage from './pages/CustomerRegisterPage.jsx';
+import ForgotPassword from './pages/ForgotPassword.jsx';
 
 // Auth Components
 import RequireAuth from './components/RequireAuth.jsx';
@@ -29,10 +30,12 @@ function App() {
         {/* Artisan Auth Routes (For the "Artisan Portal") */}
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
         
         {/* Customer Auth Routes (NEW) */}
         <Route path="customer/login" element={<CustomerLoginPage />} />
         <Route path="customer/register" element={<CustomerRegisterPage />} />
+        <Route path="customer/forgot-password" element={<ForgotPassword customer />} />
 
         {/* Protected Artisan Route */}
         <Route 
