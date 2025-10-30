@@ -13,7 +13,7 @@ const RegisterPage = () => {
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const { register } = useContext(AuthContext);
+    const { artisanRegister } = useContext(AuthContext);
 
     const handleChange = (e) => {
         const { id, value } = e.target;
@@ -38,7 +38,7 @@ const RegisterPage = () => {
                 phoneNumber: formData.useEmail ? '' : formData.phoneNumber
             };
 
-            await register(registrationData);
+            await artisanRegister(registrationData);
             navigate('/');
         } catch (err) {
             console.error('Registration error:', err);

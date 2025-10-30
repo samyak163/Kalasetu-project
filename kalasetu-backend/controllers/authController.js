@@ -6,8 +6,17 @@ import crypto from 'crypto';
 
 const registerSchema = z.object({
     fullName: z.string().min(2),
-    email: z.string().email().transform((v) => v.toLowerCase().trim()).optional(),
-    phoneNumber: z.string().min(7).max(20).optional(),
+    email: z.preprocess(
+        // If value is an empty string, treat it as undefined, otherwise use the value
+        (val) => (val === '' ? undefined : val),
+        // Now, the regular validation will only run on non-empty strings
+        z.string().email().transform((v) => v.toLowerCase().trim()).optional()
+    ),
+    phoneNumber: z.preprocess(
+        // Same logic for phone number
+        (val) => (val === '' ? undefined : val),
+        z.string().min(7).max(20).optional()
+    ),
     password: z.string().min(8),
 }).refine((data) => data.email || data.phoneNumber, {
     message: "Either email or phone number must be provided",
