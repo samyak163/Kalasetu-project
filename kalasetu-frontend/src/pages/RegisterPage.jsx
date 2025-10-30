@@ -10,6 +10,7 @@ const RegisterPage = () => {
         password: '',
         useEmail: true // Toggle between email and phone
     });
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -165,15 +166,30 @@ const RegisterPage = () => {
                             <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                                 Password
                             </label>
-                            <input 
-                                type="password" 
-                                id="password" 
-                                value={formData.password} 
-                                onChange={handleChange} 
-                                required 
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200"
-                                placeholder="Create a strong password"
-                            />
+                            <div className="relative">
+                                <input 
+                                    type={showPassword ? 'text' : 'password'}
+                                    id="password" 
+                                    value={formData.password} 
+                                    onChange={handleChange} 
+                                    required 
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 pr-12"
+                                    placeholder="Create a strong password"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword((v) => !v)}
+                                    className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 focus:outline-none"
+                                    tabIndex={-1}
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    {showPassword ? (
+                                        <svg width="20" height="20" fill="none" stroke="currentColor"><path d="M1 10C3 4.5 9 2 14 5c2 .8 6 4 6 5s-4 4.2-6 5C9 18 3 15.5 1 10z"/><circle cx="10" cy="10" r="3"/></svg>
+                                    ) : (
+                                        <svg width="20" height="20" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="3"/><path d="M1 10C3 4.5 9 2 14 5c2 .8 6 4 6 5s-4 4.2-6 5C9 18 3 15.5 1 10z"/><line x1="4" y1="4" x2="16" y2="16"/></svg>
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         <button 
