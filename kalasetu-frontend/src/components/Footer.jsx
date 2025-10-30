@@ -1,34 +1,92 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { Icons } from './Icons.jsx'; // Assuming you have Icons defined here
 
-const Footer = () => (
-    <footer className="bg-[#1A1A1A] text-gray-300 py-10 px-4 sm:px-8">
-        <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left max-w-7xl">
-            <div>
-                <h3 className="text-xl font-bold text-[#A55233] mb-2">Kala<span className="text-white">Setu</span></h3>
-                <p className="text-sm">Connecting communities, one craft at a time.</p>
+const Footer = () => {
+  return (
+    <footer className="bg-gray-900 text-gray-400" aria-labelledby="footer-heading">
+      <h2 id="footer-heading" className="sr-only">Footer</h2>
+      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
+        <div className="xl:grid xl:grid-cols-3 xl:gap-8">
+          <div className="space-y-8 xl:col-span-1">
+            <Link to="/" className="text-3xl font-bold text-white">
+              Kala<span className="text-[#A55233]">Setu</span>
+            </Link>
+            <p className="text-gray-400 text-base">
+              Connecting you with the heart of craftsmanship. Discover unique, handmade products from local artisans.
+            </p>
+            <div className="flex space-x-6">
+              {/* Social links can be added here, e.g., <Icons.twitter /> */}
             </div>
-            <div>
-                <h4 className="font-semibold text-white mb-2">Explore</h4>
-                <a href="#" className="block hover:text-[#A55233] text-sm mb-1">Categories</a>
-                <a href="#" className="block hover:text-[#A55233] text-sm mb-1">About Us</a>
+          </div>
+          <div className="mt-12 grid grid-cols-2 gap-8 xl:mt-0 xl:col-span-2">
+            <div className="md:grid md:grid-cols-2 md:gap-8">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Discover</h3>
+                <ul role="list" className="mt-4 space-y-4">
+                  <li>
+                    <Link to="/" className="text-base text-gray-400 hover:text-white">Home</Link>
+                  </li>
+                  {/* TODO: Add these routes later
+                    <li>
+                      <Link to="/explore" className="text-base text-gray-400 hover:text-white">Explore</Link>
+                    </li> 
+                  */}
+                </ul>
+              </div>
+              <div className="mt-12 md:mt-0">
+                <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Company</h3>
+                <ul role="list" className="mt-4 space-y-4">
+                  {/* TODO: Add these routes later
+                    <li>
+                      <Link to="/about" className="text-base text-gray-400 hover:text-white">About</Link>
+                    </li>
+                    <li>
+                      <Link to="/blog" className="text-base text-gray-400 hover:text-white">Blog</Link>
+                    </li>
+                  */}
+                </ul>
+              </div>
             </div>
-            <div>
-                <h4 className="font-semibold text-white mb-2">For Artisans</h4>
-                <a href="#" className="block hover:text-[#A55233] text-sm mb-1">Join Our Community</a>
-                <a href="#" className="block hover:text-[#A55233] text-sm mb-1">How It Works</a>
+            <div className="md:grid md:grid-cols-2 md:gap-8">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">For Artisans</h3>
+                <ul role="list" className="mt-4 space-y-4">
+                  <li>
+                    <Link to="/login" className="text-base text-gray-400 hover:text-white">Artisan Login</Link>
+                  </li>
+                  <li>
+                    <Link to="/register" className="text-base text-gray-400 hover:text-white">Join as Artisan</Link>
+                  </li>
+                </ul>
+              </div>
+              <div className="mt-12 md:mt-0">
+                <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Legal</h3>
+                <ul role="list" className="mt-4 space-y-4">
+                   {/* TODO: Add these routes later
+                    <li>
+                      <Link to="/privacy" className="text-base text-gray-400 hover:text-white">Privacy</Link>
+                    </li>
+                    <li>
+                      <Link to="/terms" className="text-base text-gray-400 hover:text-white">Terms</Link>
+                    </li>
+                  */}
+                </ul>
+              </div>
             </div>
-            <div>
-                <h4 className="font-semibold text-white mb-2">Follow Us</h4>
-                <div className="flex space-x-4 justify-center md:justify-start">
-                    <a href="#" className="hover:text-[#A55233]">Social 1</a>
-                    <a href="#" className="hover:text-[#A55233]">Social 2</a>
-                </div>
-            </div>
+          </div>
         </div>
-        <div className="container mx-auto mt-8 border-t border-gray-700 pt-4 text-center text-sm max-w-7xl">
-            <p>&copy; {new Date().getFullYear()} KalaSetu. All rights reserved.</p>
+        
+        {/* --- BOTTOM SECTION --- */}
+        <div className="mt-12 border-t border-gray-700 pt-8">
+          <p className="text-base text-gray-400 xl:text-center">
+            &copy; {new Date().getFullYear()} KalaSetu. All rights reserved.
+          </p>
         </div>
+      </div>
     </footer>
-);
+  );
+};
 
 export default Footer;
+
