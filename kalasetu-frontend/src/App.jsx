@@ -18,6 +18,12 @@ import ForgotPassword from './pages/ForgotPassword.jsx';
 import PhoneOTPPage from './pages/PhoneOTPPage.jsx';
 import VerifyEmail from './pages/VerifyEmail.jsx';
 
+// --- POLICY PAGES ---
+import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
+import TermsConditions from './pages/TermsConditions.jsx';
+import ShippingPolicy from './pages/ShippingPolicy.jsx';
+import CancellationRefund from './pages/CancellationRefund.jsx';
+
 // Auth Components
 import RequireAuth from './components/RequireAuth.jsx';
 
@@ -41,6 +47,12 @@ function App() {
         <Route path="customer/login" element={<CustomerLoginPage />} />
         <Route path="customer/register" element={<CustomerRegisterPage />} />
         <Route path="customer/forgot-password" element={<ForgotPassword customer />} />
+
+        {/* Policy Pages */}
+        <Route path="privacy" element={<PrivacyPolicy />} />
+        <Route path="terms" element={<TermsConditions />} />
+        <Route path="shipping" element={<ShippingPolicy />} />
+        <Route path="cancellation-refund" element={<CancellationRefund />} />
 
         {/* Protected Artisan Route */}
         <Route 

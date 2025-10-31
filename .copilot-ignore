@@ -24,5 +24,3 @@ kalasetu-backend/serviceAccountKey.json
 *.log
 
 # Add more patterns below as needed
-.DS_Store
-.vscode/
