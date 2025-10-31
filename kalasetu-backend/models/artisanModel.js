@@ -13,6 +13,8 @@ const artisanSchema = new mongoose.Schema({
         unique: true, // Guarantees no two artisans have the same public ID
         index: true, // Makes searching by this ID very fast
     },
+  // Optional link to Firebase Authentication user UID
+  firebaseUid: { type: String, unique: true, sparse: true, index: true },
     fullName: { type: String, required: true },
     email: { type: String, unique: true, sparse: true }, // sparse: true allows multiple null values
     phoneNumber: { type: String, unique: true, sparse: true }, // sparse: true allows multiple null values

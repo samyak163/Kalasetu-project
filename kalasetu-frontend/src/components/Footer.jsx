@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Icons } from './Icons.jsx'; // Assuming you have Icons defined here
 
 const Footer = () => {
   return (
@@ -23,35 +22,22 @@ const Footer = () => {
             <div className="md:grid md:grid-cols-2 md:gap-8">
               <div>
                 <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Discover</h3>
-                <ul role="list" className="mt-4 space-y-4">
+                <ul className="mt-4 space-y-4">
                   <li>
                     <Link to="/" className="text-base text-gray-400 hover:text-white">Home</Link>
                   </li>
-                  {/* TODO: Add these routes later
-                    <li>
-                      <Link to="/explore" className="text-base text-gray-400 hover:text-white">Explore</Link>
-                    </li> 
-                  */}
                 </ul>
               </div>
               <div className="mt-12 md:mt-0">
                 <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Company</h3>
-                <ul role="list" className="mt-4 space-y-4">
-                  {/* TODO: Add these routes later
-                    <li>
-                      <Link to="/about" className="text-base text-gray-400 hover:text-white">About</Link>
-                    </li>
-                    <li>
-                      <Link to="/blog" className="text-base text-gray-400 hover:text-white">Blog</Link>
-                    </li>
-                  */}
+                <ul className="mt-4 space-y-4">
                 </ul>
               </div>
             </div>
             <div className="md:grid md:grid-cols-2 md:gap-8">
               <div>
                 <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">For Artisans</h3>
-                <ul role="list" className="mt-4 space-y-4">
+                <ul className="mt-4 space-y-4">
                   <li>
                     <Link to="/login" className="text-base text-gray-400 hover:text-white">Artisan Login</Link>
                   </li>
@@ -62,15 +48,7 @@ const Footer = () => {
               </div>
               <div className="mt-12 md:mt-0">
                 <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">Legal</h3>
-                <ul role="list" className="mt-4 space-y-4">
-                   {/* TODO: Add these routes later
-                    <li>
-                      <Link to="/privacy" className="text-base text-gray-400 hover:text-white">Privacy</Link>
-                    </li>
-                    <li>
-                      <Link to="/terms" className="text-base text-gray-400 hover:text-white">Terms</Link>
-                    </li>
-                  */}
+                <ul className="mt-4 space-y-4">
                 </ul>
               </div>
             </div>

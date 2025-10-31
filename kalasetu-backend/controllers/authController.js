@@ -3,6 +3,7 @@ import { z } from 'zod';
 import Artisan from '../models/artisanModel.js';
 import { signJwt, setAuthCookie, clearAuthCookie } from '../utils/generateToken.js';
 import crypto from 'crypto';
+import admin from '../config/firebaseAdmin.js';
 
 const registerSchema = z.object({
     fullName: z.string().min(2),
@@ -26,6 +27,15 @@ const registerSchema = z.object({
 const loginSchema = z.object({
     loginIdentifier: z.string().min(3),
     password: z.string().min(8),
+});
+
+const forgotPasswordSchema = z.object({
+    loginIdentifier: z.string().min(3, "Email or phone number is required"),
+});
+
+const resetPasswordSchema = z.object({
+    token: z.string().min(1, "Reset token is required"),
+    newPassword: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export const register = async (req, res, next) => {
@@ -131,38 +141,108 @@ export const logout = async (req, res, next) => {
 // --- Forgot Password ---
 // @route POST /api/auth/forgot-password
 export const forgotPassword = async (req, res, next) => {
-  const { loginIdentifier } = req.body;
-  const query = loginIdentifier.includes('@') ? { email: loginIdentifier.toLowerCase().trim() } : { phoneNumber: loginIdentifier };
-  const artisan = await Artisan.findOne(query);
-  if (!artisan) {
-    return res.status(200).json({ message: 'If the account exists, you will receive a reset link.' });
+  try {
+    const { loginIdentifier } = forgotPasswordSchema.parse(req.body);
+    const query = loginIdentifier.includes('@') ? { email: loginIdentifier.toLowerCase().trim() } : { phoneNumber: loginIdentifier };
+    const artisan = await Artisan.findOne(query);
+    if (!artisan) {
+      return res.status(200).json({ message: 'If the account exists, you will receive a reset link.' });
+    }
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    artisan.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    artisan.resetPasswordExpires = Date.now() + 3600000;
+    await artisan.save({ validateBeforeSave: false });
+    const resetUrl = `${process.env.FRONTEND_BASE_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+    console.log(`Artisan password reset link for ${artisan.email || artisan.phoneNumber}: ${resetUrl}`);
+    res.status(200).json({ message: 'If the account exists, you will receive a reset link.' });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ message: err.issues.map(i => i.message).join(', ') });
+    }
+    next(err);
   }
-  const resetToken = crypto.randomBytes(32).toString('hex');
-  artisan.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-  artisan.resetPasswordExpires = Date.now() + 3600000;
-  await artisan.save({ validateBeforeSave: false });
-  const resetUrl = `${process.env.FRONTEND_BASE_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
-  console.log(`Artisan password reset link for ${artisan.email || artisan.phoneNumber}: ${resetUrl}`);
-  res.status(200).json({ message: 'If the account exists, you will receive a reset link.' });
 };
 
 // --- Reset Password ---
 // @route POST /api/auth/reset-password
 export const resetPassword = async (req, res, next) => {
-  const { token, newPassword } = req.body;
-  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-  const artisan = await Artisan.findOne({
-    resetPasswordToken: hashedToken,
-    resetPasswordExpires: { $gt: Date.now() },
-  });
-  if (!artisan) {
-    return res.status(400).json({ message: 'Invalid or expired password reset token.' });
+  try {
+    const { token, newPassword } = resetPasswordSchema.parse(req.body);
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const artisan = await Artisan.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+    if (!artisan) {
+      return res.status(400).json({ message: 'Invalid or expired password reset token.' });
+    }
+    artisan.password = await bcrypt.hash(newPassword, 10);
+    artisan.resetPasswordToken = undefined;
+    artisan.resetPasswordExpires = undefined;
+    await artisan.save();
+    res.status(200).json({ message: 'Password reset successful. You can now log in.' });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ message: err.issues.map(i => i.message).join(', ') });
+    }
+    next(err);
   }
-  artisan.password = await bcrypt.hash(newPassword, 10);
-  artisan.resetPasswordToken = undefined;
-  artisan.resetPasswordExpires = undefined;
-  await artisan.save();
-  res.status(200).json({ message: 'Password reset successful. You can now log in.' });
+};
+
+// --- Firebase Login (Phone/Email Link via Firebase Auth) ---
+// @route POST /api/auth/firebase-login
+export const firebaseLogin = async (req, res, next) => {
+    try {
+        const { idToken } = req.body || {};
+        if (!idToken) return res.status(400).json({ message: 'idToken is required' });
+
+        // Verify the Firebase ID token
+        const decoded = await admin.auth().verifyIdToken(idToken);
+        const { uid, phone_number: phoneNumber, email, name } = decoded;
+
+        // Try to find existing artisan by firebaseUid, email or phone
+        const findQuery = {
+            $or: [
+                { firebaseUid: uid },
+                ...(email ? [{ email }] : []),
+                ...(phoneNumber ? [{ phoneNumber }] : []),
+            ],
+        };
+
+        let artisan = await Artisan.findOne(findQuery);
+
+        if (!artisan) {
+            // Create a new artisan with random password (not used, but required by schema)
+            const randomPass = crypto.randomBytes(16).toString('hex');
+            const hashedPassword = await bcrypt.hash(randomPass, 10);
+
+            artisan = await Artisan.create({
+                firebaseUid: uid,
+                fullName: name || 'KalaSetu User',
+                email: email || undefined,
+                phoneNumber: phoneNumber || undefined,
+                password: hashedPassword,
+            });
+        } else if (!artisan.firebaseUid) {
+            // Link existing artisan with this Firebase UID if not already linked
+            artisan.firebaseUid = uid;
+            await artisan.save({ validateBeforeSave: false });
+        }
+
+        const token = signJwt(artisan._id);
+        setAuthCookie(res, token);
+
+        return res.json({
+            _id: artisan._id,
+            fullName: artisan.fullName,
+            email: artisan.email,
+            phoneNumber: artisan.phoneNumber,
+            publicId: artisan.publicId,
+        });
+    } catch (err) {
+        console.error('Firebase auth error:', err);
+        return res.status(401).json({ message: 'Invalid Firebase token' });
+    }
 };
 
 

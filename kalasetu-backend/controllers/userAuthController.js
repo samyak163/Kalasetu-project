@@ -18,6 +18,15 @@ const loginSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email address').transform((v) => v.toLowerCase().trim()),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
+
 
 // --- Register New Customer ---
 // @desc    Register a new customer user
@@ -110,7 +119,7 @@ export const getMe = asyncHandler(async (req, res, next) => {
 // --- Forgot Password ---
 // @route POST /api/users/forgot-password
 export const forgotPassword = asyncHandler(async (req, res, next) => {
-  const { email } = req.body;
+  const { email } = forgotPasswordSchema.parse(req.body);
   const user = await User.findOne({ email });
   if (!user) {
     return res.status(200).json({ message: 'If this email is registered, you will receive a reset link shortly.' });
@@ -129,7 +138,7 @@ export const forgotPassword = asyncHandler(async (req, res, next) => {
 // --- Reset Password ---
 // @route POST /api/users/reset-password
 export const resetPassword = asyncHandler(async (req, res, next) => {
-  const { token, newPassword } = req.body;
+  const { token, newPassword } = resetPasswordSchema.parse(req.body);
   const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
   const user = await User.findOne({
     resetPasswordToken: hashedToken,

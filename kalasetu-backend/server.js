@@ -15,6 +15,7 @@ import artisanRoutes from './routes/artisanRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 // Routes for CUSTOMER authentication (login, register, me, logout)
 import userAuthRoutes from './routes/userAuthRoutes.js'; 
+import uploadRoutes from './routes/uploadRoutes.js';
 
 
 // --- Load Environment Variables ---
@@ -49,14 +50,14 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // CORS Configuration
-const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+const allowedOrigins = new Set((process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean));
 app.use(cors({
     origin: (origin, callback) => {
         // Allow requests with no origin (like Postman, mobile apps, server-to-server)
         if (!origin) return callback(null, true);
         
         // Allow specific origins from environment
-        if (allowedOrigins.includes(origin)) return callback(null, true);
+        if (allowedOrigins.has(origin)) return callback(null, true);
         
         // In development, allow localhost origins
         if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
@@ -86,6 +87,8 @@ app.use('/api/artisans', artisanRoutes);
 app.use('/api/auth', authRoutes);
 // /api/users -> Handles CUSTOMER authentication
 app.use('/api/users', userAuthRoutes);
+// /api/uploads -> Cloudinary signed upload helpers
+app.use('/api/uploads', uploadRoutes);
 
 // --- Debug Logging (Updated) ---
 // This is now accurate for our new structure

@@ -15,6 +15,8 @@ import ArtisanDashboardPage from './pages/ArtisanDashboardPage.jsx';
 import CustomerLoginPage from './pages/CustomerLoginPage.jsx';
 import CustomerRegisterPage from './pages/CustomerRegisterPage.jsx';
 import ForgotPassword from './pages/ForgotPassword.jsx';
+import PhoneOTPPage from './pages/PhoneOTPPage.jsx';
+import VerifyEmail from './pages/VerifyEmail.jsx';
 
 // Auth Components
 import RequireAuth from './components/RequireAuth.jsx';
@@ -31,6 +33,9 @@ function App() {
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="forgot-password" element={<ForgotPassword />} />
+  {/* Firebase Auth helper pages */}
+  <Route path="phone-otp" element={<PhoneOTPPage />} />
+  <Route path="verify-email" element={<VerifyEmail />} />
         
         {/* Customer Auth Routes (NEW) */}
         <Route path="customer/login" element={<CustomerLoginPage />} />
