@@ -1,22 +1,41 @@
-# Dependencies
-node_modules/
-kalasetu-frontend/node_modules
-kalasetu-backend/node_modules
+#Dependencies
 
-# Build folders
-dist/
-kalasetu-frontend/dist/
+#These are specific to your project structure
 
-# Environment files (CRITICAL)
-.env
-.env.*
-*.env
+/kalasetu-frontend/node_modules
+/kalasetu-backend/node_modules
 
-# Log files
-npm-debug.log*
+#Build folders
+
+/kalasetu-frontend/dist
+/kalasetu-backend/dist
+.vite/
+
+#Environment variables (CRITICAL)
+
+#This will ignore .env files in the root, frontend, and backend folders
+
+/.env
+/.env.*
+/kalasetu-frontend/.env
+/kalasetu-frontend/.env.*
+/kalasetu-backend/.env
+/kalasetu-backend/.env.*
+
+#Firebase Service Account Key (CRITICAL)
+
+/kalasetu-backend/kalasetu-marketplace-firebase-adminsdk-fbsvc-a09d742bcf.json
+/kalasetu-backend/*.json
+
+#Log files
+
+.log
+npm-debug.log
 yarn-debug.log*
 yarn-error.log*
 
-# OS and IDE files
+#OS and IDE files
+
 .DS_Store
 .vscode/
+
