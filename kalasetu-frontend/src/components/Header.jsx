@@ -1,11 +1,19 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
-// Use absolute path
 import { AuthContext } from '/src/context/AuthContext.jsx';
-import { Icons } from './Icons.jsx'; // Assuming you have Icons defined here
+import ProfileDropdown from './common/ProfileDropdown.jsx';
 
 const Header = () => {
   const { auth, logout } = useContext(AuthContext);
+  const [profileModalOpen, setProfileModalOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleOpenProfile = () => {
+      setProfileModalOpen(true);
+    };
+    window.addEventListener('open-profile', handleOpenProfile);
+    return () => window.removeEventListener('open-profile', handleOpenProfile);
+  }, []);
 
   const renderAuthLinks = () => {
     // Case 1: No one is logged in
@@ -25,20 +33,17 @@ const Header = () => {
       );
     }
 
-    // Case 2: A Customer is logged in
+    // Case 2: A Customer is logged in - use ProfileDropdown
     if (auth.userType === 'user') {
       return (
-        <>
-          <span className="text-sm font-medium text-gray-700">Hi, {auth.user.fullName.split(' ')[0]}</span>
-          {/* TODO: Link to customer profile page */}
-          {/* <Link to="/my-profile" className="ml-4 text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">My Profile</Link> */}
-          <button
-            onClick={logout}
-            className="ml-4 text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors"
-          >
-            Sign Out
-          </button>
-        </>
+        <ProfileDropdown
+          user={auth.user}
+          onLogout={logout}
+          onOpenProfile={() => {
+            const event = new CustomEvent('open-profile');
+            window.dispatchEvent(event);
+          }}
+        />
       );
     }
 
@@ -89,12 +94,14 @@ const Header = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-             {/* Artisan Portal Link */}
-             <div className="hidden sm:block">
-              <Link to="/login" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors border-r border-gray-300 pr-4">
-                For Artisans
-              </Link>
-             </div>
+             {/* Artisan Portal Link - hidden when logged in */}
+             {!auth.user && (
+               <div className="hidden sm:block">
+                <Link to="/login" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors border-r border-gray-300 pr-4">
+                  For Artisans
+                </Link>
+               </div>
+             )}
              
             {/* Auth Links (Dynamic) */}
             <div className="flex items-center">
