@@ -40,3 +40,7 @@ yarn-error.log*
 .vscode/
 
 kalasetu-backend/serviceAccountKey.json
+
+#GitHub Copilot
+
+.copilotignore
