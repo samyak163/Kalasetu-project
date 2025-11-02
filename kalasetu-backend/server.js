@@ -6,7 +6,17 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
+import validateEnv from './utils/validateEnv.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import { 
+  initSentry, 
+  sentryRequestHandler, 
+  sentryTracingHandler, 
+  sentryErrorHandler 
+} from './utils/sentry.js';
+import { initPostHog, shutdownPostHog } from './utils/posthog.js';
+import { trackApiRequest } from './middleware/analyticsMiddleware.js';
+import { initStreamChat } from './utils/streamChat.js';
 
 // --- IMPORT ALL OUR ROUTES ---
 // Routes for general artisan data (profiles, search, etc.)
@@ -16,15 +26,29 @@ import authRoutes from './routes/authRoutes.js';
 // Routes for CUSTOMER authentication (login, register, me, logout)
 import userAuthRoutes from './routes/userAuthRoutes.js'; 
 import uploadRoutes from './routes/uploadRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import videoRoutes from './routes/videoRoutes.js';
 
 
 // --- Load Environment Variables ---
 dotenv.config();
 
-// --- Connect to Database ---
+// --- Validate env & Connect to Database ---
+validateEnv();
 connectDB();
 
 const app = express();
+
+// --- Initialize Sentry (before any routes) ---
+initSentry(app);
+
+// --- Initialize PostHog ---
+initPostHog();
+
+// --- Initialize Stream Chat ---
+initStreamChat();
 
 // --- Middleware ---
 app.use(helmet()); // Security headers
@@ -33,6 +57,10 @@ app.use(helmet()); // Security headers
 if (process.env.NODE_ENV !== 'production') {
     app.use(morgan('dev'));
 }
+
+// Sentry request handler (must be before other middleware)
+app.use(sentryRequestHandler());
+app.use(sentryTracingHandler());
 
 // JSON body parsing
 app.use(express.json());
@@ -48,6 +76,9 @@ const apiLimiter = rateLimit({
     legacyHeaders: false,
 });
 app.use('/api', apiLimiter);
+
+// Add analytics middleware (after auth middleware will be applied in routes)
+app.use('/api', trackApiRequest);
 
 // CORS Configuration
 const allowedOrigins = new Set((process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean));
@@ -86,9 +117,17 @@ app.use('/api/artisans', artisanRoutes);
 // /api/auth -> Handles ARTISAN authentication
 app.use('/api/auth', authRoutes);
 // /api/users -> Handles CUSTOMER authentication
-app.use('/api/users', userAuthRoutes);
+app.use('/api/users', userAuthRoutes); 
 // /api/uploads -> Cloudinary signed upload helpers
 app.use('/api/uploads', uploadRoutes);
+// /api/search -> Search endpoints
+app.use('/api/search', searchRoutes);
+// /api/notifications -> Push notification endpoints
+app.use('/api/notifications', notificationRoutes);
+// /api/chat -> Stream Chat endpoints
+app.use('/api/chat', chatRoutes);
+// /api/video -> Daily.co video call endpoints
+app.use('/api/video', videoRoutes);
 
 // --- Debug Logging (Updated) ---
 // This is now accurate for our new structure
@@ -108,9 +147,15 @@ console.log('- POST /api/users/register');
 console.log('- POST /api/users/login');
 console.log('- POST /api/users/logout');
 console.log('- GET /api/users/me');
+console.log('--- Search ---');
+console.log('- GET /api/search/artisans');
+console.log('- GET /api/search/facets');
 // ---------------------------------
 
 // --- Error Handlers (Must be last) ---
+// Sentry error handler (must be before other error handlers)
+app.use(sentryErrorHandler());
+
 app.use(notFound);
 app.use(errorHandler);
 
@@ -118,3 +163,15 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
 
+// --- Graceful Shutdown ---
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  await shutdownPostHog();
+  process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  await shutdownPostHog();
+  process.exit(0);
+});

@@ -23,7 +23,22 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
+    },
+  },
+  // Node env for config files
+  {
+    files: ['vite.config.js', 'postcss.config.js', 'tailwind.config.js'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+    rules: {},
+  },
+  // Relax React Refresh rule for context/provider files
+  {
+    files: ['src/context/**/*.{js,jsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
     },
   },
 ])

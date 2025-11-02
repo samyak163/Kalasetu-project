@@ -1,10 +1,11 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { CLOUDINARY_CONFIG } from './env.config.js';
 
 // Configure Cloudinary with server-side credentials
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: CLOUDINARY_CONFIG.cloudName,
+  api_key: CLOUDINARY_CONFIG.apiKey,
+  api_secret: CLOUDINARY_CONFIG.apiSecret,
 });
 
 export default cloudinary;

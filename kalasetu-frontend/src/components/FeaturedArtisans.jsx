@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { API_CONFIG } from '../config/env.config.js';
 
 const FeaturedArtisans = () => {
     const [artisans, setArtisans] = useState([]);
@@ -9,8 +10,7 @@ const FeaturedArtisans = () => {
     useEffect(() => {
         const fetchArtisans = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL;
-                const response = await fetch(`${apiUrl}/api/artisans`);
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/artisans`);
                 if (!response.ok) throw new Error('Data could not be fetched!');
                 const data = await response.json();
                 setArtisans(data);

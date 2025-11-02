@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom'; // This hook reads parameters from the URL
+import { API_CONFIG } from '../config/env.config.js';
 
 const ArtisanProfilePage = () => {
     // THE UPGRADE: We are now getting the 'publicId' from the URL instead of 'id'.
@@ -12,9 +13,8 @@ const ArtisanProfilePage = () => {
     useEffect(() => {
         const fetchArtisanByPublicId = async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL;
                 // THE UPGRADE: We now call our new backend endpoint.
-                const response = await fetch(`${apiUrl}/api/artisans/${publicId}`); 
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/artisans/${publicId}`); 
                 if (!response.ok) {
                     throw new Error('Artisan not found!');
                 }

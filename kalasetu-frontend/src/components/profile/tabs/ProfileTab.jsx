@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { uploadToCloudinary, validateImage } from '/src/lib/cloudinary.js';
-import api from '/src/lib/axios.js';
-import { ToastContext } from '/src/context/ToastContext.jsx';
+import { uploadToCloudinary, validateImage } from '../../../lib/cloudinary.js';
+import api from '../../../lib/axios.js';
+import { ToastContext } from '../../../context/ToastContext.jsx';
 
 const ProfileTab = ({ user, onSave }) => {
   const { showToast } = React.useContext(ToastContext);

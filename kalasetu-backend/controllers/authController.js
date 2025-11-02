@@ -4,6 +4,7 @@ import Artisan from '../models/artisanModel.js';
 import { signJwt, setAuthCookie, clearAuthCookie } from '../utils/generateToken.js';
 import crypto from 'crypto';
 import admin from '../config/firebaseAdmin.js';
+import { indexArtisan } from '../utils/algolia.js';
 
 const registerSchema = z.object({
     fullName: z.string().min(2),
@@ -69,6 +70,9 @@ export const register = async (req, res, next) => {
         const artisan = await Artisan.create(artisanData);
         const token = signJwt(artisan._id);
         setAuthCookie(res, token);
+        
+        // Index artisan in Algolia
+        await indexArtisan(artisan);
         
         res.status(201).json({
             _id: artisan._id,
@@ -223,6 +227,9 @@ export const firebaseLogin = async (req, res, next) => {
                 phoneNumber: phoneNumber || undefined,
                 password: hashedPassword,
             });
+            
+            // Index new artisan in Algolia
+            await indexArtisan(artisan);
         } else if (!artisan.firebaseUid) {
             // Link existing artisan with this Firebase UID if not already linked
             artisan.firebaseUid = uid;

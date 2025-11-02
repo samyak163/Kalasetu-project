@@ -5,31 +5,47 @@
   "main": "server.js",
   "type": "module",
   "engines": {
-    "node": ">=20 <21"
+    "node": ">=18 <23"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@daily-co/daily-js": "^0.85.0",
+    "@googlemaps/google-maps-services-js": "^3.4.2",
+    "@react-email/components": "^0.5.7",
+    "@sentry/node": "^10.22.0",
+    "@sentry/profiling-node": "^10.22.0",
+    "@upstash/qstash": "^2.8.4",
+    "@upstash/redis": "^1.35.6",
+    "algoliasearch": "^5.42.0",
+    "axios": "^1.13.1",
     "bcryptjs": "^2.4.3",
-    "cloudinary": "2.8.0",
-    "cookie-parser": "^1.4.6",
+    "cloudinary": "^2.8.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "express-rate-limit": "^7.4.0",
-    "firebase-admin": "13.5.0",
-    "helmet": "^7.1.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.1",
+    "firebase-admin": "^13.5.0",
+    "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.4.1",
+    "mongoose": "^8.19.2",
     "morgan": "^1.10.0",
+    "multer": "^2.0.2",
     "nanoid": "^5.1.6",
     "nodemailer": "^7.0.10",
-    "zod": "^3.23.8"
+    "posthog-node": "^5.11.0",
+    "razorpay": "^2.9.6",
+    "react-email": "^4.3.2",
+    "resend": "^6.4.0",
+    "stream-chat": "^9.25.0",
+    "stream-chat-react": "^13.10.2",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

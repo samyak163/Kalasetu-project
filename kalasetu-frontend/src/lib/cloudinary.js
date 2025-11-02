@@ -1,9 +1,11 @@
+import { CLOUDINARY_CONFIG } from '../config/env.config.js';
+
 /**
  * Cloudinary upload service using unsigned preset
  */
-export const uploadToCloudinary = async (file, preset, folder = 'kalasetu/profile-pictures') => {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || preset;
+export const uploadToCloudinary = async (file, preset, folder = CLOUDINARY_CONFIG.defaultFolder) => {
+  const cloudName = CLOUDINARY_CONFIG.cloudName;
+  const uploadPreset = CLOUDINARY_CONFIG.uploadPreset || preset;
 
   if (!cloudName || !uploadPreset) {
     throw new Error('Cloudinary configuration missing. Please check environment variables.');
@@ -46,8 +48,8 @@ export const uploadToCloudinary = async (file, preset, folder = 'kalasetu/profil
  * Validate image file before upload
  */
 export const validateImage = (file) => {
-  const maxSize = 5 * 1024 * 1024; // 5MB
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  const maxSize = CLOUDINARY_CONFIG.maxFileSize; // 5MB
+  const allowedTypes = CLOUDINARY_CONFIG.allowedTypes;
 
   if (!file) {
     return { valid: false, error: 'No file selected' };

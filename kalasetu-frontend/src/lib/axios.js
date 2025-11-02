@@ -1,10 +1,11 @@
 import axios from 'axios';
+import { API_CONFIG } from '../config/env.config.js';
 
 // Create axios instance with base URL and credentials
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://kalasetu-api-k2d8.onrender.com',
-  withCredentials: true, // Important for cookie-based auth
-  timeout: 10000,
+  baseURL: API_CONFIG.BASE_URL,
+  withCredentials: API_CONFIG.WITH_CREDENTIALS, // Important for cookie-based auth
+  timeout: API_CONFIG.TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
   },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import api from '/src/lib/axios.js';
-import { ToastContext } from '/src/context/ToastContext.jsx';
+import api from '../../../lib/axios.js';
+import { ToastContext } from '../../../context/ToastContext.jsx';
 
 const OrderHistoryTab = ({ user }) => {
   const { showToast } = React.useContext(ToastContext);

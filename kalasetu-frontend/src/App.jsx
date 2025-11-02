@@ -24,6 +24,12 @@ import TermsConditions from './pages/TermsConditions.jsx';
 import ShippingPolicy from './pages/ShippingPolicy.jsx';
 import CancellationRefund from './pages/CancellationRefund.jsx';
 
+// --- MESSAGING PAGE ---
+import MessagesPage from './pages/MessagesPage.jsx';
+
+// --- VIDEO CALL PAGE ---
+import VideoCallPage from './pages/VideoCallPage.jsx';
+
 // Auth Components
 import RequireAuth from './components/RequireAuth.jsx';
 
@@ -61,6 +67,26 @@ function App() {
             // This now checks if the logged-in user is an 'artisan'
             <RequireAuth role="artisan">
               <ArtisanDashboardPage />
+            </RequireAuth>
+          } 
+        />
+
+        {/* Messages Page (Protected - Both artisans and customers) */}
+        <Route 
+          path="messages" 
+          element={
+            <RequireAuth>
+              <MessagesPage />
+            </RequireAuth>
+          } 
+        />
+
+        {/* Video Call Page (Protected - Both artisans and customers) */}
+        <Route 
+          path="video-call" 
+          element={
+            <RequireAuth>
+              <VideoCallPage />
             </RequireAuth>
           } 
         />

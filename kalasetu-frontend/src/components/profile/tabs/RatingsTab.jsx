@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '/src/lib/axios.js';
+import api from '../../../lib/axios.js';
 
 const RatingsTab = ({ user }) => {
   const [ratings, setRatings] = useState(null);

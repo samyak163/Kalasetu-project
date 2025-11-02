@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import api from '/src/lib/axios.js';
-import { ToastContext } from '/src/context/ToastContext.jsx';
+import api from '../../../lib/axios.js';
+import { ToastContext } from '../../../context/ToastContext.jsx';
 
 const HelpSupportTab = () => {
   const { showToast } = React.useContext(ToastContext);

@@ -6,29 +6,43 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives",
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.7.7",
-    "firebase": "12.5.0",
+    "@daily-co/daily-js": "^0.85.0",
+    "@daily-co/daily-react": "^0.24.0",
+    "@sentry/browser": "^10.22.0",
+    "@sentry/react": "^10.22.0",
+    "@vis.gl/react-google-maps": "^1.7.0",
+    "algoliasearch": "^5.42.0",
+    "axios": "^1.13.1",
+    "firebase": "^12.5.0",
+    "logrocket": "^10.1.0",
+    "logrocket-react": "^6.0.3",
+    "posthog-js": "^1.284.0",
+    "posthog-node": "^5.11.0",
     "prop-types": "^15.8.1",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-router-dom": "^7.9.4"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-instantsearch": "^7.17.0",
+    "react-onesignal": "^3.4.0",
+    "react-router-dom": "^7.9.5",
+    "stream-chat": "^9.25.0",
+    "stream-chat-react": "^13.10.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
-    "@vitejs/plugin-react": "^5.0.0",
+    "@vitejs/plugin-react": "^5.1.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.33.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^3.4.17",
-    "vite": "^7.1.2"
+    "tailwindcss": "^3.4.18",
+    "vite": "^7.1.12"
   }
 }
