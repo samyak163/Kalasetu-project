@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage.jsx'; // This is now ARTISAN login
 import RegisterPage from './pages/RegisterPage.jsx'; // This is now ARTISAN register
 import ArtisanProfilePage from './pages/ArtisanProfilePage.jsx';
 import ArtisanDashboardPage from './pages/ArtisanDashboardPage.jsx';
+import ArtisanAccountPage from './pages/ArtisanAccountPage.jsx';
 import ArtisanProfileEditor from './pages/ArtisanProfileEditor.jsx';
 
 // --- NEW CUSTOMER PAGES ---
@@ -80,6 +81,16 @@ function App() {
               <ArtisanProfileEditor />
             </RequireAuth>
           } 
+        />
+
+        {/* Artisan Account (Profile + tabs) */}
+        <Route
+          path="dashboard/account"
+          element={
+            <RequireAuth role="artisan">
+              <ArtisanAccountPage />
+            </RequireAuth>
+          }
         />
 
         {/* Messages Page (Protected - Both artisans and customers) */}

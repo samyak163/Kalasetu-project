@@ -9,7 +9,8 @@ const LoginPage = () => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    const { login } = useContext(AuthContext);
+    // Use artisanLogin for artisan portal authentication
+    const { artisanLogin } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -17,12 +18,12 @@ const LoginPage = () => {
         setLoading(true);
         setError(null);
         try {
-            const user = await login({ loginIdentifier, password });
-
+            const user = await artisanLogin({ loginIdentifier, password });
+            // After successful login, take artisans to their dashboard
             if (user?.publicId) {
-                navigate(`/artisan/${user.publicId}`);
+                navigate('/dashboard');
             } else {
-                navigate('/');
+                navigate('/dashboard');
             }
         } catch (err) {
             setError(err.response?.data?.message || err.message || 'An unexpected error occurred.');

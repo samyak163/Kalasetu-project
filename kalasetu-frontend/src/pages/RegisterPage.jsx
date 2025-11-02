@@ -40,7 +40,8 @@ const RegisterPage = () => {
             };
 
             await artisanRegister(registrationData);
-            navigate('/');
+            // Take new artisans straight to their account to complete profile
+            navigate('/dashboard/account');
         } catch (err) {
             console.error('Registration error:', err);
             let errorMessage = 'Registration failed';

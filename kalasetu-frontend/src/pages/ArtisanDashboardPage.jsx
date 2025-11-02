@@ -29,7 +29,7 @@ const ArtisanDashboardPage = () => {
                                                         <h2 className="text-2xl font-bold text-[#A55233] mb-4">Manage Your Profile</h2>
                                                         <p className="text-gray-600 mb-4">Keep your information, bio, and portfolio up to date.</p>
                                                         <button
-                                                            onClick={() => navigate('/dashboard/profile-editor')}
+                                                            onClick={() => navigate('/dashboard/account')}
                                                             className="mt-2 bg-[#A55233] text-white py-2 px-4 rounded-lg hover:bg-[#8f472c] transition-colors"
                                                         >
                                                             Edit Profile
