@@ -5,6 +5,7 @@ import { signJwt, setAuthCookie, clearAuthCookie } from '../utils/generateToken.
 import crypto from 'crypto';
 import admin from '../config/firebaseAdmin.js';
 import { indexArtisan } from '../utils/algolia.js';
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../utils/email.js';
 
 const registerSchema = z.object({
     fullName: z.string().min(2),
@@ -73,6 +74,13 @@ export const register = async (req, res, next) => {
         
         // Index artisan in Algolia
         await indexArtisan(artisan);
+        
+        // Send welcome email (async, don't wait)
+        if (artisan.email) {
+            sendWelcomeEmail(artisan.email, artisan.fullName).catch(err => {
+                console.error('Failed to send welcome email:', err);
+            });
+        }
         
         res.status(201).json({
             _id: artisan._id,
@@ -157,7 +165,17 @@ export const forgotPassword = async (req, res, next) => {
     artisan.resetPasswordExpires = Date.now() + 3600000;
     await artisan.save({ validateBeforeSave: false });
     const resetUrl = `${process.env.FRONTEND_BASE_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
-    console.log(`Artisan password reset link for ${artisan.email || artisan.phoneNumber}: ${resetUrl}`);
+    
+    // Send password reset email (async, don't wait)
+    if (artisan.email) {
+        sendPasswordResetEmail(artisan.email, artisan.fullName, resetToken).catch(err => {
+            console.error('Failed to send password reset email:', err);
+        });
+    } else {
+        // Fallback for phone-only users
+        console.log(`Artisan password reset link for ${artisan.phoneNumber}: ${resetUrl}`);
+    }
+    
     res.status(200).json({ message: 'If the account exists, you will receive a reset link.' });
   } catch (err) {
     if (err instanceof z.ZodError) {

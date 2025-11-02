@@ -21,15 +21,20 @@ const ArtisanDashboardPage = () => {
                         <div className="bg-white p-8 rounded-lg shadow-lg">
                             <h2 className="text-2xl font-bold text-[#A55233] mb-4">Your Public Profile</h2>
                             <p className="text-gray-600 mb-4">This is your digital storefront. Share this link with your customers!</p>
-                            <Link to={`/${currentUser?.publicId}`} className="text-blue-600 hover:underline font-mono break-all" target="_blank" rel="noopener noreferrer">
-                                {window.location.origin}/{currentUser?.publicId}
+                            <Link to={`/${currentUser?.publicId}`} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                                View Public Profile
                             </Link>
                         </div>
-                        <div className="bg-white p-8 rounded-lg shadow-lg">
-                            <h2 className="text-2xl font-bold text-[#A55233] mb-4">Manage Your Profile</h2>
-                            <p className="text-gray-600 mb-4">Keep your information, bio, and portfolio up to date.</p>
-                             <button className="mt-4 bg-gray-200 text-gray-600 py-2 px-4 rounded-lg cursor-not-allowed">Edit Profile (Coming Soon)</button>
-                        </div>
+                                                <div className="bg-white p-8 rounded-lg shadow-lg">
+                                                        <h2 className="text-2xl font-bold text-[#A55233] mb-4">Manage Your Profile</h2>
+                                                        <p className="text-gray-600 mb-4">Keep your information, bio, and portfolio up to date.</p>
+                                                        <button
+                                                            onClick={() => navigate('/dashboard/profile-editor')}
+                                                            className="mt-2 bg-[#A55233] text-white py-2 px-4 rounded-lg hover:bg-[#8f472c] transition-colors"
+                                                        >
+                                                            Edit Profile
+                                                        </button>
+                                                </div>
                     </div>
                     {/* Sidebar with Logout */}
                     <div className="bg-white p-6 rounded-lg shadow-lg h-fit">

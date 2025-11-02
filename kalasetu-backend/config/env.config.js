@@ -88,7 +88,9 @@ export const FIREBASE_CONFIG = {
     } catch (e) {
       // Only warn in production where we expect the env variable
       if (process.env.NODE_ENV === 'production') {
-        console.warn('⚠️  Invalid FIREBASE_SERVICE_ACCOUNT JSON in production.');
+        console.warn('⚠️  Invalid FIREBASE_SERVICE_ACCOUNT JSON in production.', e.message);
+      } else {
+        console.warn('⚠️  Invalid FIREBASE_SERVICE_ACCOUNT JSON format:', e.message);
       }
       return null;
     }
@@ -114,6 +116,7 @@ export const SEARCH_CONFIG = {
 export const EMAIL_CONFIG = {
   enabled: true,
   provider: 'resend',
+  appUrl: process.env.FRONTEND_BASE_URL || 'http://localhost:5173',
   resend: {
     apiKey: process.env.RESEND_API_KEY,
     fromEmail: process.env.RESEND_FROM_EMAIL,
@@ -217,8 +220,16 @@ export const CACHE_CONFIG = {
   },
 };
 
-// Background Jobs Configuration (BullMQ)
-// Removed BullMQ Jobs (not in use)
+// Background Jobs Configuration (QStash)
+export const JOBS_CONFIG = {
+  enabled: true,
+  provider: 'qstash',
+  qstash: {
+    token: process.env.QSTASH_TOKEN,
+    currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY,
+    nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY,
+  },
+};
 
 // ==================== VALIDATION & EXPORT ====================
 

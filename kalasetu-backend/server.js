@@ -17,6 +17,12 @@ import {
 import { initPostHog, shutdownPostHog } from './utils/posthog.js';
 import { trackApiRequest } from './middleware/analyticsMiddleware.js';
 import { initStreamChat } from './utils/streamChat.js';
+import { initRedis } from './utils/redis.js';
+import { initQStash } from './utils/qstash.js';
+import { scheduleCleanupJob, scheduleDailyReports } from './utils/jobQueue.js';
+import { SERVER_CONFIG } from './config/env.config.js';
+import { initRazorpay } from './utils/razorpay.js';
+import { initResend } from './utils/email.js';
 
 // --- IMPORT ALL OUR ROUTES ---
 // Routes for general artisan data (profiles, search, etc.)
@@ -30,6 +36,10 @@ import searchRoutes from './routes/searchRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
+import jobRoutes from './routes/jobRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
+import artisanProfileRoutes from './routes/artisanProfileRoutes.js';
 
 
 // --- Load Environment Variables ---
@@ -49,6 +59,24 @@ initPostHog();
 
 // --- Initialize Stream Chat ---
 initStreamChat();
+
+// --- Initialize Redis Cache (if enabled) ---
+initRedis();
+
+// --- Initialize QStash (if enabled) ---
+initQStash();
+
+// --- Initialize Razorpay ---
+initRazorpay();
+
+// --- Initialize Resend Email Service ---
+initResend();
+
+// --- Schedule recurring jobs (production only) ---
+if (SERVER_CONFIG.isProduction) {
+  scheduleCleanupJob().catch(console.error);
+  scheduleDailyReports().catch(console.error);
+}
 
 // --- Middleware ---
 app.use(helmet()); // Security headers
@@ -114,6 +142,8 @@ app.get('/api/test', (req, res) => {
 // Mount all our different routers
 // /api/artisans -> Handles public artisan data (profiles, etc.)
 app.use('/api/artisans', artisanRoutes); 
+// /api/artisan -> Handles authenticated artisan profile management (singular)
+app.use('/api/artisan', artisanProfileRoutes);
 // /api/auth -> Handles ARTISAN authentication
 app.use('/api/auth', authRoutes);
 // /api/users -> Handles CUSTOMER authentication
@@ -128,6 +158,12 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
 // /api/video -> Daily.co video call endpoints
 app.use('/api/video', videoRoutes);
+// /api/jobs -> QStash job webhooks
+app.use('/api/jobs', jobRoutes);
+// /api/payments -> Razorpay payment endpoints
+app.use('/api/payments', paymentRoutes);
+// /api/contact -> Contact form
+app.use('/api/contact', contactRoutes);
 
 // --- Debug Logging (Updated) ---
 // This is now accurate for our new structure
@@ -136,6 +172,8 @@ console.log('- GET /');
 console.log('- GET /api/test');
 console.log('--- Artisan Data ---');
 console.log('- GET /api/artisans');
+console.log('- GET /api/artisans/id/:id');
+console.log('- GET /api/artisans/nearby?lat=..&lng=..&radiusKm=..&limit=..');
 console.log('- GET /api/artisans/:publicId');
 console.log('--- Artisan Auth ---');
 console.log('- POST /api/auth/register');

@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage.jsx'; // This is now ARTISAN login
 import RegisterPage from './pages/RegisterPage.jsx'; // This is now ARTISAN register
 import ArtisanProfilePage from './pages/ArtisanProfilePage.jsx';
 import ArtisanDashboardPage from './pages/ArtisanDashboardPage.jsx';
+import ArtisanProfileEditor from './pages/ArtisanProfileEditor.jsx';
 
 // --- NEW CUSTOMER PAGES ---
 import CustomerLoginPage from './pages/CustomerLoginPage.jsx';
@@ -71,6 +72,16 @@ function App() {
           } 
         />
 
+        {/* Artisan Profile Editor (Protected) */}
+        <Route 
+          path="dashboard/profile-editor" 
+          element={
+            <RequireAuth role="artisan">
+              <ArtisanProfileEditor />
+            </RequireAuth>
+          } 
+        />
+
         {/* Messages Page (Protected - Both artisans and customers) */}
         <Route 
           path="messages" 
@@ -91,16 +102,7 @@ function App() {
           } 
         />
         
-        {/* TODO: Add protected customer routes here in the future, e.g.:
-          <Route 
-            path="my-profile" 
-            element={
-              <RequireAuth role="user">
-                <CustomerProfilePage />
-              </RequireAuth>
-            } 
-          />
-        */}
+        {/* Customer protected routes can be added here in future releases */}
 
       </Route>
     </Routes>
