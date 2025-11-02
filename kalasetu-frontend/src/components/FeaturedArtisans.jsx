@@ -10,12 +10,17 @@ const FeaturedArtisans = () => {
     useEffect(() => {
         const fetchArtisans = async () => {
             try {
-                const response = await fetch(`${API_CONFIG.BASE_URL}/api/artisans`);
+                const response = await fetch(`${API_CONFIG.BASE_URL}/api/artisans`, {
+                    // Ensure cookies flow if backend uses cookie auth
+                    credentials: 'include',
+                });
                 if (!response.ok) throw new Error('Data could not be fetched!');
                 const data = await response.json();
-                setArtisans(data);
+                const list = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+                setArtisans(list);
             } catch (error) {
-                setError(error.message);
+                setError(error.message || 'Failed to load artisans');
+                setArtisans([]);
             } finally {
                 setLoading(false);
             }
@@ -32,7 +37,7 @@ const FeaturedArtisans = () => {
                 <h3 className="text-3xl font-bold text-center text-[#1A1A1A] mb-2">Featured Local Talent</h3>
                 <p className="text-center text-gray-600 mb-10">Meet some of the top-rated professionals on KalaSetu.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {artisans.map(artisan => (
+                    {(Array.isArray(artisans) ? artisans : []).map(artisan => (
                         // THE FINAL UPGRADE: The Link now points to the clean publicId URL
                         <Link to={`/${artisan.publicId}`} key={artisan.publicId} className="bg-white rounded-lg overflow-hidden shadow-xl border border-gray-200 group cursor-pointer transition-transform duration-300 transform hover:-translate-y-2">
                             <div className="relative h-56">
