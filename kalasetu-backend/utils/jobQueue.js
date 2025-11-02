@@ -1,9 +1,25 @@
 import { publishMessage, scheduleJob } from './qstash.js';
-import { SERVER_CONFIG, FRONTEND_CONFIG } from '../config/env.config.js';
+import { SERVER_CONFIG, JOBS_CONFIG } from '../config/env.config.js';
 
-// Use frontend URL or server URL for webhook
-const WEBHOOK_BASE = FRONTEND_CONFIG.baseUrl || `http://localhost:${SERVER_CONFIG.port}`;
+// Use configured public backend URL for webhook, else fallback to localhost (for local dev)
+const WEBHOOK_BASE = JOBS_CONFIG.webhookBaseUrl || `http://localhost:${SERVER_CONFIG.port}`;
 const WEBHOOK_URL = `${WEBHOOK_BASE}/api/jobs/webhook`;
+
+// Determine if the webhook URL is publicly reachable (not loopback)
+function isLoopbackUrl(urlStr) {
+  try {
+    const { hostname } = new URL(urlStr);
+    return (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1'
+    );
+  } catch {
+    return true; // treat invalid URL as not safe
+  }
+}
+
+const isPublicWebhook = !isLoopbackUrl(WEBHOOK_URL);
 
 /**
  * Queue a job to be processed
@@ -13,6 +29,10 @@ const WEBHOOK_URL = `${WEBHOOK_BASE}/api/jobs/webhook`;
  * @returns {Promise<Object|null>} Job response
  */
 export const queueJob = async (jobType, data, delay = 0) => {
+  if (!isPublicWebhook) {
+    console.warn('⚠️  Skipping QStash publish: webhook URL is not publicly reachable:', WEBHOOK_URL);
+    return null;
+  }
   return publishMessage({
     url: WEBHOOK_URL,
     body: { jobType, data },
@@ -53,6 +73,10 @@ export const queueBulkNotifications = async (userIds, notification) => {
  * Schedule daily cleanup job
  */
 export const scheduleCleanupJob = async () => {
+  if (!isPublicWebhook) {
+    console.warn('⚠️  Skipping QStash schedule (cleanup): webhook URL is not publicly reachable:', WEBHOOK_URL);
+    return null;
+  }
   return scheduleJob({
     url: WEBHOOK_URL,
     body: { jobType: 'cleanup-expired-calls' },
@@ -64,6 +88,10 @@ export const scheduleCleanupJob = async () => {
  * Schedule daily reports job
  */
 export const scheduleDailyReports = async () => {
+  if (!isPublicWebhook) {
+    console.warn('⚠️  Skipping QStash schedule (daily reports): webhook URL is not publicly reachable:', WEBHOOK_URL);
+    return null;
+  }
   return scheduleJob({
     url: WEBHOOK_URL,
     body: { jobType: 'generate-daily-reports' },

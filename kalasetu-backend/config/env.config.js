@@ -16,15 +16,16 @@ export const SERVER_CONFIG = {
   port: process.env.PORT || 5000,
   isDevelopment: process.env.NODE_ENV === 'development',
   isProduction: process.env.NODE_ENV === 'production',
+  // Publicly reachable base URL of the backend (e.g., https://api.example.com)
+  // Used by external services (QStash webhooks, etc.)
+  publicUrl: process.env.SERVER_PUBLIC_URL,
 };
 
 // Database Configuration
 export const DATABASE_CONFIG = {
   mongoUri: process.env.MONGO_URI,
-  options: {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  },
+  // Mongoose v6+ ignores useNewUrlParser/useUnifiedTopology; leave options empty to avoid warnings
+  options: {},
 };
 
 // JWT Configuration
@@ -222,8 +223,17 @@ export const CACHE_CONFIG = {
 
 // Background Jobs Configuration (QStash)
 export const JOBS_CONFIG = {
-  enabled: true,
+  // Enable background jobs only when explicitly enabled or when running in production with a token present
+  enabled: (() => {
+    if (typeof process.env.JOBS_ENABLED !== 'undefined') {
+      return process.env.JOBS_ENABLED === 'true';
+    }
+    return Boolean(process.env.QSTASH_TOKEN) && (process.env.NODE_ENV === 'production');
+  })(),
   provider: 'qstash',
+  // Public webhook base used by QStash to call your backend's job webhook
+  // Prefer JOBS_WEBHOOK_BASE, else fallback to SERVER_PUBLIC_URL
+  webhookBaseUrl: process.env.JOBS_WEBHOOK_BASE || process.env.SERVER_PUBLIC_URL,
   qstash: {
     token: process.env.QSTASH_TOKEN,
     currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY,

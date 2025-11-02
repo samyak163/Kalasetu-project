@@ -20,7 +20,7 @@ import { initStreamChat } from './utils/streamChat.js';
 import { initRedis } from './utils/redis.js';
 import { initQStash } from './utils/qstash.js';
 import { scheduleCleanupJob, scheduleDailyReports } from './utils/jobQueue.js';
-import { SERVER_CONFIG } from './config/env.config.js';
+import { SERVER_CONFIG, JOBS_CONFIG } from './config/env.config.js';
 import { initRazorpay } from './utils/razorpay.js';
 import { initResend } from './utils/email.js';
 
@@ -72,8 +72,8 @@ initRazorpay();
 // --- Initialize Resend Email Service ---
 initResend();
 
-// --- Schedule recurring jobs (production only) ---
-if (SERVER_CONFIG.isProduction) {
+// --- Schedule recurring jobs (only when jobs are enabled) ---
+if (JOBS_CONFIG.enabled) {
   scheduleCleanupJob().catch(console.error);
   scheduleDailyReports().catch(console.error);
 }

@@ -15,7 +15,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@daily-co/daily-js": "^0.85.0",
     "@googlemaps/google-maps-services-js": "^3.4.2",
     "@react-email/components": "^0.5.7",
     "@sentry/node": "^10.22.0",
@@ -44,7 +43,6 @@
     "react-email": "^4.3.2",
     "resend": "^6.4.0",
     "stream-chat": "^9.25.0",
-    "stream-chat-react": "^13.10.2",
     "zod": "^3.25.76"
   },
   "devDependencies": {

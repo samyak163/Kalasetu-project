@@ -1,4 +1,3 @@
-import Daily from '@daily-co/daily-js';
 import { VIDEO_CONFIG } from '../config/env.config.js';
 
 /**
