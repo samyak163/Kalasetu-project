@@ -1,18 +1,32 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import DashboardOverviewTab from '../components/profile/tabs/DashboardOverviewTab.jsx';
 import ArtisanProfileTab from '../components/profile/tabs/ArtisanProfileTab.jsx';
+import ServicesTab from '../components/profile/tabs/ServicesTab.jsx';
+import PortfolioTab from '../components/profile/tabs/PortfolioTab.jsx';
+import BookingsTab from '../components/profile/tabs/BookingsTab.jsx';
+import EarningsTab from '../components/profile/tabs/EarningsTab.jsx';
+import ReviewsTab from '../components/profile/tabs/ReviewsTab.jsx';
+import CustomersTab from '../components/profile/tabs/CustomersTab.jsx';
 import AppearanceTab from '../components/profile/tabs/AppearanceTab.jsx';
 import HelpSupportTab from '../components/profile/tabs/HelpSupportTab.jsx';
 
 const tabs = [
+  { key: 'dashboard', label: 'Dashboard', icon: '📊' },
   { key: 'profile', label: 'Your Profile', icon: '👤' },
-  { key: 'appearance', label: 'Appearance', icon: '🎨' },
+  { key: 'services', label: 'Services', icon: '🛠️' },
+  { key: 'portfolio', label: 'Portfolio', icon: '🎨' },
+  { key: 'bookings', label: 'Bookings', icon: '📅' },
+  { key: 'earnings', label: 'Earnings', icon: '💰' },
+  { key: 'reviews', label: 'Reviews', icon: '⭐' },
+  { key: 'customers', label: 'Customers', icon: '👥' },
+  { key: 'appearance', label: 'Appearance', icon: '�' },
   { key: 'help', label: 'Help & Support', icon: '❓' },
 ];
 
 const ArtisanAccountPage = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   return (
     <div className="bg-white dark:bg-gray-900 min-h-screen">
@@ -48,7 +62,14 @@ const ArtisanAccountPage = () => {
 
         {/* Content */}
         <section className="md:col-span-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 md:p-6">
+          {activeTab === 'dashboard' && <DashboardOverviewTab />}
           {activeTab === 'profile' && <ArtisanProfileTab />}
+          {activeTab === 'services' && <ServicesTab />}
+          {activeTab === 'portfolio' && <PortfolioTab />}
+          {activeTab === 'bookings' && <BookingsTab />}
+          {activeTab === 'earnings' && <EarningsTab />}
+          {activeTab === 'reviews' && <ReviewsTab />}
+          {activeTab === 'customers' && <CustomersTab />}
           {activeTab === 'appearance' && <AppearanceTab user={user} />}
           {activeTab === 'help' && <HelpSupportTab />}
         </section>
