@@ -12,25 +12,22 @@ const userProtect = asyncHandler(async (req, res, next) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
+
       // Find the USER by the ID in the token (use 'id' to match generateToken)
       // We exclude the password field from being returned
       req.user = await User.findById(decoded.id).select('-password');
 
       if (!req.user) {
-        res.status(401);
-        throw new Error('Not authorized, user not found');
+        return res.status(401).json({ message: 'Not authorized, user not found' });
       }
 
-      next(); // User is found, proceed to the next middleware/controller
+      return next(); // User is found, proceed to the next middleware/controller
     } catch (error) {
       console.error(error);
-      res.status(401);
-      throw new Error('Not authorized, token failed');
+      return res.status(401).json({ message: 'Not authorized, token failed' });
     }
   } else {
-    res.status(401);
-    throw new Error('Not authorized, no token');
+    return res.status(401).json({ message: 'Not authorized, no token' });
   }
 });
 
