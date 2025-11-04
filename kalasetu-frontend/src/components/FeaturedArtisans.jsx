@@ -52,7 +52,11 @@ const FeaturedArtisans = () => {
                                  <p className="text-gray-500 text-sm">{artisan.craft}</p>
                                </div>
                                <div className="mt-6 flex justify-between items-center text-sm border-t pt-4">
-                                   <p className="text-gray-600">📍 {artisan.location?.city || 'Pune'}</p>
+                                   <p className="text-gray-600">
+                                       📍 {artisan.location?.city && artisan.location?.state 
+                                           ? `${artisan.location.city}, ${artisan.location.state}` 
+                                           : artisan.location?.address || 'Location not specified'}
+                                   </p>
                                </div>
                             </div>
                         </Link>

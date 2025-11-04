@@ -71,7 +71,9 @@ const ArtisanProfilePage = () => {
                         <h1 className="text-3xl md:text-4xl font-bold text-[#1A1A1A]">{artisan.fullName}</h1>
                         <p className="text-lg text-[#A55233] font-semibold">{artisan.craft}</p>
                         <p className="text-md text-gray-600 mt-1">
-                            📍 {artisan.location?.city}, {artisan.location?.state}
+                            📍 {artisan.location?.city && artisan.location?.state 
+                                ? `${artisan.location.city}, ${artisan.location.state}` 
+                                : artisan.location?.address || 'Location not specified'}
                         </p>
                     </div>
                 </div>
