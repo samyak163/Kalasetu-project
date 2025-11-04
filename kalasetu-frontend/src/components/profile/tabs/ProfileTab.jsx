@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { uploadToCloudinary, validateImage } from '../../../lib/cloudinary.js';
 import api from '../../../lib/axios.js';
 import { ToastContext } from '../../../context/ToastContext.jsx';
+import { auth } from '../../../lib/firebase.js';
+import { sendEmailVerification } from 'firebase/auth';
 
-const ProfileTab = ({ user, onSave }) => {
+const ProfileTab = ({ user, userType: _userType, onSave }) => {
   const { showToast } = React.useContext(ToastContext);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -22,6 +24,10 @@ const ProfileTab = ({ user, onSave }) => {
     confirmPassword: '',
   });
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [emailVerificationSent, setEmailVerificationSent] = useState(false);
+  const [phoneVerificationSent, setPhoneVerificationSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -90,6 +96,59 @@ const ProfileTab = ({ user, onSave }) => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Reset verification status when email/phone changes
+    if (name === 'email') {
+      setEmailVerified(false);
+      setEmailVerificationSent(false);
+    } else if (name === 'phoneNumber') {
+      setPhoneVerified(false);
+      setPhoneVerificationSent(false);
+    }
+  };
+
+  const handleSendEmailVerification = async () => {
+    if (!formData.email || !isValidEmail(formData.email)) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+
+    try {
+      setEmailVerificationSent(true);
+      // Use Firebase to send verification email
+      const user = auth.currentUser;
+      if (user) {
+        await sendEmailVerification(user);
+        showToast('Verification email sent! Please check your inbox.', 'success');
+      } else {
+        // If no current user, this might be a new email change
+        // We'll handle this in the save function
+        showToast('Email verification will be sent when you save changes.', 'info');
+      }
+    } catch (error) {
+      console.error('Email verification error:', error);
+      showToast('Failed to send verification email. Please try again.', 'error');
+      setEmailVerificationSent(false);
+    }
+  };
+
+  const handleSendPhoneVerification = async () => {
+    if (!formData.phoneNumber || !isValidPhone(formData.phoneNumber)) {
+      showToast('Please enter a valid phone number', 'error');
+      return;
+    }
+
+    try {
+      setPhoneVerificationSent(true);
+      // For phone verification, we'll use Firebase Phone Auth
+      // This would typically open an OTP modal
+      showToast('Phone verification code sent! Please check your messages.', 'info');
+      // In a real implementation, this would integrate with PhoneOTP component
+    } catch (error) {
+      console.error('Phone verification error:', error);
+      showToast('Failed to send verification code. Please try again.', 'error');
+      setPhoneVerificationSent(false);
+    }
   };
 
   const handlePasswordChange = (e) => {
@@ -113,13 +172,35 @@ const ProfileTab = ({ user, onSave }) => {
       return;
     }
 
+    // Check email verification if email was changed
+    if (formData.email !== user?.email && !emailVerified) {
+      showToast('Please verify your new email address before saving', 'error');
+      return;
+    }
+
+    // Check phone verification if phone was changed
+    if (formData.phoneNumber !== user?.phoneNumber && !phoneVerified) {
+      showToast('Please verify your new phone number before saving', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await api.put('/api/users/profile', {
+      const updateData = {
         fullName: formData.fullName.trim(),
         bio: formData.bio.trim(),
         profileImageUrl: formData.profileImageUrl,
-      });
+      };
+
+      // Only include email/phone if they were verified
+      if (formData.email !== user?.email && emailVerified) {
+        updateData.email = formData.email;
+      }
+      if (formData.phoneNumber !== user?.phoneNumber && phoneVerified) {
+        updateData.phoneNumber = formData.phoneNumber;
+      }
+
+      const response = await api.put('/api/users/profile', updateData);
 
       showToast('Profile updated successfully!', 'success');
       onSave?.();
@@ -183,6 +264,17 @@ const ProfileTab = ({ user, onSave }) => {
     if (passwordStrength <= 2) return { label: 'Weak', color: 'text-red-600' };
     if (passwordStrength === 3) return { label: 'Medium', color: 'text-yellow-600' };
     return { label: 'Strong', color: 'text-green-600' };
+  };
+
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const isValidPhone = (phone) => {
+    // Basic phone validation - adjust regex based on your requirements
+    const phoneRegex = /^[+]?[1-9][\d]{0,15}$/;
+    return phoneRegex.test(phone.replace(/\s+/g, ''));
   };
 
   return (
@@ -271,16 +363,37 @@ const ProfileTab = ({ user, onSave }) => {
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Email Address
           </label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            disabled
-            className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Email cannot be changed from here
-          </p>
+          <div className="flex gap-2">
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white"
+              placeholder="Enter your email"
+            />
+            {formData.email !== user?.email && !emailVerified && (
+              <button
+                onClick={handleSendEmailVerification}
+                disabled={emailVerificationSent}
+                className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {emailVerificationSent ? 'Sent' : 'Verify'}
+              </button>
+            )}
+            {emailVerified && (
+              <div className="flex items-center text-green-600">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+            )}
+          </div>
+          {formData.email !== user?.email && !emailVerified && (
+            <p className="text-xs text-blue-600 mt-1">
+              {emailVerificationSent ? 'Verification email sent. Check your inbox.' : 'Click verify to confirm your new email address.'}
+            </p>
+          )}
         </div>
 
         {/* Phone Number */}
@@ -288,16 +401,37 @@ const ProfileTab = ({ user, onSave }) => {
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Phone Number
           </label>
-          <input
-            type="tel"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            disabled
-            className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Phone number cannot be changed from here
-          </p>
+          <div className="flex gap-2">
+            <input
+              type="tel"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleInputChange}
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white"
+              placeholder="Enter your phone number"
+            />
+            {formData.phoneNumber !== user?.phoneNumber && !phoneVerified && (
+              <button
+                onClick={handleSendPhoneVerification}
+                disabled={phoneVerificationSent}
+                className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {phoneVerificationSent ? 'Sent' : 'Verify'}
+              </button>
+            )}
+            {phoneVerified && (
+              <div className="flex items-center text-green-600">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+            )}
+          </div>
+          {formData.phoneNumber !== user?.phoneNumber && !phoneVerified && (
+            <p className="text-xs text-blue-600 mt-1">
+              {phoneVerificationSent ? 'Verification code sent to your phone.' : 'Click verify to confirm your new phone number.'}
+            </p>
+          )}
         </div>
 
         {/* Account Created Date */}

@@ -1,6 +1,8 @@
 import { sendNotificationToUser } from '../utils/onesignal.js';
 import { indexArtisan } from '../utils/algolia.js';
 import Artisan from '../models/artisanModel.js';
+import { sendWelcomeEmail, sendEmail } from '../utils/email.js';
+import { EMAIL_CONFIG } from '../config/env.config.js';
 
 /**
  * Send welcome email job
@@ -10,14 +12,8 @@ export const sendWelcomeEmailJob = async (data) => {
   try {
     const { userId, email, name } = data;
 
-    console.log(`✅ Welcome email job processed for ${email} (email sending not yet implemented)`);
-    // TODO: Implement actual email sending when email service is configured
-    // await sendEmail({
-    //   to: email,
-    //   subject: 'Welcome to KalaSetu!',
-    //   template: 'welcome',
-    //   data: { name },
-    // });
+    await sendWelcomeEmail(email, name);
+    console.log(`✅ Welcome email processed for ${email}`);
   } catch (error) {
     console.error('❌ Failed to send welcome email:', error.message);
     throw error;
@@ -110,8 +106,16 @@ export const generateDailyReportsJob = async () => {
 
     console.log(`✅ Daily report: ${newArtisans} new artisans registered today`);
 
-    // TODO: Send report to admin email when email service is configured
-    // await sendEmail({ ... });
+    // Send report to admin email when email service is configured
+    const to = EMAIL_CONFIG?.resend?.fromEmail;
+    if (to) {
+      await sendEmail({
+        to,
+        subject: 'KalaSetu Daily Report',
+        html: `<p><strong>Date:</strong> ${today.toDateString()}</p>
+               <p><strong>New artisans today:</strong> ${newArtisans}</p>`,
+      });
+    }
   } catch (error) {
     console.error('❌ Failed to generate daily report:', error.message);
     throw error;

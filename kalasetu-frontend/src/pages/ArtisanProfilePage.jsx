@@ -1,41 +1,65 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom'; // This hook reads parameters from the URL
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
 import { API_CONFIG } from '../config/env.config.js';
+import SEOHelmet from '../components/SEOHelmet.jsx';
 
 const ArtisanProfilePage = () => {
     // THE UPGRADE: We are now getting the 'publicId' from the URL instead of 'id'.
     const { publicId } = useParams(); 
 
     const [artisan, setArtisan] = useState(null);
+    const [seoData, setSeoData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchArtisanByPublicId = async () => {
+        const fetchData = async () => {
             try {
-                // THE UPGRADE: We now call our new backend endpoint.
-                const response = await fetch(`${API_CONFIG.BASE_URL}/api/artisans/${publicId}`); 
-                if (!response.ok) {
-                    throw new Error('Artisan not found!');
+                // Fetch artisan data
+                const artisanRes = await axios.get(
+                    `${API_CONFIG.BASE_URL}/api/artisans/${publicId}`
+                );
+                
+                // Fetch SEO data
+                const seoRes = await axios.get(
+                    `${API_CONFIG.BASE_URL}/api/seo/artisan/${publicId}`
+                );
+
+                setArtisan(artisanRes.data);
+                if (seoRes.data.success) {
+                    setSeoData(seoRes.data.seo);
                 }
-                const data = await response.json();
-                setArtisan(data);
             } catch (error) {
-                setError(error.message);
+                console.error('Error fetching artisan:', error);
+                setError(error.message || 'Artisan not found');
             } finally {
                 setLoading(false);
             }
         };
-
-        fetchArtisanByPublicId();
-    }, [publicId]); // This effect re-runs if the publicId in the URL changes.
+        
+        fetchData();
+    }, [publicId]);
 
     if (loading) { return <div className="text-center py-40">Loading profile...</div>; }
     if (error) { return <div className="text-center py-40 text-red-500">Error: {error}</div>; }
     if (!artisan) { return <div className="text-center py-40">Artisan not found.</div>; }
 
     return (
-        <div>
+        <>
+            {seoData && (
+                <SEOHelmet
+                    title={seoData.title}
+                    description={seoData.description}
+                    keywords={seoData.keywords}
+                    image={seoData.image}
+                    url={seoData.url}
+                    type={seoData.type}
+                    structuredData={seoData.structuredData}
+                />
+            )}
+            
+            <div>
             {/* ... (The beautiful UI for the profile page is the same as before) ... */}
             <div className="relative h-64 md:h-80 bg-gray-200">
                 <img src={artisan.coverImageUrl} alt={`${artisan.fullName}'s work`} className="w-full h-full object-cover" />
@@ -56,7 +80,8 @@ const ArtisanProfilePage = () => {
                     <p className="text-gray-700 leading-relaxed">{artisan.bio}</p>
                 </div>
             </div>
-        </div>
+            </div>
+        </>
     );
 };
 

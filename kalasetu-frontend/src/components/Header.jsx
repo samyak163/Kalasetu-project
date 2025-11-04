@@ -1,60 +1,48 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
+import ProfileDropdown from './common/ProfileDropdown.jsx';
+import SearchBar from './SearchBar.jsx';
+import ProfileModal from './profile/ProfileModal.jsx';
 
 const Header = () => {
   const { auth, logout } = useContext(AuthContext);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const renderAuthLinks = () => {
-    // Case 1: No one is logged in
     if (!auth.user) {
       return (
         <>
-          <Link to="/customer/login" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">
-            Sign In
+          <Link to="/login" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">
+            Login
           </Link>
           <Link
-            to="/customer/register"
-            className="ml-4 inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#A55233] hover:bg-[#8e462b] transition-colors"
+            to="/register"
+            className="ml-4 inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-[#A55233] hover:bg-[#8e462b] transition-colors"
           >
-            Create Account
+            Sign Up as Customer
           </Link>
         </>
       );
     }
 
-    // Case 2: A Customer is logged in
     if (auth.userType === 'user') {
       return (
-        <>
-          <span className="text-sm font-medium text-gray-700">Hi, {auth.user.fullName.split(' ')[0]}</span>
-          <button
-            onClick={logout}
-            className="ml-4 text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors"
-          >
-            Sign Out
-          </button>
-        </>
+        <ProfileDropdown
+          user={auth.user}
+          onLogout={logout}
+          onOpenProfile={() => setShowProfileModal(true)}
+        />
       );
     }
 
-    // Case 3: An Artisan is logged in
     if (auth.userType === 'artisan') {
       return (
-        <>
-          <Link to={`/${auth.user.publicId}`} className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">
-            My Profile
-          </Link>
-          <Link to="/dashboard" className="ml-4 text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">
-            Dashboard
-          </Link>
-          <button
-            onClick={logout}
-            className="ml-4 text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors"
-          >
-            Sign Out
-          </button>
-        </>
+        <ProfileDropdown
+          user={auth.user}
+          onLogout={logout}
+          onOpenProfile={() => setShowProfileModal(true)}
+        />
       );
     }
   };
@@ -63,35 +51,57 @@ const Header = () => {
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="w-full py-4 flex items-center justify-between">
-          <div className="flex items-center">
-            {/* Logo */}
+          <div className="flex items-center gap-6">
             <Link to="/" className="text-2xl font-bold text-[#A55233]">
-              Kala<span className="text-gray-800">Setu</span>
+              {auth.userType === 'artisan' ? 'KalaSetu Artisan' : 'Kala'}<span className="text-gray-800">{auth.userType === 'artisan' ? '' : 'Setu'}</span>
             </Link>
-            {/* Main Nav (for customers) */}
-            <div className="hidden ml-10 space-x-8 lg:block">
-              <Link to="/" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">
-                Home
-              </Link>
-              {null}
+            <div className="hidden md:flex">
+              <SearchBar />
+            </div>
+            <div className="hidden lg:flex items-center gap-6">
+              {auth.userType !== 'artisan' && (
+                <>
+                  <Link to="/" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Home</Link>
+                  <Link to="#" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Services</Link>
+                  <Link to="#" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">How it Works</Link>
+                  <Link to="/artisan/login" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">For Artisans</Link>
+                </>
+              )}
+              {auth.userType === 'artisan' && (
+                <>
+                  <Link to="/dashboard" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Dashboard</Link>
+                  <Link to="/dashboard/account" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Jobs</Link>
+                  <Link to="/messages" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Chat</Link>
+                  <Link to="/video-call" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Calls</Link>
+                </>
+              )}
             </div>
           </div>
-          
-          <div className="flex items-center space-x-4">
-             {/* Artisan Portal Link */}
-             <div className="hidden sm:block">
-              <Link to="/login" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors border-r border-gray-300 pr-4">
-                For Artisans
-              </Link>
-             </div>
-             
-            {/* Auth Links (Dynamic) */}
+
+          <div className="flex items-center gap-4">
+            {/* Notifications placeholder */}
+            {auth.user && (
+              <button type="button" className="hidden sm:inline-flex relative h-9 w-9 items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50">
+                <span className="text-lg">🔔</span>
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-red-600 rounded-full">2</span>
+              </button>
+            )}
             <div className="flex items-center">
               {renderAuthLinks()}
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <ProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          user={auth.user}
+          userType={auth.userType}
+        />
+      )}
     </header>
   );
 };

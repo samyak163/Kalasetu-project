@@ -1,6 +1,7 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import axios from 'axios';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({ 
@@ -14,7 +15,7 @@ const RegisterPage = () => {
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const { artisanRegister } = useContext(AuthContext);
+    const { login } = useAuth(); // Get login function from context
 
     const handleChange = (e) => {
         const { id, value } = e.target;
@@ -27,8 +28,15 @@ const RegisterPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
         setError(null);
+        
+        // Validation
+        if (formData.password.length < 8) {
+            setError('Password must be at least 8 characters');
+            return;
+        }
+
+        setLoading(true);
         
         try {
             // Prepare registration data based on selected method
@@ -39,26 +47,49 @@ const RegisterPage = () => {
                 phoneNumber: formData.useEmail ? '' : formData.phoneNumber
             };
 
-            await artisanRegister(registrationData);
-            // Take new artisans straight to their account to complete profile
-            navigate('/dashboard/account');
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/register`,
+                registrationData,
+                { withCredentials: true }
+            );
+
+            if (response.data.success) {
+                // Update auth context
+                login(response.data.artisan, 'artisan');
+                
+                // Track with PostHog if available
+                if (window.posthog) {
+                    window.posthog.identify(response.data.artisan._id, {
+                        email: response.data.artisan.email,
+                        name: response.data.artisan.fullName,
+                        user_type: 'artisan'
+                    });
+                    window.posthog.capture('artisan_registration_completed');
+                }
+
+                // Show success message
+                alert('Registration successful! Redirecting to dashboard...');
+                
+                // Redirect to dashboard
+                navigate(response.data.redirectTo || '/artisan/dashboard', { replace: true });
+            }
         } catch (err) {
             console.error('Registration error:', err);
-            let errorMessage = 'Registration failed';
             
-            if (err.response?.data?.message) {
-                errorMessage = err.response.data.message;
-            } else if (err.response?.status === 400) {
-                errorMessage = 'Invalid input data. Please check all fields.';
-            } else if (err.response?.status === 409) {
-                errorMessage = 'Email or phone number already exists.';
-            } else if (err.response?.status === 0) {
-                errorMessage = 'Cannot connect to server. Please check your internet connection.';
-            } else if (err.message) {
-                errorMessage = err.message;
-            }
-            
+            const errorMessage = err.response?.data?.message || 'Registration failed. Please try again.';
             setError(errorMessage);
+            
+            // Track error with PostHog
+            if (window.posthog) {
+                window.posthog.capture('artisan_registration_failed', {
+                    error: errorMessage
+                });
+            }
+
+            // Log to LogRocket if available
+            if (window.LogRocket) {
+                window.LogRocket.captureException(err);
+            }
         } finally {
             setLoading(false);
         }

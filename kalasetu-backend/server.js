@@ -33,6 +33,7 @@ import authRoutes from './routes/authRoutes.js';
 import userAuthRoutes from './routes/userAuthRoutes.js'; 
 import uploadRoutes from './routes/uploadRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import seoRoutes from './routes/seoRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
@@ -123,8 +124,8 @@ app.use(cors({
             return callback(null, true);
         }
         
-        // Block everything else
-        return callback(new Error('Not allowed by CORS'));
+        // Block everything else with a clean JSON error
+        return callback(Object.assign(new Error('Not allowed by CORS'), { code: 'CORS_NOT_ALLOWED' }));
     },
     credentials: true,
 }));
@@ -152,6 +153,8 @@ app.use('/api/users', userAuthRoutes);
 app.use('/api/uploads', uploadRoutes);
 // /api/search -> Search endpoints
 app.use('/api/search', searchRoutes);
+// /api/seo -> SEO helpers (meta, sitemap)
+app.use('/api/seo', seoRoutes);
 // /api/notifications -> Push notification endpoints
 app.use('/api/notifications', notificationRoutes);
 // /api/chat -> Stream Chat endpoints

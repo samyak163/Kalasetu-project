@@ -1,4 +1,23 @@
 import Artisan from '../models/artisanModel.js';
+import { trackEvent } from '../utils/posthog.js';
+import * as Sentry from '@sentry/node';
+
+// Helper function to calculate distance between two points
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of Earth in km
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function toRad(deg) {
+  return deg * (Math.PI / 180);
+}
 
 const getArtisanByPublicId = async (req, res) => {
     try {
@@ -70,10 +89,10 @@ const updateArtisanProfile = async (req, res) => {
     }
 };
 
-// New: Nearby artisans based on lat/lng and radius (km)
+// Nearby artisans with filters and distance in km
 const getNearbyArtisans = async (req, res) => {
     try {
-        const { lat, lng, radiusKm, radius, limit = 20 } = req.query;
+        const { lat, lng, radiusKm = 50, limit = 20, skills = '', minRating = 0 } = req.query;
 
         if (lat == null || lng == null) {
             return res.status(400).json({ message: 'lat and lng query parameters are required' });
@@ -81,33 +100,69 @@ const getNearbyArtisans = async (req, res) => {
 
         const latitude = parseFloat(lat);
         const longitude = parseFloat(lng);
-        const rKm = radiusKm != null ? parseFloat(radiusKm) : null;
-        const rMeters = radius != null ? parseFloat(radius) : null;
-        const maxDistance = rMeters != null
-            ? Math.max(0, rMeters)
-            : Math.max(0, (rKm != null ? rKm : 10)) * 1000; // default 10km
+        const rKm = parseFloat(radiusKm) || 50;
+        const maxDistance = Math.max(0, rKm) * 1000;
         const maxResults = Math.min(100, Math.max(1, parseInt(limit)));
 
-        // Use aggregation with $geoNear to compute distance
-        const results = await Artisan.aggregate([
+        const pipeline = [
             {
                 $geoNear: {
                     near: { type: 'Point', coordinates: [longitude, latitude] },
                     distanceField: 'distance',
-                    maxDistance: maxDistance || undefined,
+                    maxDistance,
                     spherical: true,
                     key: 'location',
                 },
             },
-            { $project: { password: 0 } },
-            { $limit: maxResults },
-        ]);
+            { $addFields: { distanceKm: { $round: [{ $divide: ['$distance', 1000] }, 1] } } },
+        ];
 
-        // Return as array; distance is in meters
-        return res.status(200).json({ data: results });
+        const match = {};
+        if (skills) {
+            const skillsArray = String(skills).split(',').map(s => s.trim()).filter(Boolean);
+            if (skillsArray.length) match.skills = { $in: skillsArray };
+        }
+        if (parseFloat(minRating) > 0) {
+            match.rating = { $gte: parseFloat(minRating) };
+        }
+        if (Object.keys(match).length) pipeline.push({ $match: match });
+
+        pipeline.push({ $project: { password: 0 } }, { $limit: maxResults });
+
+        const results = await Artisan.aggregate(pipeline);
+
+        // Track with PostHog
+        trackEvent({
+            distinctId: req.user?.id || req.user?._id || 'anonymous',
+            event: 'nearby_artisans_searched',
+            properties: {
+                latitude,
+                longitude,
+                radius: radiusKm,
+                results_count: results.length,
+                has_skills_filter: !!skills
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            artisans: results,
+            count: results.length,
+            searchCenter: { latitude, longitude },
+            radiusKm: rKm,
+        });
     } catch (error) {
         console.error('Error fetching nearby artisans:', error);
-        return res.status(500).json({ message: 'Server Error', error: error.message });
+        
+        if (Sentry) {
+            Sentry.captureException(error);
+        }
+
+        return res.status(500).json({ 
+            success: false,
+            message: 'Failed to fetch nearby artisans',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 };
  

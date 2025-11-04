@@ -6,6 +6,8 @@ import crypto from 'crypto';
 import admin from '../config/firebaseAdmin.js';
 import { indexArtisan } from '../utils/algolia.js';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '../utils/email.js';
+import { trackEvent } from '../utils/posthog.js';
+import * as Sentry from '@sentry/node';
 
 const registerSchema = z.object({
     fullName: z.string().min(2),
@@ -68,7 +70,7 @@ export const register = async (req, res, next) => {
         if (email) artisanData.email = email;
         if (phoneNumber) artisanData.phoneNumber = phoneNumber;
         
-        const artisan = await Artisan.create(artisanData);
+    const artisan = await Artisan.create(artisanData);
         const token = signJwt(artisan._id);
         setAuthCookie(res, token);
         
@@ -82,18 +84,49 @@ export const register = async (req, res, next) => {
             });
         }
         
+    // Return response WITHOUT sensitive fields
+    const artisanPublic = artisan.toObject();
+    delete artisanPublic.password;
+    delete artisanPublic.resetPasswordToken;
+    delete artisanPublic.resetPasswordExpire;
+
+        // Track with PostHog if available
+        trackEvent({
+            distinctId: artisan._id.toString(),
+            event: 'artisan_registered',
+            properties: {
+                email: artisan.email,
+                hasPhone: !!artisan.phoneNumber
+            }
+        });
+
         res.status(201).json({
-            _id: artisan._id,
-            fullName: artisan.fullName,
-            email: artisan.email,
-            phoneNumber: artisan.phoneNumber,
-            publicId: artisan.publicId,
+            success: true,
+            message: 'Registration successful',
+            artisan: artisanPublic,
+            token, // Include token in response for frontend
+            redirectTo: '/artisan/dashboard' // Tell frontend where to redirect
         });
     } catch (err) {
-        if (err instanceof z.ZodError) {
-            return res.status(400).json({ message: err.issues.map(i => i.message).join(', ') });
+        console.error('Registration error:', err);
+        
+        // Send to Sentry if available
+        if (Sentry) {
+            Sentry.captureException(err);
         }
-        next(err);
+
+        if (err instanceof z.ZodError) {
+            return res.status(400).json({ 
+                success: false,
+                message: err.issues.map(i => i.message).join(', ') 
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            message: 'Registration failed',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
     }
 };
 

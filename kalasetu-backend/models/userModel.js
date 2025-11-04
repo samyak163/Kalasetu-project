@@ -27,7 +27,12 @@ const userSchema = new mongoose.Schema({
     loginAttempts: { type: Number, default: 0 },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
+    bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artisan' }],
 }, { timestamps: true });
+
+// Helpful indexes
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ createdAt: -1 });
 
 // --- Mongoose Middleware (Robust "pre-save" hook) ---
 // This function runs automatically BEFORE a new user is saved.

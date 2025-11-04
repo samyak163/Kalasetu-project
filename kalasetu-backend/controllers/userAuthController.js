@@ -5,6 +5,8 @@ import { signJwt, setAuthCookie, clearAuthCookie } from '../utils/generateToken.
 import asyncHandler from '../utils/asyncHandler.js';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer'; // Simulate sending for now
+import { sendPasswordResetEmail } from '../utils/email.js';
+import Review from '../models/reviewModel.js';
 
 // --- Validation Schemas (using Zod) ---
 const registerSchema = z.object({
@@ -139,8 +141,8 @@ export const forgotPassword = asyncHandler(async (req, res, next) => {
   user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
   await user.save({ validateBeforeSave: false });
   const resetUrl = `${process.env.FRONTEND_BASE_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
-  // Simulate sending email
-  console.log(`Password reset link for ${email}: ${resetUrl}`);
+  // Send reset email (falls back to console when not configured)
+  await sendPasswordResetEmail(user.email, user.fullName || 'there', resetToken);
   res.status(200).json({ message: 'If this email is registered, you will receive a reset link shortly.' });
 });
 
@@ -227,19 +229,30 @@ export const removeBookmark = asyncHandler(async (req, res) => {
 // @route GET /api/users/ratings
 // @access Private
 export const getRatings = asyncHandler(async (req, res) => {
-  // TODO: Calculate from reviews/ratings collection
-  // For now, return mock data structure
+  // Aggregate reviews written by this user to artisans (or received by this user if such data exists later)
+  const userId = req.user._id;
+  const [stats, recent] = await Promise.all([
+    Review.aggregate([
+      { $match: { user: userId } },
+      { $group: { _id: null, avgRating: { $avg: '$rating' }, count: { $sum: 1 } } },
+    ]),
+    Review.find({ user: userId }).sort({ createdAt: -1 }).limit(10).populate('artisan', 'fullName publicId'),
+  ]);
+
+  const overallRating = stats[0]?.avgRating || 0;
+  const ratingsCount = stats[0]?.count || 0;
+
   res.json({
-    overallRating: 0,
-    ratingsCount: 0,
-    categories: {
-      punctuality: 0,
-      courtesy: 0,
-      generosity: 0,
-      communication: 0,
-      propertyCare: 0,
-    },
-    recentReviews: [],
+    overallRating: Number(overallRating.toFixed(2)),
+    ratingsCount,
+    categories: {},
+    recentReviews: recent.map(r => ({
+      id: r._id,
+      rating: r.rating,
+      comment: r.comment,
+      artisan: r.artisan,
+      createdAt: r.createdAt,
+    })),
   });
 });
 

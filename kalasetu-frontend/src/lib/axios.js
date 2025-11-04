@@ -11,14 +11,18 @@ const api = axios.create({
   },
 });
 
-// Request interceptor for debugging
+// Request interceptor (quiet in production)
 api.interceptors.request.use(
   (config) => {
-    console.log(`Making ${config.method?.toUpperCase()} request to ${config.baseURL}${config.url}`);
+    if (import.meta.env.DEV) {
+      console.log(`Making ${config.method?.toUpperCase()} request to ${config.baseURL}${config.url}`);
+    }
     return config;
   },
   (error) => {
-    console.error('Request error:', error);
+    if (import.meta.env.DEV) {
+      console.error('Request error:', error);
+    }
     return Promise.reject(error);
   }
 );
@@ -29,19 +33,19 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('API Error:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      url: error.config?.url,
-      baseURL: error.config?.baseURL,
-    });
-    
-    // If we get HTML instead of JSON, it's likely a CORS or routing issue
-    if (error.response?.data && typeof error.response.data === 'string' && error.response.data.includes('<html')) {
-      console.error('Received HTML instead of JSON - likely CORS or routing issue');
+    if (import.meta.env.DEV) {
+      console.error('API Error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+      });
+      // If we get HTML instead of JSON, it's likely a CORS or routing issue
+      if (error.response?.data && typeof error.response.data === 'string' && error.response.data.includes('<html')) {
+        console.error('Received HTML instead of JSON - likely CORS or routing issue');
+      }
     }
-    
     return Promise.reject(error);
   }
 );

@@ -1,24 +1,29 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 // Core Layout & Pages
 import Layout from './components/Layout.jsx';
 import HomePage from './pages/HomePage.jsx';
 
-// Artisan Pages
-import LoginPage from './pages/LoginPage.jsx'; // This is now ARTISAN login
-import RegisterPage from './pages/RegisterPage.jsx'; // This is now ARTISAN register
-import ArtisanProfilePage from './pages/ArtisanProfilePage.jsx';
-import ArtisanDashboardPage from './pages/ArtisanDashboardPage.jsx';
-import ArtisanAccountPage from './pages/ArtisanAccountPage.jsx';
-import ArtisanProfileEditor from './pages/ArtisanProfileEditor.jsx';
+// Artisan Pages (lazy)
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
+const ArtisanProfilePage = lazy(() => import('./pages/ArtisanProfilePage.jsx'));
+const ArtisanDashboardPage = lazy(() => import('./pages/ArtisanDashboardPage.jsx'));
+const ArtisanAccountPage = lazy(() => import('./pages/ArtisanAccountPage.jsx'));
+const ArtisanProfileEditor = lazy(() => import('./pages/ArtisanProfileEditor.jsx'));
 
-// --- NEW CUSTOMER PAGES ---
-import CustomerLoginPage from './pages/CustomerLoginPage.jsx';
-import CustomerRegisterPage from './pages/CustomerRegisterPage.jsx';
-import ForgotPassword from './pages/ForgotPassword.jsx';
-import PhoneOTPPage from './pages/PhoneOTPPage.jsx';
-import VerifyEmail from './pages/VerifyEmail.jsx';
+// --- NEW CUSTOMER PAGES --- (lazy)
+const CustomerLoginPage = lazy(() => import('./pages/CustomerLoginPage.jsx'));
+const CustomerRegisterPage = lazy(() => import('./pages/CustomerRegisterPage.jsx'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
+const PhoneOTPPage = lazy(() => import('./pages/PhoneOTPPage.jsx'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail.jsx'));
+const CustomerProfilePage = lazy(() => import('./pages/CustomerProfilePage.jsx'));
+
+// Unified selectors (lazy)
+const AuthSelector = lazy(() => import('./pages/AuthSelector.jsx'));
+const RegisterSelector = lazy(() => import('./pages/RegisterSelector.jsx'));
 
 // --- POLICY PAGES ---
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
@@ -26,26 +31,31 @@ import TermsConditions from './pages/TermsConditions.jsx';
 import ShippingPolicy from './pages/ShippingPolicy.jsx';
 import CancellationRefund from './pages/CancellationRefund.jsx';
 
-// --- MESSAGING PAGE ---
-import MessagesPage from './pages/MessagesPage.jsx';
+// --- MESSAGING PAGE --- (lazy)
+const MessagesPage = lazy(() => import('./pages/MessagesPage.jsx'));
 
-// --- VIDEO CALL PAGE ---
-import VideoCallPage from './pages/VideoCallPage.jsx';
+// --- VIDEO CALL PAGE --- (lazy)
+const VideoCallPage = lazy(() => import('./pages/VideoCallPage.jsx'));
 
 // Auth Components
 import RequireAuth from './components/RequireAuth.jsx';
 
 function App() {
   return (
-    <Routes>
+    <Suspense fallback={<div className="p-8 text-center text-sm text-gray-600">Loading...</div>}>
+      <Routes>
       <Route path="/" element={<Layout />}>
         {/* Public Routes */}
         <Route index element={<HomePage />} />
         <Route path=":publicId" element={<ArtisanProfilePage />} />
 
-        {/* Artisan Auth Routes (For the "Artisan Portal") */}
-        <Route path="login" element={<LoginPage />} />
-        <Route path="register" element={<RegisterPage />} />
+        {/* Unified Auth Selectors */}
+        <Route path="login" element={<AuthSelector />} />
+        <Route path="register" element={<RegisterSelector />} />
+
+        {/* Direct Artisan Auth Routes */}
+        <Route path="artisan/login" element={<LoginPage />} />
+        <Route path="artisan/register" element={<RegisterPage />} />
         <Route path="forgot-password" element={<ForgotPassword />} />
   {/* Firebase Auth helper pages */}
   <Route path="phone-otp" element={<PhoneOTPPage />} />
@@ -112,11 +122,22 @@ function App() {
             </RequireAuth>
           } 
         />
+
+        {/* Customer Profile (Protected) */}
+        <Route
+          path="profile"
+          element={
+            <RequireAuth role="user">
+              <CustomerProfilePage />
+            </RequireAuth>
+          }
+        />
         
         {/* Customer protected routes can be added here in future releases */}
 
       </Route>
     </Routes>
+    </Suspense>
   );
 }
 

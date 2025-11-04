@@ -147,6 +147,35 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
+  // --- Simple login function (for compatibility with guide) ---
+  const login = (userData, type) => {
+    setAuth({ user: userData, userType: type });
+    setSentryUser(userData);
+    
+    // Initialize PostHog
+    if (window.posthog) {
+      window.posthog.identify(userData._id || userData.id, {
+        email: userData.email,
+        name: userData.fullName || userData.name,
+        user_type: type
+      });
+    }
+
+    // Initialize LogRocket
+    if (window.LogRocket) {
+      window.LogRocket.identify(userData._id || userData.id, {
+        name: userData.fullName || userData.name,
+        email: userData.email,
+        user_type: type
+      });
+    }
+  };
+
+  // --- Check auth function (for compatibility) ---
+  const checkAuth = async () => {
+    await bootstrapAuth();
+  };
+
   return (
     <AuthContext.Provider 
       value={{ 
@@ -158,7 +187,9 @@ export const AuthContextProvider = ({ children }) => {
         artisanRegister,
         userLogin,
         userRegister,
-        logout, 
+        login, // Simple login function
+        logout,
+        checkAuth, // Check auth function
         loading 
       }}
     >

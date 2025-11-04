@@ -5,6 +5,7 @@ const ServicesTab = () => {
   const { showToast } = useContext(ToastContext);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     fetchServices();
