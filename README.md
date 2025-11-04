@@ -2,15 +2,15 @@
 
 KalaSetu is a full-stack web application connecting traditional artisans with customers. Built with React, Node.js, Express, and MongoDB.
 
+[![CI](https://github.com/samyak163/Kalasetu-project/actions/workflows/ci.yml/badge.svg)](https://github.com/samyak163/Kalasetu-project/actions/workflows/ci.yml)
+
 ## 📋 Table of Contents
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
+- [Quick Start](#quick-start)
+- [Documentation](#documentation)
 - [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Deployment](#deployment)
-- [Environment Variables](#environment-variables)
-- [API Documentation](#api-documentation)
 - [Contributing](#contributing)
 
 ## ✨ Features
@@ -45,10 +45,130 @@ KalaSetu is a full-stack web application connecting traditional artisans with cu
 - **HTTP Client:** Axios
 - **Build Tool:** Vite
 - **Authentication:** Firebase Auth (optional)
+- **Maps:** Google Maps API
+- **Search:** Algolia InstantSearch
 
 ### Backend
-- **Runtime:** Node.js (v20+)
+- **Runtime:** Node.js (v18-22)
 - **Framework:** Express.js
+- **Database:** MongoDB with Mongoose
+- **Authentication:** JWT + HTTP-only cookies
+- **Validation:** Zod
+- **File Upload:** Cloudinary
+- **Real-time Chat:** Stream Chat
+- **Video Calls:** Daily.co
+- **Push Notifications:** OneSignal
+- **Email:** Resend / Nodemailer
+- **Analytics:** PostHog, Sentry, LogRocket
+- **Payments:** Razorpay
+- **Background Jobs:** QStash
+- **Caching:** Redis (optional)
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js v18+ (v20+ recommended)
+- MongoDB (local or Atlas)
+- Git
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/samyak163/Kalasetu-project.git
+   cd Kalasetu-project
+   ```
+
+2. **Install dependencies**
+   ```bash
+   # Backend
+   cd kalasetu-backend
+   npm install
+   
+   # Frontend
+   cd ../kalasetu-frontend
+   npm install
+   ```
+
+3. **Configure environment variables**
+   ```bash
+   # Backend
+   cd kalasetu-backend
+   copy .env.example .env
+   # Edit .env with your configuration
+   
+   # Frontend
+   cd ../kalasetu-frontend
+   copy .env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. **Start development servers**
+   ```bash
+   # Backend (Terminal 1)
+   cd kalasetu-backend
+   npm run dev
+   
+   # Frontend (Terminal 2)
+   cd kalasetu-frontend
+   npm run dev
+   ```
+
+5. **Open your browser**
+   - Frontend: http://localhost:5173
+   - Backend: http://localhost:5000
+
+---
+
+## 📚 Documentation
+
+Comprehensive guides are available in the `docs/` directory:
+
+- **[Setup Guide](docs/SETUP.md)** - Complete installation and configuration
+- **[Integrations Guide](docs/INTEGRATIONS.md)** - External services setup (Firebase, Cloudinary, etc.)
+- **[API Documentation](docs/API.md)** - REST API endpoints reference
+- **[CI/CD Guide](docs/CI-CD.md)** - Deployment and automation setup
+
+---
+
+## 📁 Project Structure
+
+```
+kalasetu-project/
+├── kalasetu-backend/          # Express.js backend
+│   ├── config/                # Configuration files
+│   ├── controllers/           # Route controllers
+│   ├── middleware/            # Express middleware
+│   ├── models/                # Mongoose models
+│   ├── routes/                # API routes
+│   ├── utils/                 # Utility functions
+│   ├── jobs/                  # Background job handlers
+│   ├── scripts/               # CLI scripts
+│   └── server.js              # Entry point
+│
+├── kalasetu-frontend/         # React frontend
+│   ├── src/
+│   │   ├── components/        # Reusable components
+│   │   ├── pages/             # Page components
+│   │   ├── context/           # React Context providers
+│   │   ├── hooks/             # Custom hooks
+│   │   ├── lib/               # Third-party integrations
+│   │   └── App.jsx            # Root component
+│   └── vite.config.js         # Vite configuration
+│
+├── docs/                      # Documentation
+│   ├── SETUP.md
+│   ├── INTEGRATIONS.md
+│   ├── API.md
+│   └── CI-CD.md
+│
+└── .github/
+    └── workflows/             # GitHub Actions CI/CD
+```
+
+---
 - **Database:** MongoDB (Atlas)
 - **ODM:** Mongoose
 - **Authentication:** JWT + bcrypt

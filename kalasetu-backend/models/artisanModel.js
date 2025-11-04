@@ -210,9 +210,9 @@ artisanSchema.methods.isLocked = function () {
 // Geospatial index for proximity queries (index the GeoJSON field itself)
 artisanSchema.index({ location: '2dsphere' });
 
+// Additional useful indexes (email and phoneNumber already have unique: true in schema definition)
+artisanSchema.index({ createdAt: -1 });
+artisanSchema.index({ 'location.city': 1, 'location.state': 1 });
+
 const Artisan = mongoose.model('Artisan', artisanSchema);
 export default Artisan;
-// Additional useful indexes
-artisanSchema.index({ email: 1 }, { unique: true, sparse: true });
-artisanSchema.index({ phoneNumber: 1 }, { unique: true, sparse: true });
-artisanSchema.index({ createdAt: -1 });

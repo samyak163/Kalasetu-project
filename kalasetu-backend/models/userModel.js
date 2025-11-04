@@ -30,8 +30,7 @@ const userSchema = new mongoose.Schema({
     bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artisan' }],
 }, { timestamps: true });
 
-// Helpful indexes
-userSchema.index({ email: 1 }, { unique: true });
+// Helpful indexes (email already has unique: true in schema definition)
 userSchema.index({ createdAt: -1 });
 
 // --- Mongoose Middleware (Robust "pre-save" hook) ---
