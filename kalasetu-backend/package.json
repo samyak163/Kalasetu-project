@@ -9,7 +9,9 @@
   },
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "seed": "node scripts/seedArtisans.js",
+    "seed:index": "npm run seed && node scripts/indexArtisans.js"
   },
   "keywords": [],
   "author": "",
