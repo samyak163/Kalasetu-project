@@ -31,6 +31,13 @@ const ProfileDropdown = ({ user, onLogout, onOpenProfile }) => {
     }
   };
 
+  const handleOpenProfileTab = (tab = 'profile') => {
+    setIsOpen(false);
+    // Dispatch custom event with tab parameter (ProfileModal will listen for this)
+    const event = new CustomEvent('open-profile', { detail: { tab } });
+    window.dispatchEvent(event);
+  };
+
   const avatarUrl = user?.profileImageUrl || '';
   const displayName = user?.fullName || 'User';
   const truncatedName = displayName.length > 15 
@@ -116,32 +123,21 @@ const ProfileDropdown = ({ user, onLogout, onOpenProfile }) => {
           {/* Menu Items */}
           <div className="py-1">
             <button
-              onClick={() => {
-                setIsOpen(false);
-                onOpenProfile();
-              }}
+              onClick={() => handleOpenProfileTab('profile')}
               className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50"
               role="menuitem"
             >
               View Profile
             </button>
             <button
-              onClick={() => {
-                setIsOpen(false);
-                // Navigate to settings if you add a settings page
-                // navigate('/settings');
-              }}
+              onClick={() => handleOpenProfileTab('preferences')}
               className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50"
               role="menuitem"
             >
               Settings
             </button>
             <button
-              onClick={() => {
-                setIsOpen(false);
-                // Navigate to help if you add a help page
-                // navigate('/help');
-              }}
+              onClick={() => handleOpenProfileTab('help')}
               className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50"
               role="menuitem"
             >

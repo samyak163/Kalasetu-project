@@ -26,9 +26,11 @@ const ProfileModal = () => {
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
-    const handleOpenProfile = () => {
+    const handleOpenProfile = (event) => {
       setIsOpen(true);
-      setActiveTab('profile');
+      // If event has a tab detail, use it, otherwise default to 'profile'
+      const tab = event.detail?.tab || 'profile';
+      setActiveTab(tab);
     };
     window.addEventListener('open-profile', handleOpenProfile);
     return () => window.removeEventListener('open-profile', handleOpenProfile);
