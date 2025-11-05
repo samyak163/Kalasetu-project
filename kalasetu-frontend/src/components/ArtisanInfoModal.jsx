@@ -1,31 +1,83 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const ArtisanInfoModal = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
+
   if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div className="w-full max-w-xl rounded-xl bg-white shadow-xl">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Why Join KalaSetu as an Artisan?</h2>
-            <button onClick={onClose} aria-label="Close" className="p-2 rounded hover:bg-gray-100">✕</button>
-          </div>
-          <div className="px-6 py-5">
-            <ul className="list-disc pl-5 space-y-2 text-gray-700">
-              <li>Reach users across your region</li>
-              <li>Professional portfolio showcase</li>
-              <li>Secure booking & payment system</li>
-              <li>Build your reputation with reviews</li>
-              <li>Flexible scheduling tools</li>
-              <li>No commission fees for first 3 months</li>
-            </ul>
-          </div>
-          <div className="px-6 pb-6 flex items-center gap-3">
-            <Link to="/artisan/login" className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-white bg-[#A55233] hover:bg-[#8e462b] transition-colors">Get Started</Link>
-            <Link to="/artisan/info" className="text-[#A55233] hover:underline">Learn More</Link>
-          </div>
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="w-full max-w-xl rounded-xl bg-white shadow-xl relative max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+          aria-label="Close"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900 pr-8">Why Join KalaSetu as an Artisan?</h2>
+        </div>
+
+        {/* Content */}
+        <div className="px-6 py-5">
+          <ul className="space-y-3 text-gray-700">
+            <li className="flex items-start gap-3">
+              <span className="text-green-600 font-bold">✓</span>
+              <span>Reach customers across India</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-green-600 font-bold">✓</span>
+              <span>Professional portfolio showcase</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-green-600 font-bold">✓</span>
+              <span>Secure booking & payment system</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-green-600 font-bold">✓</span>
+              <span>Build your reputation with reviews</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-green-600 font-bold">✓</span>
+              <span>Flexible scheduling tools</span>
+            </li>
+            <li className="flex items-start gap-3">
+              <span className="text-green-600 font-bold">✓</span>
+              <span>No commission fees for first 3 months</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* CTA Buttons */}
+        <div className="px-6 pb-6 flex gap-3">
+          <button
+            onClick={() => {
+              onClose();
+              navigate('/artisan/register');
+            }}
+            className="flex-1 bg-[#A55233] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#8e462b] transition-colors"
+          >
+            Get Started
+          </button>
+          <button
+            onClick={onClose}
+            className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Maybe Later
+          </button>
         </div>
       </div>
     </div>
