@@ -31,16 +31,22 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
   };
 
   const handleOpenProfileTab = (tab = 'profile') => {
+    // Close dropdown first to avoid event being swallowed by state updates
     setIsOpen(false);
-    // For normal users, open ProfileModal with specific tab
-    if (userType === 'user') {
-      const event = new CustomEvent('open-profile', { detail: { tab } });
-      globalThis.dispatchEvent(event);
-      return;
-    }
-    // For artisans, delegate to parent (usually navigates to dashboard)
-    if (userType === 'artisan' && typeof onOpenProfile === 'function') {
-      onOpenProfile();
+    const trigger = () => {
+      if (userType === 'user') {
+        const event = new CustomEvent('open-profile', { detail: { tab } });
+        // Use window to match the listener target in ProfileModal
+        window.dispatchEvent(event);
+      } else if (userType === 'artisan' && typeof onOpenProfile === 'function') {
+        onOpenProfile();
+      }
+    };
+    // Defer to the next frame to ensure dropdown has closed before opening modal
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(() => trigger());
+    } else {
+      setTimeout(trigger, 0);
     }
   };
 

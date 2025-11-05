@@ -20,11 +20,11 @@ const Header = () => {
     // For users: dispatch custom event for ProfileModal
     if (auth.userType === 'user') {
       const event = new CustomEvent('open-profile');
-      globalThis.dispatchEvent(event);
+      window.dispatchEvent(event);
     }
     // For artisans: navigate to dashboard
     else if (auth.userType === 'artisan') {
-      globalThis.location.href = '/artisan/dashboard/account';
+      window.location.href = '/artisan/dashboard/account';
     }
   };
 
