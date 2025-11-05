@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '/src/context/AuthContext.jsx';
-import { ToastContext } from '/src/context/ToastContext.jsx';
+import { AuthContext } from '../../context/AuthContext.jsx';
+import { ToastContext } from '../../context/ToastContext.jsx';
 import ProfileTab from './tabs/ProfileTab.jsx';
 import RatingsTab from './tabs/RatingsTab.jsx';
 import BookmarksTab from './tabs/BookmarksTab.jsx';
@@ -32,8 +32,8 @@ const ProfileModal = () => {
       const tab = event.detail?.tab || 'profile';
       setActiveTab(tab);
     };
-    window.addEventListener('open-profile', handleOpenProfile);
-    return () => window.removeEventListener('open-profile', handleOpenProfile);
+    globalThis.addEventListener('open-profile', handleOpenProfile);
+    return () => globalThis.removeEventListener('open-profile', handleOpenProfile);
   }, []);
 
   useEffect(() => {

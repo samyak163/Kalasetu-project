@@ -36,15 +36,15 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
     const trigger = () => {
       if (userType === 'user') {
         const event = new CustomEvent('open-profile', { detail: { tab } });
-        // Use window to match the listener target in ProfileModal
-        window.dispatchEvent(event);
+        // Dispatch on globalThis for broader compatibility
+        globalThis.dispatchEvent(event);
       } else if (userType === 'artisan' && typeof onOpenProfile === 'function') {
         onOpenProfile();
       }
     };
     // Defer to the next frame to ensure dropdown has closed before opening modal
-    if (typeof window.requestAnimationFrame === 'function') {
-      window.requestAnimationFrame(() => trigger());
+    if (typeof globalThis.requestAnimationFrame === 'function') {
+      globalThis.requestAnimationFrame(() => trigger());
     } else {
       setTimeout(trigger, 0);
     }
