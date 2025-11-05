@@ -20,6 +20,7 @@
     "axios": "^1.13.1",
     "firebase": "^12.5.0",
     "i18next": "^23.11.5",
+    "jotai": "^2.15.1",
     "logrocket": "^10.1.0",
     "logrocket-react": "^6.0.3",
     "posthog-js": "^1.284.0",
