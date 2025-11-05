@@ -1,18 +1,28 @@
 ﻿import React, { useContext, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 import ArtisanInfoModal from './ArtisanInfoModal.jsx';
 import HowItWorksModal from './HowItWorksModal.jsx';
 import NotificationPanel from './NotificationPanel.jsx';
 import { useNotifications } from '../context/NotificationContext.jsx';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
+import ProfileDropdown from './common/ProfileDropdown.jsx';
 
 const Header = () => {
   const { auth, logout } = useContext(AuthContext);
   const { notifications, unreadCount } = useNotifications();
+  const navigate = useNavigate();
   const [showArtisanInfo, setShowArtisanInfo] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const handleOpenProfile = () => {
+    if (auth.userType === 'artisan') {
+      navigate('/artisan/dashboard/account');
+    } else if (auth.userType === 'user') {
+      navigate('/customer/profile');
+    }
+  };
 
   const renderAuthLinks = () => {
     // Case 1: No one is logged in
@@ -25,38 +35,14 @@ const Header = () => {
       );
     }
 
-    // Case 2: A USER is logged in
-    if (auth.userType === 'user') {
-      return (
-        <>
-          <span className="text-sm font-medium text-gray-700">Hi, {auth.user.fullName.split(' ')[0]}</span>
-          <button
-            onClick={logout}
-            className="ml-4 text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors"
-          >
-            Sign Out
-          </button>
-        </>
-      );
-    }
-
-    // Case 3: An Artisan is logged in
-    if (auth.userType === 'artisan') {
-      return (
-        <>
-          <Link to={`/${auth.user.publicId}`} className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">
-            My Profile
-          </Link>
-          <Link to="/artisan/dashboard/account" className="ml-4 text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">Dashboard</Link>
-          <button
-            onClick={logout}
-            className="ml-4 text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors"
-          >
-            Sign Out
-          </button>
-        </>
-      );
-    }
+    // Case 2: User or Artisan is logged in - use ProfileDropdown
+    return (
+      <ProfileDropdown 
+        user={auth.user}
+        onLogout={logout}
+        onOpenProfile={handleOpenProfile}
+      />
+    );
   };
 
   return (
