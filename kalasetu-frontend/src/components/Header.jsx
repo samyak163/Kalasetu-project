@@ -15,7 +15,18 @@ const Header = () => {
   const [showArtisanInfo, setShowArtisanInfo] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  const handleOpenProfile = () => {
+    // For users: dispatch custom event for ProfileModal
+    if (auth.userType === 'user') {
+      const event = new CustomEvent('open-profile');
+      window.dispatchEvent(event);
+    }
+    // For artisans: navigate to dashboard
+    else if (auth.userType === 'artisan') {
+      window.location.href = '/artisan/dashboard/account';
+    }
+  };
 
   const renderAuthLinks = () => {
     // Case 1: No one is logged in
@@ -33,7 +44,7 @@ const Header = () => {
       <ProfileDropdown 
         user={auth.user}
         onLogout={logout}
-        onOpenProfile={() => setShowProfileModal(true)}
+        onOpenProfile={handleOpenProfile}
       />
     );
   };
@@ -72,14 +83,7 @@ const Header = () => {
       <ArtisanInfoModal isOpen={showArtisanInfo} onClose={() => setShowArtisanInfo(false)} />
       <HowItWorksModal isOpen={showHowItWorks} onClose={() => setShowHowItWorks(false)} />
       <NotificationPanel isOpen={showNotifications} onClose={() => setShowNotifications(false)} notifications={notifications} />
-      {showProfileModal && (
-        <ProfileModal 
-          isOpen={showProfileModal} 
-          onClose={() => setShowProfileModal(false)} 
-          user={auth.user}
-          userType={auth.userType}
-        />
-      )}
+      <ProfileModal />
     </header>
   );
 };
