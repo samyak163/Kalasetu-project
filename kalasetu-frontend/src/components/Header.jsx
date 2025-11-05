@@ -1,5 +1,5 @@
 ﻿import React, { useContext, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 import ArtisanInfoModal from './ArtisanInfoModal.jsx';
 import HowItWorksModal from './HowItWorksModal.jsx';
@@ -7,22 +7,15 @@ import NotificationPanel from './NotificationPanel.jsx';
 import { useNotifications } from '../context/NotificationContext.jsx';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 import ProfileDropdown from './common/ProfileDropdown.jsx';
+import ProfileModal from './profile/ProfileModal.jsx';
 
 const Header = () => {
   const { auth, logout } = useContext(AuthContext);
   const { notifications, unreadCount } = useNotifications();
-  const navigate = useNavigate();
   const [showArtisanInfo, setShowArtisanInfo] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-
-  const handleOpenProfile = () => {
-    if (auth.userType === 'artisan') {
-      navigate('/artisan/dashboard/account');
-    } else if (auth.userType === 'user') {
-      navigate('/customer/profile');
-    }
-  };
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const renderAuthLinks = () => {
     // Case 1: No one is logged in
@@ -40,7 +33,7 @@ const Header = () => {
       <ProfileDropdown 
         user={auth.user}
         onLogout={logout}
-        onOpenProfile={handleOpenProfile}
+        onOpenProfile={() => setShowProfileModal(true)}
       />
     );
   };
@@ -79,6 +72,14 @@ const Header = () => {
       <ArtisanInfoModal isOpen={showArtisanInfo} onClose={() => setShowArtisanInfo(false)} />
       <HowItWorksModal isOpen={showHowItWorks} onClose={() => setShowHowItWorks(false)} />
       <NotificationPanel isOpen={showNotifications} onClose={() => setShowNotifications(false)} notifications={notifications} />
+      {showProfileModal && (
+        <ProfileModal 
+          isOpen={showProfileModal} 
+          onClose={() => setShowProfileModal(false)} 
+          user={auth.user}
+          userType={auth.userType}
+        />
+      )}
     </header>
   );
 };
