@@ -12,16 +12,16 @@ import AppearanceTab from '../components/profile/tabs/AppearanceTab.jsx';
 import HelpSupportTab from '../components/profile/tabs/HelpSupportTab.jsx';
 
 const tabs = [
-  { key: 'dashboard', label: 'Dashboard', icon: 'ðŸ“Š' },
-  { key: 'profile', label: 'Your Profile', icon: 'ðŸ‘¤' },
-  { key: 'services', label: 'Services', icon: 'ðŸ› ï¸' },
-  { key: 'portfolio', label: 'Portfolio', icon: 'ðŸŽ¨' },
-  { key: 'bookings', label: 'Bookings', icon: 'ðŸ“…' },
-  { key: 'earnings', label: 'Earnings', icon: 'ðŸ’°' },
-  { key: 'reviews', label: 'Reviews', icon: 'â­' },
-  { key: 'USERs', label: 'USERs', icon: 'ðŸ‘¥' },
-  { key: 'appearance', label: 'Appearance', icon: 'ï¿½' },
-  { key: 'help', label: 'Help & Support', icon: 'â“' },
+  { key: 'dashboard', label: 'Dashboard', icon: '📊' },
+  { key: 'profile', label: 'Your Profile', icon: '👤' },
+  { key: 'services', label: 'Services', icon: '🛠️' },
+  { key: 'portfolio', label: 'Portfolio', icon: '🎨' },
+  { key: 'bookings', label: 'Bookings', icon: '📅' },
+  { key: 'earnings', label: 'Earnings', icon: '💰' },
+  { key: 'reviews', label: 'Reviews', icon: '⭐' },
+  { key: 'USERs', label: 'USERs', icon: '👥' },
+  { key: 'appearance', label: 'Appearance', icon: '🎨' },
+  { key: 'help', label: 'Help & Support', icon: '❓' },
 ];
 
 const ArtisanAccountPage = () => {

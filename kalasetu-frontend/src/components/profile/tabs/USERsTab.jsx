@@ -80,7 +80,7 @@ const USERsTab = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full px-4 py-3 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
         />
-        <span className="absolute left-3 top-3.5 text-gray-400">ðŸ”</span>
+        <span className="absolute left-3 top-3.5 text-gray-400">🔍</span>
       </div>
 
       {/* USER Stats */}
@@ -129,15 +129,15 @@ const USERsTab = () => {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 dark:text-gray-400 mt-3">
-                    <div>ðŸ“ž {USER.phone}</div>
-                    <div>ðŸ“§ {USER.email}</div>
-                    <div>ðŸ“ {USER.location}</div>
-                    <div>ðŸ“… Last booking: {USER.lastBooking}</div>
+                    <div>📞 {USER.phone}</div>
+                    <div>📧 {USER.email}</div>
+                    <div>📍 {USER.location}</div>
+                    <div>📅 Last booking: {USER.lastBooking}</div>
                   </div>
 
                   {USER.notes && (
                     <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                      <div className="text-xs font-medium text-yellow-800 dark:text-yellow-200 mb-1">ðŸ“ Notes:</div>
+                      <div className="text-xs font-medium text-yellow-800 dark:text-yellow-200 mb-1">📝 Notes:</div>
                       <div className="text-sm text-yellow-700 dark:text-yellow-300">{USER.notes}</div>
                     </div>
                   )}
@@ -146,7 +146,7 @@ const USERsTab = () => {
                 <div className="text-right ml-4">
                   <div className="text-sm text-gray-500 dark:text-gray-400">Total Spent</div>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    â‚¹{USER.totalSpent.toLocaleString()}
+                    ₹{USER.totalSpent.toLocaleString()}
                   </div>
                   <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     {USER.totalBookings} bookings
@@ -173,7 +173,7 @@ const USERsTab = () => {
         </div>
       ) : (
         <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-          <div className="text-4xl mb-4">ðŸ‘¥</div>
+          <div className="text-4xl mb-4">👥</div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             {searchTerm ? 'No USERs found' : 'No USERs yet'}
           </h3>

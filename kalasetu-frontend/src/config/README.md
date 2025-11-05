@@ -63,24 +63,24 @@ const uploadImage = async (file) => {
 ## Available Configurations
 
 ### Active Services (Configured)
-- âœ… `API_CONFIG` - Backend API configuration
-- âœ… `FIREBASE_CONFIG` - Firebase authentication
-- âœ… `CLOUDINARY_CONFIG` - Image upload service
+- ✅ `API_CONFIG` - Backend API configuration
+- ✅ `FIREBASE_CONFIG` - Firebase authentication
+- ✅ `CLOUDINARY_CONFIG` - Image upload service
 
 ### Future Services (Prepared but disabled)
-- ðŸ”§ `SEARCH_CONFIG` - Algolia/Meilisearch (Search & Discovery)
-- ðŸ”§ `SMS_CONFIG` - Twilio/MSG91/Kaleyra (SMS notifications)
-- ðŸ”§ `EMAIL_CONFIG` - Resend/SendGrid/SES (Email service)
-- ðŸ”§ `PUSH_CONFIG` - OneSignal/FCM (Push notifications)
-- ðŸ”§ `ANALYTICS_CONFIG` - Mixpanel/PostHog/Amplitude (Analytics)
-- ðŸ”§ `ERROR_TRACKING_CONFIG` - Sentry (Error tracking)
-- ðŸ”§ `SESSION_REPLAY_CONFIG` - LogRocket/FullStory (Session replay)
-- ðŸ”§ `MAPS_CONFIG` - Google Maps/Mapbox (Maps & location)
-- ðŸ”§ `CHAT_CONFIG` - Stream/SendBird/Socket.io (Real-time chat)
-- ðŸ”§ `VIDEO_CONFIG` - Agora/Twilio/Daily (Video calls)
-- ðŸ”§ `SUPPORT_CONFIG` - Intercom/Zendesk/Freshdesk (USER support)
-- ðŸ”§ `AB_TESTING_CONFIG` - Optimizely/PostHog/VWO (A/B testing)
-- ðŸ”§ `APP_CONFIG` - General app metadata
+- 🔧 `SEARCH_CONFIG` - Algolia/Meilisearch (Search & Discovery)
+- 🔧 `SMS_CONFIG` - Twilio/MSG91/Kaleyra (SMS notifications)
+- 🔧 `EMAIL_CONFIG` - Resend/SendGrid/SES (Email service)
+- 🔧 `PUSH_CONFIG` - OneSignal/FCM (Push notifications)
+- 🔧 `ANALYTICS_CONFIG` - Mixpanel/PostHog/Amplitude (Analytics)
+- 🔧 `ERROR_TRACKING_CONFIG` - Sentry (Error tracking)
+- 🔧 `SESSION_REPLAY_CONFIG` - LogRocket/FullStory (Session replay)
+- 🔧 `MAPS_CONFIG` - Google Maps/Mapbox (Maps & location)
+- 🔧 `CHAT_CONFIG` - Stream/SendBird/Socket.io (Real-time chat)
+- 🔧 `VIDEO_CONFIG` - Agora/Twilio/Daily (Video calls)
+- 🔧 `SUPPORT_CONFIG` - Intercom/Zendesk/Freshdesk (USER support)
+- 🔧 `AB_TESTING_CONFIG` - Optimizely/PostHog/VWO (A/B testing)
+- 🔧 `APP_CONFIG` - General app metadata
 
 ## Environment Variables
 
@@ -128,12 +128,12 @@ export const SEARCH_CONFIG = {
 
 ## Benefits
 
-- âœ… **Centralized Configuration**: All environment variables in one place
-- âœ… **Type Safety**: Easy to validate and document configurations
-- âœ… **Scalability**: Ready for future integrations
-- âœ… **Maintainability**: Easy to update and manage
-- âœ… **Developer Experience**: Clear structure and documentation
-- âœ… **Migration Path**: Prepared for 15+ future services
+- ✅ **Centralized Configuration**: All environment variables in one place
+- ✅ **Type Safety**: Easy to validate and document configurations
+- ✅ **Scalability**: Ready for future integrations
+- ✅ **Maintainability**: Easy to update and manage
+- ✅ **Developer Experience**: Clear structure and documentation
+- ✅ **Migration Path**: Prepared for 15+ future services
 
 ## Notes
 

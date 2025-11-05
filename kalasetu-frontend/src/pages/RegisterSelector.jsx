@@ -12,13 +12,13 @@ export default function RegisterSelector() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <Link to="/user/register" className="group block rounded-xl border border-gray-200 bg-white hover:shadow-lg transition p-8">
-            <div className="text-4xl mb-4">ðŸ‘¤</div>
+            <div className="text-4xl mb-4">👤</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Sign up as USER</h3>
             <p className="text-gray-600">Find artisans, book services and track orders.</p>
           </Link>
 
           <Link to="/artisan/register" className="group block rounded-xl border border-gray-200 bg-white hover:shadow-lg transition p-8">
-            <div className="text-4xl mb-4">ðŸ”§</div>
+            <div className="text-4xl mb-4">🔧</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Sign up as Artisan</h3>
             <p className="text-gray-600">Get leads, manage jobs and grow your business.</p>
           </Link>

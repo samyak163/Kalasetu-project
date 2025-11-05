@@ -1,4 +1,4 @@
-﻿# ðŸ“¡ API Documentation
+﻿# 📡 API Documentation
 
 REST API documentation for KalaSetu backend.
 
@@ -313,7 +313,7 @@ Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "amount": 50000,           // Amount in paise (â‚¹500.00)
+  "amount": 50000,           // Amount in paise (₹500.00)
   "currency": "INR",
   "notes": { /* custom data */ }
 }

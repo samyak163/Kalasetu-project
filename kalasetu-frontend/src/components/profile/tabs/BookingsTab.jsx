@@ -49,11 +49,11 @@ const BookingsTab = () => {
 
   const getStatusBadge = (status) => {
     const badges = {
-      pending: { bg: 'bg-blue-100 text-blue-800', text: 'ðŸ”µ Pending' },
-      confirmed: { bg: 'bg-green-100 text-green-800', text: 'ðŸŸ¢ Confirmed' },
-      inProgress: { bg: 'bg-yellow-100 text-yellow-800', text: 'ðŸŸ¡ In Progress' },
-      completed: { bg: 'bg-gray-100 text-gray-800', text: 'ðŸ”´ Completed' },
-      cancelled: { bg: 'bg-red-100 text-red-800', text: 'âš« Cancelled' }
+      pending: { bg: 'bg-blue-100 text-blue-800', text: '⏳ Pending' },
+      confirmed: { bg: 'bg-green-100 text-green-800', text: '✅ Confirmed' },
+      inProgress: { bg: 'bg-yellow-100 text-yellow-800', text: '🔄 In Progress' },
+      completed: { bg: 'bg-gray-100 text-gray-800', text: '✔ Completed' },
+      cancelled: { bg: 'bg-red-100 text-red-800', text: '❌ Cancelled' }
     };
     const badge = badges[status] || badges.pending;
     return (
@@ -111,14 +111,14 @@ const BookingsTab = () => {
                     {getStatusBadge(booking.status)}
                   </div>
                   <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                    <div>ðŸ‘¤ USER: <span className="font-medium text-gray-900 dark:text-white">{booking.USER}</span></div>
-                    <div>ðŸ“ž {booking.phone}</div>
-                    <div>ðŸ“… {booking.date} | â° {booking.time}</div>
-                    <div>ðŸ“ {booking.address}</div>
+                    <div>👤 USER: <span className="font-medium text-gray-900 dark:text-white">{booking.USER}</span></div>
+                    <div>📞 {booking.phone}</div>
+                    <div>📅 {booking.date} | ⏰ {booking.time}</div>
+                    <div>📍 {booking.address}</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">â‚¹{booking.amount}</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">₹{booking.amount}</div>
                 </div>
               </div>
 
@@ -141,7 +141,7 @@ const BookingsTab = () => {
         </div>
       ) : (
         <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-          <div className="text-4xl mb-4">ðŸ“…</div>
+          <div className="text-4xl mb-4">📅</div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             No bookings yet
           </h3>

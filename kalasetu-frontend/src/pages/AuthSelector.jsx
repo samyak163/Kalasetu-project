@@ -12,13 +12,13 @@ export default function AuthSelector() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <Link to="/user/login" className="group block rounded-xl border border-gray-200 bg-white hover:shadow-lg transition p-8">
-            <div className="text-4xl mb-4">ðŸ‘¤</div>
+            <div className="text-4xl mb-4">👤</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Login as USER</h3>
             <p className="text-gray-600">Book services, manage orders and chat with artisans.</p>
           </Link>
 
           <Link to="/artisan/login" className="group block rounded-xl border border-gray-200 bg-white hover:shadow-lg transition p-8">
-            <div className="text-4xl mb-4">ðŸ”§</div>
+            <div className="text-4xl mb-4">🔧</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Login as Artisan</h3>
             <p className="text-gray-600">Manage jobs, earnings and your professional profile.</p>
           </Link>

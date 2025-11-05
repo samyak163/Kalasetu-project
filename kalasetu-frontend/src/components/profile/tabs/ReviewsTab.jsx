@@ -68,7 +68,7 @@ const ReviewsTab = () => {
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map(star => (
           <span key={star} className={star <= rating ? 'text-yellow-400' : 'text-gray-300'}>
-            â­
+            ⭐
           </span>
         ))}
       </div>
@@ -117,7 +117,7 @@ const ReviewsTab = () => {
               return (
                 <div key={star} className="flex items-center gap-3">
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300 w-12">
-                    {star} â­
+                    {star} ⭐
                   </div>
                   <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div 
@@ -147,7 +147,7 @@ const ReviewsTab = () => {
                     <div className="font-semibold text-gray-900 dark:text-white">{review.USER}</div>
                     <div className="flex items-center gap-2 mt-1">
                       {renderStars(review.rating)}
-                      <span className="text-xs text-gray-500 dark:text-gray-400">â€¢ {review.date}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">• {review.date}</span>
                     </div>
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">{review.service}</div>
@@ -204,7 +204,7 @@ const ReviewsTab = () => {
           </div>
         ) : (
           <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-            <div className="text-4xl mb-4">â­</div>
+            <div className="text-4xl mb-4">⭐</div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               No reviews yet
             </h3>
