@@ -3,17 +3,23 @@ import React from 'react';
 // THE FIX: Added .jsx extensions to all local imports
 import HeroSearch from '../components/HeroSearch.jsx';
 import Categories from '../components/Categories.jsx';
-import FeaturedArtisans from '../components/FeaturedArtisans.jsx';
 import HowItWorks from '../components/HowItWorks.jsx';
 import NearbyArtisans from '../components/Maps/NearbyArtisans.jsx';
 import { isGoogleMapsEnabled } from '../lib/googleMaps.js';
+import SEO from '../components/SEO.jsx';
 
 const HomePage = () => {
     return (
         <>
+            <SEO
+                title="KalaSetu - Discover Local Artisans"
+                description="Find and book local artisans for crafts and services near you."
+                url="https://kalasetu.com/"
+                type="website"
+            />
             <HeroSearch />
             <Categories />
-            <FeaturedArtisans />
+            {/* Featured Local Talent removed */}
             
             {/* Nearby Artisans Section (only if Google Maps is enabled) */}
             {isGoogleMapsEnabled() && (

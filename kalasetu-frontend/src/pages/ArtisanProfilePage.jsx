@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { API_CONFIG } from '../config/env.config.js';
-import SEOHelmet from '../components/SEOHelmet.jsx';
+import SEO from '../components/SEO.jsx';
+import { optimizeImage } from '../utils/cloudinary.js';
+import ReviewList from '../components/reviews/ReviewList.jsx';
 
 const ArtisanProfilePage = () => {
     // THE UPGRADE: We are now getting the 'publicId' from the URL instead of 'id'.
@@ -48,25 +50,25 @@ const ArtisanProfilePage = () => {
     return (
         <>
             {seoData && (
-                <SEOHelmet
+                <SEO
                     title={seoData.title}
                     description={seoData.description}
                     keywords={seoData.keywords}
                     image={seoData.image}
                     url={seoData.url}
                     type={seoData.type}
-                    structuredData={seoData.structuredData}
+                    jsonLd={seoData.structuredData}
                 />
             )}
             
             <div>
             {/* ... (The beautiful UI for the profile page is the same as before) ... */}
             <div className="relative h-64 md:h-80 bg-gray-200">
-                <img src={artisan.coverImageUrl} alt={`${artisan.fullName}'s work`} className="w-full h-full object-cover" />
+                <img src={optimizeImage(artisan.coverImageUrl, { width: 1200, height: 320, crop: 'fill' })} loading="lazy" alt={`${artisan.fullName}'s work`} className="w-full h-full object-cover" />
             </div>
             <div className="container mx-auto max-w-5xl -mt-24 relative px-4">
                 <div className="bg-white rounded-lg shadow-xl p-6 flex flex-col md:flex-row items-center">
-                    <img src={artisan.profileImageUrl} alt={artisan.fullName} className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white object-cover -mt-16 md:-mt-24"/>
+                    <img src={optimizeImage(artisan.profileImageUrl, { width: 160, height: 160 })} loading="lazy" alt={artisan.fullName} className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white object-cover -mt-16 md:-mt-24"/>
                     <div className="mt-4 md:mt-0 md:ml-6 text-center md:text-left">
                         <h1 className="text-3xl md:text-4xl font-bold text-[#1A1A1A]">{artisan.fullName}</h1>
                         <p className="text-lg text-[#A55233] font-semibold">{artisan.craft}</p>
@@ -82,6 +84,10 @@ const ArtisanProfilePage = () => {
                 <div className="bg-white rounded-lg shadow-xl p-6">
                     <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4">About Me</h2>
                     <p className="text-gray-700 leading-relaxed">{artisan.bio}</p>
+                </div>
+                <div className="bg-white rounded-lg shadow-xl p-6 mt-6">
+                    <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4">Reviews</h2>
+                    <ReviewList artisanId={artisan._id} />
                 </div>
             </div>
             </div>

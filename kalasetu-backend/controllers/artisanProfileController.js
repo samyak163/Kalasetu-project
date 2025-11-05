@@ -7,6 +7,19 @@ import { logAudit } from '../utils/audit.js';
 import { sendEmail } from '../utils/email.js';
 import fs from 'node:fs/promises';
 
+// ---------- Sanitization Helpers ----------
+const sanitizeString = (str) => {
+  if (typeof str !== 'string') return str;
+  // Strip script/style tags and angle brackets; collapse whitespace
+  return str
+    .replace(/<\/(script|style)>/gi, '')
+    .replace(/<(script|style)[\s\S]*?>[\s\S]*?<\/\1>/gi, '')
+    .replace(/[<>]/g, '')
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 // ---------- Zod Schemas ----------
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/; // HH:MM 24h
 
@@ -111,6 +124,12 @@ export const getProfile = asyncHandler(async (req, res) => {
 export const updateProfile = asyncHandler(async (req, res) => {
   const userId = req.user._id || req.user.id;
   const payload = profileUpdateSchema.parse(req.body);
+
+  // Sanitize user-provided strings
+  if (payload.fullName) payload.fullName = sanitizeString(payload.fullName);
+  if (payload.businessName) payload.businessName = sanitizeString(payload.businessName);
+  if (payload.tagline) payload.tagline = sanitizeString(payload.tagline);
+  if (payload.bio) payload.bio = sanitizeString(payload.bio);
 
   // Sanitize immutable/sensitive fields
   const disallowed = ['publicId', 'password', 'loginAttempts', 'lockUntil'];

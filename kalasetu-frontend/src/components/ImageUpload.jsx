@@ -55,7 +55,7 @@ export default function ImageUpload({ onUploadSuccess, currentImage }) {
     <div className="space-y-4">
       <div className="flex items-center space-x-4">
         {preview && (
-          <img src={preview} alt="Profile" className="w-24 h-24 rounded-full object-cover" />
+          <img src={preview} alt="Profile" loading="lazy" className="w-24 h-24 rounded-full object-cover" />
         )}
         <div>
           <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">

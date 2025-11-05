@@ -17,15 +17,24 @@ import {
   reportIssue,
 } from '../controllers/userAuthController.js';
 import { userProtect } from '../middleware/userProtectMiddleware.js';
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 
+// Stricter rate limiter for sensitive auth endpoints
+const strictLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Public routes
-router.post('/register', registerUser);
-router.post('/login', loginUser);
-router.post('/logout', logoutUser);
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/register', strictLimiter, registerUser);
+router.post('/login', strictLimiter, loginUser);
+router.post('/logout', strictLimiter, logoutUser);
+router.post('/forgot-password', strictLimiter, forgotPassword);
+router.post('/reset-password', strictLimiter, resetPassword);
 
 // Private routes
 router.get('/me', userProtect, getMe);

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_CONFIG } from '../config/env.config.js';
+import { optimizeImage } from '../utils/cloudinary.js';
 
 const SearchBar = ({ showFilters = false }) => {
   const navigate = useNavigate();
@@ -120,8 +121,9 @@ const SearchBar = ({ showFilters = false }) => {
               >
                 {suggestion.image ? (
                   <img
-                    src={suggestion.image}
+                    src={optimizeImage(suggestion.image, { width: 48, height: 48 })}
                     alt={suggestion.name}
+                    loading="lazy"
                     className="w-12 h-12 rounded-full object-cover"
                   />
                 ) : (

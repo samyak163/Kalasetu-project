@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs';
+﻿import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import User from '../models/userModel.js';
 import { signJwt, setAuthCookie, clearAuthCookie } from '../utils/generateToken.js';
@@ -31,8 +31,8 @@ const resetPasswordSchema = z.object({
 });
 
 
-// --- Register New Customer ---
-// @desc    Register a new customer user
+// --- Register New USER ---
+// @desc    Register a new USER user
 // @route   POST /api/users/register
 // @access  Public
 export const registerUser = asyncHandler(async (req, res, next) => {
@@ -75,7 +75,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-// --- Login Customer ---
+// --- Login USER ---
 // @desc    Auth user & get token
 // @route   POST /api/users/login
 // @access  Public
@@ -108,7 +108,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
   });
 });
 
-// --- Logout Customer ---
+// --- Logout USER ---
 // @desc    Log user out
 // @route   POST /api/users/logout
 // @access  Public
@@ -117,7 +117,7 @@ export const logoutUser = asyncHandler(async (req, res, next) => {
   res.status(200).json({ message: 'User logged out successfully' });
 });
 
-// --- Get Customer Profile ---
+// --- Get USER Profile ---
 // @desc    Get user profile
 // @route   GET /api/users/me
 // @access  Private

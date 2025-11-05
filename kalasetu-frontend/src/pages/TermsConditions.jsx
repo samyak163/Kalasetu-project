@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 const TermsConditions = () => {
   return (
@@ -21,7 +21,7 @@ const TermsConditions = () => {
           <p>Our service allows you to:</p>
           <ul className="list-disc pl-6 space-y-2">
             <li>Browse and discover handmade products from local artisans</li>
-            <li>Create an account as a customer or artisan</li>
+            <li>Create an account as a USER or artisan</li>
             <li>Purchase products from artisans</li>
             <li>List and sell your handmade products (as an artisan)</li>
           </ul>
@@ -46,7 +46,7 @@ const TermsConditions = () => {
             <li>Provide accurate product descriptions and images</li>
             <li>Honor the prices and terms you set for your products</li>
             <li>Fulfill orders in a timely manner</li>
-            <li>Provide quality customer service to buyers</li>
+            <li>Provide quality USER service to buyers</li>
             <li>Comply with all applicable laws and regulations</li>
           </ul>
         </section>

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /artisan/dashboard/
+Disallow: /admin/
+
+Sitemap: https://kalasetu.com/api/sitemap.xml
+
+

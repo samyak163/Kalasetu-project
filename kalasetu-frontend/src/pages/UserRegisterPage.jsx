@@ -1,9 +1,9 @@
-import React, { useState, useContext } from 'react';
+﻿import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 // FIX: Changed to an absolute path from the project root '/src/'
 import { AuthContext } from '/src/context/AuthContext.jsx';
 
-const CustomerRegisterPage = () => {
+const UserRegisterPage = () => {
     const [formData, setFormData] = useState({ 
         fullName: '', 
         email: '', 
@@ -120,7 +120,7 @@ const CustomerRegisterPage = () => {
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-600">
                             Already have an account?{' '}
-                            <Link to="/customer/login" className="font-semibold text-[#A55233] hover:text-[#8e462b] transition-colors">
+                            <Link to="/user/login" className="font-semibold text-[#A55233] hover:text-[#8e462b] transition-colors">
                                 Sign in
                             </Link>
                         </p>
@@ -131,5 +131,6 @@ const CustomerRegisterPage = () => {
     );
 };
 
-export default CustomerRegisterPage;
+export default UserRegisterPage;
 
+ 

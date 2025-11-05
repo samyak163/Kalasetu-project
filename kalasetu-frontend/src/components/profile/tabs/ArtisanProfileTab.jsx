@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useContext } from 'react';
+﻿import React, { useEffect, useState, useContext } from 'react';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 import {
   getArtisanProfile,
   updateArtisanProfile,
   uploadProfilePhoto,
 } from '../../../lib/api/artisanProfile.js';
+import { optimizeImage } from '../../../utils/cloudinary.js';
 
 const ArtisanProfileTab = () => {
   const { showToast } = useContext(ToastContext);
@@ -98,7 +99,7 @@ const ArtisanProfileTab = () => {
         <div className="flex items-center gap-6">
           <div className="h-32 w-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
             {formData.profileImageUrl ? (
-              <img src={formData.profileImageUrl} alt="Profile" className="h-full w-full object-cover" />
+              <img src={optimizeImage(formData.profileImageUrl, { width: 128, height: 128 })} loading="lazy" alt="Profile" className="h-full w-full object-cover" />
             ) : (
               <div className="h-full w-full bg-[#A55233] text-white flex items-center justify-center text-2xl font-semibold">
                 {getInitials(formData.fullName)}
@@ -131,7 +132,7 @@ const ArtisanProfileTab = () => {
 
       <div>
         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">About Me</label>
-        <textarea name="bio" value={formData.bio} onChange={handleInputChange} rows={4} className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white resize-none" placeholder="Tell customers about your experience..." maxLength={500} />
+        <textarea name="bio" value={formData.bio} onChange={handleInputChange} rows={4} className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white resize-none" placeholder="Tell USERs about your experience..." maxLength={500} />
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{(formData.bio || '').length}/500 characters</p>
       </div>
 

@@ -1,7 +1,8 @@
-import express from 'express';
+﻿import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
+import hpp from 'hpp';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
@@ -29,7 +30,7 @@ import { initResend } from './utils/email.js';
 import artisanRoutes from './routes/artisanRoutes.js'; 
 // Routes for ARTISAN authentication (login, register, me, logout)
 import authRoutes from './routes/authRoutes.js';
-// Routes for CUSTOMER authentication (login, register, me, logout)
+// Routes for USER authentication (login, register, me, logout)
 import userAuthRoutes from './routes/userAuthRoutes.js'; 
 import uploadRoutes from './routes/uploadRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
@@ -37,10 +38,14 @@ import seoRoutes from './routes/seoRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
+import callRoutes from './routes/callRoutes.js';
+import bookingRoutes from './routes/bookingRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import artisanProfileRoutes from './routes/artisanProfileRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import availabilityRoutes from './routes/availabilityRoutes.js';
 
 
 // --- Load Environment Variables ---
@@ -81,6 +86,7 @@ if (JOBS_CONFIG.enabled) {
 
 // --- Middleware ---
 app.use(helmet()); // Security headers
+app.use(hpp()); // HTTP Parameter Pollution protection
 
 // Request logging (dev only)
 if (process.env.NODE_ENV !== 'production') {
@@ -147,7 +153,7 @@ app.use('/api/artisans', artisanRoutes);
 app.use('/api/artisan', artisanProfileRoutes);
 // /api/auth -> Handles ARTISAN authentication
 app.use('/api/auth', authRoutes);
-// /api/users -> Handles CUSTOMER authentication
+// /api/users -> Handles USER authentication
 app.use('/api/users', userAuthRoutes); 
 // /api/uploads -> Cloudinary signed upload helpers
 app.use('/api/uploads', uploadRoutes);
@@ -161,12 +167,19 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/chat', chatRoutes);
 // /api/video -> Daily.co video call endpoints
 app.use('/api/video', videoRoutes);
+// Calls and booking
+app.use('/api/calls', callRoutes);
+app.use('/api/bookings', bookingRoutes);
 // /api/jobs -> QStash job webhooks
 app.use('/api/jobs', jobRoutes);
 // /api/payments -> Razorpay payment endpoints
 app.use('/api/payments', paymentRoutes);
 // /api/contact -> Contact form
 app.use('/api/contact', contactRoutes);
+// /api/reviews -> Reviews endpoints
+app.use('/api/reviews', reviewRoutes);
+// /api/artisan/availability -> Availability endpoints (artisan auth)
+app.use('/api/artisan/availability', availabilityRoutes);
 
 // --- Debug Logging (Updated) ---
 // This is now accurate for our new structure
@@ -183,7 +196,7 @@ console.log('- POST /api/auth/register');
 console.log('- POST /api/auth/login');
 console.log('- POST /api/auth/logout');
 console.log('- GET /api/auth/me');
-console.log('--- Customer Auth ---');
+console.log('--- USER Auth ---');
 console.log('- POST /api/users/register');
 console.log('- POST /api/users/login');
 console.log('- POST /api/users/logout');
@@ -191,6 +204,11 @@ console.log('- GET /api/users/me');
 console.log('--- Search ---');
 console.log('- GET /api/search/artisans');
 console.log('- GET /api/search/facets');
+console.log('--- Calls & Bookings ---');
+console.log('- GET /api/calls/history');
+console.log('- POST /api/bookings');
+console.log('- GET /api/bookings/me');
+console.log('- GET /api/bookings/artisan');
 // ---------------------------------
 
 // --- Error Handlers (Must be last) ---

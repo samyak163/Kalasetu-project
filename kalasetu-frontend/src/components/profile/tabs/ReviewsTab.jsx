@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+﻿import React, { useEffect, useState, useContext } from 'react';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 
 const ReviewsTab = () => {
@@ -29,7 +29,7 @@ const ReviewsTab = () => {
       setReviews([
         {
           id: 1,
-          customer: 'Sarah Johnson',
+          USER: 'Sarah Johnson',
           rating: 5,
           comment: 'Excellent work! Very professional and punctual. Highly recommend!',
           service: 'Plumbing Repair',
@@ -38,7 +38,7 @@ const ReviewsTab = () => {
         },
         {
           id: 2,
-          customer: 'Raj Kumar',
+          USER: 'Raj Kumar',
           rating: 4,
           comment: 'Good service, but took slightly longer than expected.',
           service: 'Electrical Work',
@@ -68,7 +68,7 @@ const ReviewsTab = () => {
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map(star => (
           <span key={star} className={star <= rating ? 'text-yellow-400' : 'text-gray-300'}>
-            ⭐
+            â­
           </span>
         ))}
       </div>
@@ -92,7 +92,7 @@ const ReviewsTab = () => {
       <div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Reviews & Ratings</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          See what customers are saying about your services
+          See what USERs are saying about your services
         </p>
       </div>
 
@@ -117,7 +117,7 @@ const ReviewsTab = () => {
               return (
                 <div key={star} className="flex items-center gap-3">
                   <div className="text-sm font-medium text-gray-700 dark:text-gray-300 w-12">
-                    {star} ⭐
+                    {star} â­
                   </div>
                   <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div 
@@ -137,17 +137,17 @@ const ReviewsTab = () => {
 
       {/* Reviews List */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Customer Reviews</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">USER Reviews</h3>
         {reviews.length > 0 ? (
           <div className="space-y-4">
             {reviews.map(review => (
               <div key={review.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">{review.customer}</div>
+                    <div className="font-semibold text-gray-900 dark:text-white">{review.USER}</div>
                     <div className="flex items-center gap-2 mt-1">
                       {renderStars(review.rating)}
-                      <span className="text-xs text-gray-500 dark:text-gray-400">• {review.date}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">â€¢ {review.date}</span>
                     </div>
                   </div>
                   <div className="text-xs text-gray-500 dark:text-gray-400">{review.service}</div>
@@ -204,7 +204,7 @@ const ReviewsTab = () => {
           </div>
         ) : (
           <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-            <div className="text-4xl mb-4">⭐</div>
+            <div className="text-4xl mb-4">â­</div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
               No reviews yet
             </h3>

@@ -1,4 +1,4 @@
-import posthog from 'posthog-js';
+﻿import posthog from 'posthog-js';
 import { ANALYTICS_CONFIG } from '../config/env.config.js';
 
 /**
@@ -6,7 +6,7 @@ import { ANALYTICS_CONFIG } from '../config/env.config.js';
  */
 export const initPostHog = () => {
   if (!ANALYTICS_CONFIG.enabled || ANALYTICS_CONFIG.provider !== 'posthog') {
-    console.log('⚠️ PostHog analytics is disabled');
+    console.log('âš ï¸ PostHog analytics is disabled');
     return;
   }
 
@@ -36,9 +36,9 @@ export const initPostHog = () => {
       respect_dnt: true,
     });
 
-    console.log('✅ PostHog initialized');
+    console.log('âœ… PostHog initialized');
   } catch (error) {
-    console.error('❌ Failed to initialize PostHog:', error.message);
+    console.error('âŒ Failed to initialize PostHog:', error.message);
   }
 };
 
@@ -53,13 +53,13 @@ export const identifyPostHogUser = (user) => {
     posthog.identify(user.id || user._id, {
       email: user.email,
       name: user.fullName || user.username,
-      accountType: user.role || 'customer',
+      accountType: user.role || 'USER',
       verified: user.verified,
       createdAt: user.createdAt,
     });
-    console.log('✅ PostHog user identified');
+    console.log('âœ… PostHog user identified');
   } catch (error) {
-    console.error('❌ Failed to identify PostHog user:', error.message);
+    console.error('âŒ Failed to identify PostHog user:', error.message);
   }
 };
 
@@ -72,7 +72,7 @@ export const resetPostHog = () => {
   try {
     posthog.reset();
   } catch (error) {
-    console.error('❌ Failed to reset PostHog:', error.message);
+    console.error('âŒ Failed to reset PostHog:', error.message);
   }
 };
 
@@ -87,7 +87,7 @@ export const trackPostHogEvent = (eventName, properties = {}) => {
   try {
     posthog.capture(eventName, properties);
   } catch (error) {
-    console.error('❌ Failed to track PostHog event:', error.message);
+    console.error('âŒ Failed to track PostHog event:', error.message);
   }
 };
 
@@ -101,7 +101,7 @@ export const setPostHogUserProperties = (properties) => {
   try {
     posthog.people.set(properties);
   } catch (error) {
-    console.error('❌ Failed to set PostHog user properties:', error.message);
+    console.error('âŒ Failed to set PostHog user properties:', error.message);
   }
 };
 
@@ -116,7 +116,7 @@ export const isFeatureEnabled = (featureKey) => {
   try {
     return posthog.isFeatureEnabled(featureKey);
   } catch (error) {
-    console.error('❌ Failed to check PostHog feature flag:', error.message);
+    console.error('âŒ Failed to check PostHog feature flag:', error.message);
     return false;
   }
 };
@@ -132,7 +132,7 @@ export const getFeatureFlagPayload = (featureKey) => {
   try {
     return posthog.getFeatureFlagPayload(featureKey);
   } catch (error) {
-    console.error('❌ Failed to get PostHog feature flag payload:', error.message);
+    console.error('âŒ Failed to get PostHog feature flag payload:', error.message);
     return null;
   }
 };
@@ -152,8 +152,18 @@ export const trackPageView = (pageName, properties = {}) => {
       ...properties,
     });
   } catch (error) {
-    console.error('❌ Failed to track PostHog page view:', error.message);
+    console.error('âŒ Failed to track PostHog page view:', error.message);
   }
 };
 
 export default posthog;
+
+// Lightweight helpers for flags/experiments
+export const getVariant = (flagKey, defaultVariant = 'control') => {
+  try {
+    const value = posthog.getFeatureFlag?.(flagKey);
+    return value ?? defaultVariant;
+  } catch {
+    return defaultVariant;
+  }
+};

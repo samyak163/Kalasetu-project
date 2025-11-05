@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+﻿import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
 // Core Layout & Pages
@@ -13,13 +13,16 @@ const ArtisanDashboardPage = lazy(() => import('./pages/ArtisanDashboardPage.jsx
 const ArtisanAccountPage = lazy(() => import('./pages/ArtisanAccountPage.jsx'));
 const ArtisanProfileEditor = lazy(() => import('./pages/ArtisanProfileEditor.jsx'));
 
-// --- NEW CUSTOMER PAGES --- (lazy)
-const CustomerLoginPage = lazy(() => import('./pages/CustomerLoginPage.jsx'));
-const CustomerRegisterPage = lazy(() => import('./pages/CustomerRegisterPage.jsx'));
+// --- NEW USER PAGES --- (lazy)
+const UserLoginPage = lazy(() => import('./pages/UserLoginPage.jsx'));
+const UserRegisterPage = lazy(() => import('./pages/UserRegisterPage.jsx'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
 const PhoneOTPPage = lazy(() => import('./pages/PhoneOTPPage.jsx'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail.jsx'));
-const CustomerProfilePage = lazy(() => import('./pages/CustomerProfilePage.jsx'));
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage.jsx'));
+const UserDashboard = lazy(() => import('./pages/dashboard/user/UserDashboard.jsx'));
+const UserPreferences = lazy(() => import('./pages/dashboard/user/Preferences.jsx'));
+const UserSupport = lazy(() => import('./pages/dashboard/user/Support.jsx'));
 
 // Unified selectors (lazy)
 const AuthSelector = lazy(() => import('./pages/AuthSelector.jsx'));
@@ -33,9 +36,12 @@ import CancellationRefund from './pages/CancellationRefund.jsx';
 
 // --- MESSAGING PAGE --- (lazy)
 const MessagesPage = lazy(() => import('./pages/MessagesPage.jsx'));
+const SearchResults = lazy(() => import('./pages/SearchResults.jsx'));
 
 // --- VIDEO CALL PAGE --- (lazy)
 const VideoCallPage = lazy(() => import('./pages/VideoCallPage.jsx'));
+const Bookings = lazy(() => import('./pages/dashboard/artisan/Bookings.jsx'));
+const CallsHistory = lazy(() => import('./pages/dashboard/artisan/CallsHistory.jsx'));
 
 // Auth Components
 import RequireAuth from './components/RequireAuth.jsx';
@@ -61,20 +67,20 @@ function App() {
   <Route path="phone-otp" element={<PhoneOTPPage />} />
   <Route path="verify-email" element={<VerifyEmail />} />
         
-        {/* Customer Auth Routes (NEW) */}
-        <Route path="customer/login" element={<CustomerLoginPage />} />
-        <Route path="customer/register" element={<CustomerRegisterPage />} />
-        <Route path="customer/forgot-password" element={<ForgotPassword customer />} />
+        {/* USER Auth Routes (NEW) */}
+        <Route path="user/login" element={<UserLoginPage />} />
+        <Route path="user/register" element={<UserRegisterPage />} />
+        <Route path="user/forgot-password" element={<ForgotPassword USER />} />
 
         {/* Policy Pages */}
         <Route path="privacy" element={<PrivacyPolicy />} />
         <Route path="terms" element={<TermsConditions />} />
         <Route path="shipping" element={<ShippingPolicy />} />
-        <Route path="cancellation-refund" element={<CancellationRefund />} />
+        <Route path="refunds" element={<CancellationRefund />} />
 
-        {/* Protected Artisan Route */}
+        {/* Protected Artisan Routes */}
         <Route 
-          path="dashboard" 
+          path="artisan/dashboard" 
           element={
             // This now checks if the logged-in user is an 'artisan'
             <RequireAuth role="artisan">
@@ -82,10 +88,19 @@ function App() {
             </RequireAuth>
           } 
         />
+        {/* Artisan Bookings */}
+        <Route
+          path="artisan/dashboard/bookings"
+          element={
+            <RequireAuth role="artisan">
+              <Bookings />
+            </RequireAuth>
+          }
+        />
 
         {/* Artisan Profile Editor (Protected) */}
         <Route 
-          path="dashboard/profile-editor" 
+          path="artisan/dashboard/profile-editor" 
           element={
             <RequireAuth role="artisan">
               <ArtisanProfileEditor />
@@ -95,7 +110,7 @@ function App() {
 
         {/* Artisan Account (Profile + tabs) */}
         <Route
-          path="dashboard/account"
+          path="artisan/dashboard/account"
           element={
             <RequireAuth role="artisan">
               <ArtisanAccountPage />
@@ -103,7 +118,10 @@ function App() {
           }
         />
 
-        {/* Messages Page (Protected - Both artisans and customers) */}
+        {/* Search Results */}
+        <Route path="search" element={<SearchResults />} />
+
+        {/* Messages Page (Protected - Both artisans and USERs) */}
         <Route 
           path="messages" 
           element={
@@ -113,7 +131,11 @@ function App() {
           } 
         />
 
-        {/* Video Call Page (Protected - Both artisans and customers) */}
+        {/* Chat aliases */}
+        <Route path="artisan/chat" element={<RequireAuth role="artisan"><MessagesPage /></RequireAuth>} />
+        <Route path="user/chat" element={<RequireAuth role="user"><MessagesPage /></RequireAuth>} />
+
+        {/* Video Call Page (Protected - Both artisans and USERs) */}
         <Route 
           path="video-call" 
           element={
@@ -122,18 +144,26 @@ function App() {
             </RequireAuth>
           } 
         />
+        {/* Calls alias */}
+        <Route path="artisan/calls" element={<RequireAuth role="artisan"><VideoCallPage /></RequireAuth>} />
+        <Route path="artisan/calls/history" element={<RequireAuth role="artisan"><CallsHistory /></RequireAuth>} />
 
-        {/* Customer Profile (Protected) */}
+        {/* USER Profile (Protected) */}
         <Route
           path="profile"
           element={
             <RequireAuth role="user">
-              <CustomerProfilePage />
+              <UserProfilePage />
             </RequireAuth>
           }
         />
+        {/* USER Dashboard */}
+        <Route path="dashboard" element={<RequireAuth role="user"><UserDashboard /></RequireAuth>}>
+          <Route path="preferences" element={<UserPreferences />} />
+          <Route path="support" element={<UserSupport />} />
+        </Route>
         
-        {/* Customer protected routes can be added here in future releases */}
+        {/* USER protected routes can be added here in future releases */}
 
       </Route>
     </Routes>

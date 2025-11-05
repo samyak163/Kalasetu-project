@@ -58,9 +58,13 @@ export const indexArtisan = async (artisan) => {
       phoneNumber: artisan.phoneNumber,
       craft: artisan.craft,
       bio: artisan.bio,
+      businessName: artisan.businessName,
+      languagesSpoken: artisan.languagesSpoken,
       location: artisan.location,
       publicId: artisan.publicId,
       profileImage: artisan.profileImageUrl || artisan.profileImage,
+      rating: artisan.averageRating,
+      reviewCount: artisan.totalReviews,
       createdAt: artisan.createdAt,
     };
 
@@ -131,9 +135,13 @@ export const bulkIndexArtisans = async (artisans) => {
       email: artisan.email,
       craft: artisan.craft,
       bio: artisan.bio,
+      businessName: artisan.businessName,
+      languagesSpoken: artisan.languagesSpoken,
       location: artisan.location,
       publicId: artisan.publicId,
       profileImage: artisan.profileImageUrl || artisan.profileImage,
+      rating: artisan.averageRating,
+      reviewCount: artisan.totalReviews,
     }));
 
     const result = await index.saveObjects(records);
@@ -157,8 +165,10 @@ export const configureAlgoliaIndex = async () => {
     const result = await index.setSettings({
       searchableAttributes: [
         'fullName',
+        'businessName',
         'craft',
         'bio',
+        'languagesSpoken',
         'location'
       ],
       attributesForFaceting: [
@@ -175,7 +185,7 @@ export const configureAlgoliaIndex = async () => {
         'exact',
         'custom'
       ],
-      attributesToHighlight: ['fullName', 'craft', 'bio'],
+      attributesToHighlight: ['fullName', 'businessName', 'craft', 'bio'],
       attributesToSnippet: ['bio:20'],
       highlightPreTag: '<mark>',
       highlightPostTag: '</mark>',

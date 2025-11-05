@@ -15,7 +15,7 @@ const ProfilePhotoUploader = ({ value, onUpload, onDelete, uploading }) => {
 
   return (
     <div className="flex items-center gap-4">
-      <img src={preview || value} alt="Profile" className="w-24 h-24 rounded-full object-cover border" />
+      <img src={preview || value} alt="Profile" loading="lazy" className="w-24 h-24 rounded-full object-cover border" />
       <div className="flex gap-2">
         <button
           type="button"

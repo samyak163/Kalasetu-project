@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../lib/axios.js';
 
-const ForgotPassword = ({ customer }) => {
+const ForgotPassword = ({ USER }) => {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -13,7 +13,7 @@ const ForgotPassword = ({ customer }) => {
     setLoading(true);
     setError(null);
     try {
-      const url = customer ? '/api/users/forgot-password' : '/api/auth/forgot-password';
+      const url = USER ? '/api/users/forgot-password' : '/api/auth/forgot-password';
       await api.post(url, { email });
       setSubmitted(true);
     } catch (err) {
@@ -74,7 +74,7 @@ const ForgotPassword = ({ customer }) => {
             </form>
           )}
           <div className="mt-6 text-center">
-            <Link to="/login" className="text-sm text-[#A55233] hover:underline font-semibold">
+            <Link to="/artisan/login" className="text-sm text-[#A55233] hover:underline font-semibold">
               Back to Login
             </Link>
           </div>

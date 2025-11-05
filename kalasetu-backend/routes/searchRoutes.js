@@ -1,11 +1,19 @@
 import express from 'express';
 import { searchArtisans, getSearchFacets, getSearchSuggestions } from '../controllers/searchController.js';
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 
-router.get('/artisans', searchArtisans);
-router.get('/suggestions', getSearchSuggestions);
-router.get('/facets', getSearchFacets);
+const searchLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120, // allow up to 120 search requests per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.get('/artisans', searchLimiter, searchArtisans);
+router.get('/suggestions', searchLimiter, getSearchSuggestions);
+router.get('/facets', searchLimiter, getSearchFacets);
 
 export default router;
 

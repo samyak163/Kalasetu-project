@@ -67,11 +67,10 @@ const RegisterPage = () => {
                     window.posthog.capture('artisan_registration_completed');
                 }
 
-                // Show success message
-                alert('Registration successful! Redirecting to dashboard...');
-                
-                // Redirect to dashboard
-                navigate(response.data.redirectTo || '/artisan/dashboard', { replace: true });
+                // Redirect to artisan dashboard quickly
+                setTimeout(() => {
+                    navigate(response.data.redirectTo || '/artisan/dashboard/account', { replace: true });
+                }, 800);
             }
         } catch (err) {
             console.error('Registration error:', err);
@@ -237,7 +236,7 @@ const RegisterPage = () => {
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-600">
                             Already have an account?{' '}
-                            <Link to="/login" className="font-semibold text-[#A55233] hover:text-[#8e462b] transition-colors">
+                            <Link to="/artisan/login" className="font-semibold text-[#A55233] hover:text-[#8e462b] transition-colors">
                                 Sign in
                             </Link>
                         </p>

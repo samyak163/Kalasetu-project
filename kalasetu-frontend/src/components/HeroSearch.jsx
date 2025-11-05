@@ -16,7 +16,6 @@ const HeroSearch = () => (
                 <div className="flex-1 w-full flex items-center">
                     <span className="text-gray-500 pl-2"><LocationIcon /></span>
                     <input type="text" placeholder="Kothrud, Pune" className="w-full p-2 text-gray-800 focus:outline-none" />
-                    <button className="text-gray-600 hover:text-[#A55233] p-2" title="Use current location"><CurrentLocationIcon /></button>
                 </div>
                 <div className="w-full md:w-px bg-gray-200 h-px md:h-8"></div>
                 <div className="flex-1 w-full flex items-center">

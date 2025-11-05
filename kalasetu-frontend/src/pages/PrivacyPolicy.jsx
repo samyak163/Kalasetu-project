@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 const PrivacyPolicy = () => {
   return (
@@ -33,8 +33,8 @@ const PrivacyPolicy = () => {
           <h2 className="text-2xl font-semibold text-gray-900 mt-8">3. How We Use Your Information</h2>
           <p>We use your personal data for the following purposes:</p>
           <ul className="list-disc pl-6 space-y-2">
-            <li>To register you as a new customer or artisan</li>
-            <li>To manage your account and provide customer support</li>
+            <li>To register you as a new USER or artisan</li>
+            <li>To manage your account and provide USER support</li>
             <li>To process and deliver orders</li>
             <li>To send you updates about your orders and account</li>
             <li>To improve our website and services</li>

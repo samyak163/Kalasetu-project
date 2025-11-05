@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { SEARCH_CONFIG } from '../config/env.config.js';
 import { searchClient } from '../lib/algolia.js';
+import { optimizeImage } from '../utils/cloudinary.js';
 
 export default function ArtisanSearch() {
   const [query, setQuery] = useState('');
@@ -78,8 +79,9 @@ export default function ArtisanSearch() {
             <div className="flex items-start gap-4">
               {artisan.profileImage && (
                 <img
-                  src={artisan.profileImage}
+                  src={optimizeImage(artisan.profileImage, { width: 64, height: 64 })}
                   alt={artisan.fullName}
+                  loading="lazy"
                   className="w-16 h-16 rounded-full object-cover"
                 />
               )}

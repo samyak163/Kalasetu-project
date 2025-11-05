@@ -1,4 +1,4 @@
-import { Resend } from 'resend';
+﻿import { Resend } from 'resend';
 import { EMAIL_CONFIG } from '../config/env.config.js';
 
 let resendClient = null;
@@ -9,7 +9,7 @@ let resendClient = null;
  */
 export const initResend = () => {
   if (!EMAIL_CONFIG.enabled || EMAIL_CONFIG.provider !== 'resend') {
-    console.log('⚠️ Resend email service is disabled');
+    console.log('âš ï¸ Resend email service is disabled');
     return null;
   }
 
@@ -20,10 +20,10 @@ export const initResend = () => {
 
   try {
     resendClient = new Resend(EMAIL_CONFIG.resend.apiKey);
-    console.log('✅ Resend client initialized');
+    console.log('âœ… Resend client initialized');
     return resendClient;
   } catch (error) {
-    console.error('❌ Failed to initialize Resend:', error.message);
+    console.error('âŒ Failed to initialize Resend:', error.message);
     return null;
   }
 };
@@ -47,7 +47,7 @@ export const getResendClient = () => {
 export const sendEmail = async (options) => {
   const client = getResendClient();
   if (!client) {
-    console.log('📧 Email would be sent:', options);
+    console.log('ðŸ“§ Email would be sent:', options);
     return null;
   }
 
@@ -63,10 +63,10 @@ export const sendEmail = async (options) => {
       reply_to: replyTo,
     });
 
-    console.log(`✅ Email sent to ${to}: ${subject}`);
+    console.log(`âœ… Email sent to ${to}: ${subject}`);
     return response;
   } catch (error) {
-    console.error('❌ Failed to send email:', error.message);
+    console.error('âŒ Failed to send email:', error.message);
     return null;
   }
 };
@@ -97,16 +97,16 @@ export const sendWelcomeEmail = async (to, name) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🎨 Welcome to KalaSetu!</h1>
+          <h1>ðŸŽ¨ Welcome to KalaSetu!</h1>
         </div>
         <div class="content">
-          <h2>Hello ${name}! 👋</h2>
-          <p>We're excited to have you join the KalaSetu community - where traditional artisans connect with customers who appreciate authentic craftsmanship.</p>
+          <h2>Hello ${name}! ðŸ‘‹</h2>
+          <p>We're excited to have you join the KalaSetu community - where traditional artisans connect with USERs who appreciate authentic craftsmanship.</p>
           
           <h3>What's next?</h3>
           <ul>
             <li>Complete your profile to showcase your skills</li>
-            <li>Upload your portfolio to attract customers</li>
+            <li>Upload your portfolio to attract USERs</li>
             <li>Start connecting with potential clients</li>
             <li>Explore other artisans in the community</li>
           </ul>
@@ -126,7 +126,7 @@ export const sendWelcomeEmail = async (to, name) => {
 
   return sendEmail({
     to,
-    subject: 'Welcome to KalaSetu - Let\'s Get Started! 🎨',
+    subject: 'Welcome to KalaSetu - Let\'s Get Started! ðŸŽ¨',
     html,
   });
 };
@@ -161,7 +161,7 @@ export const sendPasswordResetEmail = async (to, name, resetToken) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>🔒 Password Reset Request</h1>
+          <h1>ðŸ”’ Password Reset Request</h1>
         </div>
         <div class="content">
           <h2>Hello ${name},</h2>
@@ -172,7 +172,7 @@ export const sendPasswordResetEmail = async (to, name, resetToken) => {
           <a href="${resetUrl}" class="button">Reset Password</a>
           
           <div class="warning">
-            <strong>⚠️ Security Notice:</strong>
+            <strong>âš ï¸ Security Notice:</strong>
             <ul style="margin: 10px 0 0 0;">
               <li>This link will expire in 1 hour</li>
               <li>If you didn't request this, please ignore this email</li>
@@ -229,7 +229,7 @@ export const sendVerificationEmail = async (to, name, verificationToken) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>✉️ Verify Your Email</h1>
+          <h1>âœ‰ï¸ Verify Your Email</h1>
         </div>
         <div class="content">
           <h2>Hello ${name}!</h2>
@@ -292,7 +292,7 @@ export const sendOrderConfirmationEmail = async (to, name, orderDetails) => {
     <body>
       <div class="container">
         <div class="header">
-          <h1>✅ Order Confirmed!</h1>
+          <h1>âœ… Order Confirmed!</h1>
         </div>
         <div class="content">
           <h2>Thank you, ${name}!</h2>
@@ -303,11 +303,11 @@ export const sendOrderConfirmationEmail = async (to, name, orderDetails) => {
             ${items.map(item => `
               <div class="item">
                 <strong>${item.name}</strong><br>
-                Quantity: ${item.quantity} × ₹${item.price.toLocaleString('en-IN')}
+                Quantity: ${item.quantity} Ã— â‚¹${item.price.toLocaleString('en-IN')}
               </div>
             `).join('')}
             <div class="total">
-              Total: ₹${total.toLocaleString('en-IN')}
+              Total: â‚¹${total.toLocaleString('en-IN')}
             </div>
           </div>
 
@@ -397,7 +397,7 @@ export const sendNotificationEmail = async (to, name, notification) => {
 export const sendBatchEmails = async (emails) => {
   const client = getResendClient();
   if (!client) {
-    console.log('📧 Batch emails would be sent:', emails.length);
+    console.log('ðŸ“§ Batch emails would be sent:', emails.length);
     return [];
   }
 
@@ -409,10 +409,10 @@ export const sendBatchEmails = async (emails) => {
     const successful = results.filter(r => r.status === 'fulfilled').length;
     const failed = results.filter(r => r.status === 'rejected').length;
 
-    console.log(`✅ Sent ${successful} emails, ${failed} failed`);
+    console.log(`âœ… Sent ${successful} emails, ${failed} failed`);
     return results;
   } catch (error) {
-    console.error('❌ Failed to send batch emails:', error.message);
+    console.error('âŒ Failed to send batch emails:', error.message);
     return [];
   }
 };
@@ -442,7 +442,7 @@ export const sendContactFormEmail = async (data) => {
     </head>
     <body>
       <div class="container">
-        <h2>📬 New Contact Form Submission</h2>
+        <h2>ðŸ“¬ New Contact Form Submission</h2>
         
         <div class="field">
           <div class="label">From:</div>

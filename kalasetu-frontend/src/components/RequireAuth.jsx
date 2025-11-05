@@ -1,4 +1,4 @@
-import { useContext } from "react";
+﻿import { useContext } from "react";
 import { useLocation, Navigate } from "react-router-dom";
 // Use absolute path
 import { AuthContext } from "/src/context/AuthContext.jsx";
@@ -20,14 +20,14 @@ const RequireAuth = ({ children, role = 'user' }) => {
   // 1. Check: Is anyone logged in?
   if (!auth.user) {
     // Redirect them to the correct login page based on the role we want
-    const loginPath = role === 'artisan' ? '/login' : '/customer/login';
+    const loginPath = role === 'artisan' ? '/artisan/login' : '/user/login';
     return <Navigate to={loginPath} state={{ from: location }} replace />;
   }
 
   // 2. Check: Is the logged-in user the correct TYPE?
   if (auth.userType !== role) {
     // User is logged in, but as the wrong type. Send them home.
-    // (e.g., a customer trying to access /dashboard)
+    // (e.g., a USER trying to access /dashboard)
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 

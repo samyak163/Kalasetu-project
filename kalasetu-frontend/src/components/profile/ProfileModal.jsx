@@ -19,9 +19,20 @@ const tabs = [
   { key: 'help', label: 'Help & Support', icon: '❓' },
 ];
 
-const ProfileModal = ({ isOpen, onClose, user, userType }) => {
+const ProfileModal = () => {
+  const { auth, logout } = useContext(AuthContext);
   const { showToast } = useContext(ToastContext);
+  const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+
+  useEffect(() => {
+    const handleOpenProfile = () => {
+      setIsOpen(true);
+      setActiveTab('profile');
+    };
+    window.addEventListener('open-profile', handleOpenProfile);
+    return () => window.removeEventListener('open-profile', handleOpenProfile);
+  }, []);
 
   useEffect(() => {
     // Prevent body scroll when modal is open
@@ -35,10 +46,10 @@ const ProfileModal = ({ isOpen, onClose, user, userType }) => {
     };
   }, [isOpen]);
 
-  if (!isOpen || !user) return null;
+  if (!isOpen || !auth.user || auth.userType !== 'user') return null;
 
   const handleClose = () => {
-    onClose();
+    setIsOpen(false);
   };
 
   const handleSaveSuccess = () => {
@@ -126,13 +137,13 @@ const ProfileModal = ({ isOpen, onClose, user, userType }) => {
 
           {/* Content Area */}
           <section className="flex-1 overflow-y-auto p-6">
-            {activeTab === 'profile' && <ProfileTab user={user} userType={userType} onSave={handleSaveSuccess} />}
-            {activeTab === 'ratings' && <RatingsTab user={user} userType={userType} />}
-            {activeTab === 'bookmarks' && <BookmarksTab user={user} userType={userType} />}
-            {activeTab === 'history' && <OrderHistoryTab user={user} userType={userType} />}
-            {activeTab === 'preferences' && <PreferencesTab user={user} userType={userType} onSave={handleSaveSuccess} />}
-            {activeTab === 'appearance' && <AppearanceTab user={user} userType={userType} />}
-            {activeTab === 'help' && <HelpSupportTab userType={userType} />}
+            {activeTab === 'profile' && <ProfileTab user={auth.user} onSave={handleSaveSuccess} />}
+            {activeTab === 'ratings' && <RatingsTab user={auth.user} />}
+            {activeTab === 'bookmarks' && <BookmarksTab user={auth.user} />}
+            {activeTab === 'history' && <OrderHistoryTab user={auth.user} />}
+            {activeTab === 'preferences' && <PreferencesTab user={auth.user} onSave={handleSaveSuccess} />}
+            {activeTab === 'appearance' && <AppearanceTab user={auth.user} />}
+            {activeTab === 'help' && <HelpSupportTab />}
           </section>
         </div>
       </div>

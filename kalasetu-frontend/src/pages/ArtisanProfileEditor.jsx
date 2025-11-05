@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { getArtisanProfile, updateArtisanProfile, uploadProfilePhoto, deleteProfilePhoto, updateBankDetails, updateDocuments, getVerificationStatus, uploadVerificationDocument, setSlug, initiateEmailChange, confirmEmailChange } from '../lib/api/artisanProfile.js';
 import ProfilePhotoUploader from '../components/ProfilePhotoUploader.jsx';
@@ -168,7 +168,7 @@ const ArtisanProfileEditor = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Loading…</div>;
+  if (loading) return <div className="p-8 text-center">Loadingâ€¦</div>;
   if (!profile) return <div className="p-8 text-center text-red-600">Failed to load profile</div>;
 
   return (
@@ -196,18 +196,18 @@ const ArtisanProfileEditor = () => {
           </Section>
         </aside>
         <section className="lg:col-span-3 space-y-6">
-          <Section title="Basic Information" actions={<button onClick={saveProfile} disabled={saving} className="px-3 py-2 bg-green-600 text-white rounded disabled:opacity-50">{saving ? 'Saving…' : 'Save Changes'}</button>}>
+          <Section title="Basic Information" actions={<button onClick={saveProfile} disabled={saving} className="px-3 py-2 bg-green-600 text-white rounded disabled:opacity-50">{saving ? 'Savingâ€¦' : 'Save Changes'}</button>}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <TextInput label="Full Name" value={profile.fullName} onChange={(v) => setProfile({ ...profile, fullName: v })} />
               <TextInput label="Business Name" value={profile.businessName} onChange={(v) => setProfile({ ...profile, businessName: v })} />
-              <TextInput label="Tagline" value={profile.tagline} onChange={(v) => setProfile({ ...profile, tagline: v })} placeholder="Expert plumber…" />
+              <TextInput label="Tagline" value={profile.tagline} onChange={(v) => setProfile({ ...profile, tagline: v })} placeholder="Expert plumberâ€¦" />
               <TextInput label="Craft" value={profile.craft} onChange={(v) => setProfile({ ...profile, craft: v })} />
               <TextInput label="Email" type="email" value={profile.email} onChange={(v) => setProfile({ ...profile, email: v })} />
               <TextInput label="Primary Phone" value={profile.phoneNumber} onChange={(v) => setProfile({ ...profile, phoneNumber: v })} />
               <TextInput label="Business Phone" value={profile.businessPhone} onChange={(v) => setProfile({ ...profile, businessPhone: v })} />
               <TextInput label="WhatsApp Number" value={profile.whatsappNumber} onChange={(v) => setProfile({ ...profile, whatsappNumber: v })} />
             </div>
-            <TextArea label="Bio" value={profile.bio} onChange={(v) => setProfile({ ...profile, bio: v })} placeholder="Tell customers about your experience, specialization, and why they should choose you" />
+            <TextArea label="Bio" value={profile.bio} onChange={(v) => setProfile({ ...profile, bio: v })} placeholder="Tell USERs about your experience, specialization, and why they should choose you" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700" htmlFor="slug">Public URL (slug)</label>
@@ -263,24 +263,24 @@ const ArtisanProfileEditor = () => {
           <Section title="Verification Documents" actions={<button onClick={saveDocuments} className="hidden" /> }>
             <form onSubmit={saveDocuments} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <TextInput label="Aadhar Number" value={verif?.aadhar?.number} onChange={()=>{}} placeholder="Optional here (you can update)" />
-              <TextInput label="Aadhar Document URL" value={verif?.aadhar?.url} onChange={()=>{}} placeholder="https://…" />
+              <TextInput label="Aadhar Document URL" value={verif?.aadhar?.url} onChange={()=>{}} placeholder="https://â€¦" />
               <input type="hidden" name="aadharNumber" defaultValue={verif?.aadhar?.number || ''} />
               <input type="hidden" name="aadharUrl" defaultValue={verif?.aadhar?.url || ''} />
 
               <TextInput label="PAN Number" value={verif?.pan?.number} onChange={()=>{}} placeholder="Optional here (you can update)" />
-              <TextInput label="PAN Document URL" value={verif?.pan?.url} onChange={()=>{}} placeholder="https://…" />
+              <TextInput label="PAN Document URL" value={verif?.pan?.url} onChange={()=>{}} placeholder="https://â€¦" />
               <input type="hidden" name="panNumber" defaultValue={verif?.pan?.number || ''} />
               <input type="hidden" name="panUrl" defaultValue={verif?.pan?.url || ''} />
 
-              <TextInput label="Police Verification URL" value={verif?.policeVerification?.url} onChange={()=>{}} placeholder="https://…" />
+              <TextInput label="Police Verification URL" value={verif?.policeVerification?.url} onChange={()=>{}} placeholder="https://â€¦" />
               <input type="hidden" name="policeUrl" defaultValue={verif?.policeVerification?.url || ''} />
 
               <TextInput label="Business License Number" value={verif?.businessLicense?.number} onChange={()=>{}} placeholder="Optional" />
-              <TextInput label="Business License URL" value={verif?.businessLicense?.url} onChange={()=>{}} placeholder="https://…" />
+              <TextInput label="Business License URL" value={verif?.businessLicense?.url} onChange={()=>{}} placeholder="https://â€¦" />
               <input type="hidden" name="licenseNumber" defaultValue={verif?.businessLicense?.number || ''} />
               <input type="hidden" name="licenseUrl" defaultValue={verif?.businessLicense?.url || ''} />
 
-              <TextInput label="Insurance URL" value={verif?.insurance?.url} onChange={()=>{}} placeholder="https://…" />
+              <TextInput label="Insurance URL" value={verif?.insurance?.url} onChange={()=>{}} placeholder="https://â€¦" />
               <input type="hidden" name="insuranceUrl" defaultValue={verif?.insurance?.url || ''} />
 
               <div className="md:col-span-2">

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+﻿import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -20,7 +20,7 @@ const ArtisanDashboardPage = () => {
                     <div className="md:col-span-2 space-y-8">
                         <div className="bg-white p-8 rounded-lg shadow-lg">
                             <h2 className="text-2xl font-bold text-[#A55233] mb-4">Your Public Profile</h2>
-                            <p className="text-gray-600 mb-4">This is your digital storefront. Share this link with your customers!</p>
+                            <p className="text-gray-600 mb-4">This is your digital storefront. Share this link with your USERs!</p>
                             <Link to={`/${currentUser?.publicId}`} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
                                 View Public Profile
                             </Link>
@@ -29,7 +29,7 @@ const ArtisanDashboardPage = () => {
                                                         <h2 className="text-2xl font-bold text-[#A55233] mb-4">Manage Your Profile</h2>
                                                         <p className="text-gray-600 mb-4">Keep your information, bio, and portfolio up to date.</p>
                                                         <button
-                                                            onClick={() => navigate('/dashboard/account')}
+                                                            onClick={() => navigate('/artisan/dashboard/account')}
                                                             className="mt-2 bg-[#A55233] text-white py-2 px-4 rounded-lg hover:bg-[#8f472c] transition-colors"
                                                         >
                                                             Edit Profile

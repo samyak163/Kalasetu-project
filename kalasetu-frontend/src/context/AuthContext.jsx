@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+﻿import { createContext, useContext, useEffect, useState, useCallback } from "react";
 // FIX: Using relative path from context/ to lib/
 import api from "../lib/axios.js";
 import { setSentryUser, clearSentryUser } from "../lib/sentry.js";
@@ -32,12 +32,12 @@ export const AuthContextProvider = ({ children }) => {
   const bootstrapAuth = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. First, try to get a CUSTOMER user
+      // 1. First, try to get a USER user
       const userRes = await api.get("/api/users/me");
       setAuth({ user: userRes.data, userType: 'user' });
       setSentryUser(userRes.data);
     } catch (userErr) {
-      // 2. If no customer, try to get an ARTISAN user
+      // 2. If no USER, try to get an ARTISAN user
       try {
         const artisanRes = await api.get("/api/auth/me");
         setAuth({ user: artisanRes.data, userType: 'artisan' });
@@ -61,13 +61,13 @@ export const AuthContextProvider = ({ children }) => {
   useEffect(() => {
     if (auth.user) {
       identifyLogRocketUser(auth.user);
-      addLogRocketTag('user-type', auth.userType || 'customer');
+      addLogRocketTag('user-type', auth.userType || 'USER');
       identifyPostHogUser(auth.user);
       
       // Set OneSignal user ID and tags
       setOneSignalUserId(auth.user.id || auth.user._id);
       addTags({
-        accountType: auth.user.role || 'customer',
+        accountType: auth.user.role || 'USER',
         email: auth.user.email,
         verified: auth.user.verified ? 'true' : 'false',
       });
@@ -101,7 +101,7 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  // --- Customer Auth Functions (NEW) ---
+  // --- USER Auth Functions (NEW) ---
   const userLogin = async (inputs) => {
     try {
       const res = await api.post("/api/users/login", inputs);

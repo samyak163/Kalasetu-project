@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 const ShippingPolicy = () => {
   return (
@@ -11,7 +11,7 @@ const ShippingPolicy = () => {
         <section className="space-y-4">
           <h2 className="text-2xl font-semibold text-gray-900 mt-8">1. Overview</h2>
           <p>
-            KalaSetu connects customers with individual artisans across India. Each artisan is responsible 
+            KalaSetu connects USERs with individual artisans across India. Each artisan is responsible 
             for shipping their own products. Shipping times and costs may vary depending on the artisan's 
             location and shipping method.
           </p>
@@ -99,7 +99,7 @@ const ShippingPolicy = () => {
             <li>Working phone number</li>
           </ul>
           <p className="mt-2 text-red-600">
-            We are not responsible for orders delivered to incorrect addresses provided by customers.
+            We are not responsible for orders delivered to incorrect addresses provided by USERs.
           </p>
         </section>
 

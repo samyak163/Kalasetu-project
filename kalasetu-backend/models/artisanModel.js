@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+﻿import mongoose from 'mongoose';
 import { customAlphabet } from 'nanoid';
 
 // We create a generator for short, URL-friendly, unique IDs (like YouTube's).
@@ -133,7 +133,8 @@ const artisanSchema = new mongoose.Schema({
           newBooking: { type: Boolean, default: true },
           bookingConfirmation: { type: Boolean, default: true },
           paymentReceived: { type: Boolean, default: true },
-          customerMessage: { type: Boolean, default: true },
+          // Use alias to maintain backward compatibility with existing documents
+          userMessage: { type: Boolean, default: true, alias: 'USERMessage' },
           newReview: { type: Boolean, default: true },
           promotional: { type: Boolean, default: false },
           weeklySummary: { type: Boolean, default: true },

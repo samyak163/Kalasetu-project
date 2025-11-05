@@ -39,10 +39,10 @@ const Footer = () => {
                 <h3 className="text-sm font-semibold text-gray-300 tracking-wider uppercase">For Artisans</h3>
                 <ul className="mt-4 space-y-4">
                   <li>
-                    <Link to="/login" className="text-base text-gray-400 hover:text-white">Artisan Login</Link>
+                    <Link to="/artisan/login" className="text-base text-gray-400 hover:text-white">Artisan Login</Link>
                   </li>
                   <li>
-                    <Link to="/register" className="text-base text-gray-400 hover:text-white">Join as Artisan</Link>
+                    <Link to="/artisan/register" className="text-base text-gray-400 hover:text-white">Join as Artisan</Link>
                   </li>
                 </ul>
               </div>
@@ -59,7 +59,7 @@ const Footer = () => {
                     <Link to="/shipping" className="text-base text-gray-400 hover:text-white">Shipping Policy</Link>
                   </li>
                   <li>
-                    <Link to="/cancellation-refund" className="text-base text-gray-400 hover:text-white">Cancellation & Refund</Link>
+                    <Link to="/refunds" className="text-base text-gray-400 hover:text-white">Cancellation & Refund</Link>
                   </li>
                 </ul>
               </div>

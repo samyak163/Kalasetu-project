@@ -1,4 +1,4 @@
-import asyncHandler from '../utils/asyncHandler.js';
+﻿import asyncHandler from '../utils/asyncHandler.js';
 import {
   createStreamUserToken,
   upsertStreamUser,
@@ -11,7 +11,7 @@ import {
 /**
  * @desc    Get Stream Chat token for user
  * @route   GET /api/chat/token
- * @access  Protected (artisan or customer)
+ * @access  Protected (artisan or USER)
  */
 export const getChatToken = asyncHandler(async (req, res) => {
   const userId = req.user._id.toString();

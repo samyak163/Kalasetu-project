@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+﻿import React, { useEffect, useState, useContext } from 'react';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 
 const DashboardOverviewTab = () => {
@@ -34,7 +34,7 @@ const DashboardOverviewTab = () => {
         {
           id: 1,
           service: 'Plumbing Repair',
-          customer: 'John D.',
+          USER: 'John D.',
           time: 'Today, 2:00 PM',
           amount: 800,
           status: 'confirmed'
@@ -59,7 +59,7 @@ const DashboardOverviewTab = () => {
     <div className="space-y-6">
       {/* Welcome Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back! 👋</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back! ðŸ‘‹</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           Your profile views: {stats?.profileViews || 0} this week (+{stats?.weeklyGrowth || 0}%)
         </p>
@@ -79,14 +79,14 @@ const DashboardOverviewTab = () => {
 
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="text-sm text-gray-600 dark:text-gray-400">Total Earned</div>
-          <div className="text-3xl font-bold text-green-600 mt-1">₹{stats?.totalEarnings?.toLocaleString() || 0}</div>
+          <div className="text-3xl font-bold text-green-600 mt-1">â‚¹{stats?.totalEarnings?.toLocaleString() || 0}</div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
           <div className="text-sm text-gray-600 dark:text-gray-400">Rating</div>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-3xl font-bold text-gray-900 dark:text-white">{stats?.rating || 0}</span>
-            <span className="text-yellow-500">⭐</span>
+            <span className="text-yellow-500">â­</span>
             <span className="text-sm text-gray-500">({stats?.reviewCount || 0})</span>
           </div>
         </div>
@@ -95,7 +95,7 @@ const DashboardOverviewTab = () => {
       {/* Pending Actions */}
       {stats?.pendingActions && (stats.pendingActions.newRequests > 0 || stats.pendingActions.unreadMessages > 0) && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-3">⚠️ Pending Actions</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-3">âš ï¸ Pending Actions</h3>
           <div className="space-y-2">
             {stats.pendingActions.newRequests > 0 && (
               <div className="flex items-center justify-between">
@@ -103,17 +103,17 @@ const DashboardOverviewTab = () => {
                   {stats.pendingActions.newRequests} new booking request{stats.pendingActions.newRequests > 1 ? 's' : ''}
                 </span>
                 <button className="text-sm font-medium text-[#A55233] hover:text-[#8e462b]">
-                  Respond now →
+                  Respond now â†’
                 </button>
               </div>
             )}
             {stats.pendingActions.unreadMessages > 0 && (
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {stats.pendingActions.unreadMessages} customer message{stats.pendingActions.unreadMessages > 1 ? 's' : ''}
+                  {stats.pendingActions.unreadMessages} USER message{stats.pendingActions.unreadMessages > 1 ? 's' : ''}
                 </span>
                 <button className="text-sm font-medium text-[#A55233] hover:text-[#8e462b]">
-                  Reply →
+                  Reply â†’
                 </button>
               </div>
             )}
@@ -131,12 +131,12 @@ const DashboardOverviewTab = () => {
                 <div className="flex-1">
                   <div className="font-medium text-gray-900 dark:text-white">{booking.service}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Customer: {booking.customer} | {booking.time}
+                    USER: {booking.USER} | {booking.time}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-gray-900 dark:text-white">₹{booking.amount}</div>
-                  <div className="text-sm text-green-600">✓ Confirmed</div>
+                  <div className="font-bold text-gray-900 dark:text-white">â‚¹{booking.amount}</div>
+                  <div className="text-sm text-green-600">âœ“ Confirmed</div>
                 </div>
               </div>
             ))}
@@ -150,11 +150,11 @@ const DashboardOverviewTab = () => {
 
       {/* Tips & Insights */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">💡 Tips & Insights</h3>
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">ðŸ’¡ Tips & Insights</h3>
         <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
-          <li>• Artisans with portfolios get 3x more bookings</li>
-          <li>• Respond within 1 hour for higher visibility</li>
-          <li>• Complete your profile to rank higher in search</li>
+          <li>â€¢ Artisans with portfolios get 3x more bookings</li>
+          <li>â€¢ Respond within 1 hour for higher visibility</li>
+          <li>â€¢ Complete your profile to rank higher in search</li>
         </ul>
       </div>
     </div>

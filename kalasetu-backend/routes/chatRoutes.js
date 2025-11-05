@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import {
   getChatToken,
   createDMChannel,
@@ -11,7 +11,7 @@ import { userProtect } from '../middleware/userProtectMiddleware.js';
 
 const router = express.Router();
 
-// Apply either artisan OR customer authentication
+// Apply either artisan OR USER authentication
 const authMiddleware = (req, res, next) => {
   // Try artisan auth first
   protect(req, res, (err) => {
@@ -19,7 +19,7 @@ const authMiddleware = (req, res, next) => {
       return next();
     }
     
-    // If artisan auth fails, try customer auth
+    // If artisan auth fails, try USER auth
     userProtect(req, res, (userErr) => {
       if (userErr || !req.user) {
         return res.status(401).json({ message: 'Not authorized' });

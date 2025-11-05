@@ -7,6 +7,7 @@ import { AuthContextProvider } from './context/AuthContext.jsx';
 import { ChatProvider } from './context/ChatContext.jsx';
 import { ToastProvider } from './context/ToastContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
+import { NotificationProvider } from './context/NotificationContext.jsx';
 
 // Initialize Sentry before React
 import { initSentry } from './lib/sentry.js';
@@ -27,6 +28,8 @@ initOneSignal();
 // Import Sentry ErrorBoundary
 import * as Sentry from '@sentry/react';
 import ErrorFallback from './components/ErrorFallback.jsx';
+import { HelmetProvider } from 'react-helmet-async';
+import './i18n/index.js';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -35,9 +38,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <ToastProvider>
           <AuthContextProvider>
             <ChatProvider>
-              <Sentry.ErrorBoundary fallback={ErrorFallback}>
-                <App />
-              </Sentry.ErrorBoundary>
+              <NotificationProvider>
+                <HelmetProvider>
+                  <Sentry.ErrorBoundary fallback={ErrorFallback}>
+                    <App />
+                  </Sentry.ErrorBoundary>
+                </HelmetProvider>
+              </NotificationProvider>
             </ChatProvider>
           </AuthContextProvider>
         </ToastProvider>

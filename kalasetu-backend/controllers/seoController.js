@@ -1,4 +1,4 @@
-import Artisan from '../models/artisanModel.js';
+﻿import Artisan from '../models/artisanModel.js';
 
 export const getArtisanSEO = async (req, res) => {
   try {
@@ -74,7 +74,7 @@ export const getSitemapData = async (req, res) => {
         { url: '/', priority: 1.0, changefreq: 'daily' },
         { url: '/search', priority: 0.9, changefreq: 'daily' },
         { url: '/artisan/register', priority: 0.7, changefreq: 'monthly' },
-        { url: '/customer/register', priority: 0.7, changefreq: 'monthly' },
+        { url: '/user/register', priority: 0.7, changefreq: 'monthly' },
       ],
       artisans: artisans.map((a) => ({
         url: `/${a.publicId}`,
@@ -87,6 +87,46 @@ export const getSitemapData = async (req, res) => {
   } catch (error) {
     console.error('Sitemap generation error:', error);
     res.status(500).json({ success: false, message: 'Failed to generate sitemap' });
+  }
+};
+
+
+export const getSitemapXml = async (req, res) => {
+  try {
+    const baseUrl = process.env.FRONTEND_BASE_URL || 'https://kalasetu.com';
+    const artisans = await Artisan.find().select('publicId updatedAt').lean();
+
+    let xml = '';
+    xml += '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+
+    const addUrl = (loc, changefreq = 'weekly', priority = '0.8', lastmod) => {
+      xml += '<url>';
+      xml += `<loc>${baseUrl}${loc}</loc>`;
+      if (lastmod) xml += `<lastmod>${new Date(lastmod).toISOString()}</lastmod>`;
+      xml += `<changefreq>${changefreq}</changefreq>`;
+      xml += `<priority>${priority}</priority>`;
+      xml += '</url>\n';
+    };
+
+    addUrl('/', 'daily', '1.0');
+    addUrl('/search', 'daily', '0.9');
+    addUrl('/artisan/register', 'monthly', '0.7');
+    addUrl('/user/register', 'monthly', '0.7');
+    addUrl('/privacy', 'monthly', '0.3');
+    addUrl('/terms', 'monthly', '0.3');
+    addUrl('/shipping', 'monthly', '0.3');
+    addUrl('/refunds', 'monthly', '0.3');
+
+    artisans.forEach((a) => addUrl(`/${a.publicId}`, 'weekly', '0.8', a.updatedAt));
+
+    xml += '</urlset>';
+
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
+  } catch (error) {
+    console.error('Sitemap XML error:', error);
+    res.status(500).send('');
   }
 };
 

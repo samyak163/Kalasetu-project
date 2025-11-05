@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import {
   createPaymentOrder,
   verifyPayment,
@@ -22,7 +22,7 @@ router.get('/', protect, getUserPayments);
 router.get('/:paymentId', protect, getPaymentDetails);
 router.post('/:paymentId/refund', protect, requestRefund);
 
-// Customer routes
+// USER routes
 router.post('/user/create-order', userProtect, createPaymentOrder);
 router.post('/user/verify', userProtect, verifyPayment);
 router.get('/user/payments', userProtect, getUserPayments);

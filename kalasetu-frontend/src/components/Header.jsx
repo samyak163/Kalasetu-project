@@ -1,48 +1,60 @@
-import React, { useContext, useState } from 'react';
+﻿import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
-import ProfileDropdown from './common/ProfileDropdown.jsx';
-import SearchBar from './SearchBar.jsx';
-import ProfileModal from './profile/ProfileModal.jsx';
+import ArtisanInfoModal from './ArtisanInfoModal.jsx';
+import HowItWorksModal from './HowItWorksModal.jsx';
+import NotificationPanel from './NotificationPanel.jsx';
+import { useNotifications } from '../context/NotificationContext.jsx';
+import LanguageSwitcher from './LanguageSwitcher.jsx';
 
 const Header = () => {
   const { auth, logout } = useContext(AuthContext);
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  const { notifications, unreadCount } = useNotifications();
+  const [showArtisanInfo, setShowArtisanInfo] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const renderAuthLinks = () => {
+    // Case 1: No one is logged in
     if (!auth.user) {
       return (
         <>
-          <Link to="/login" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">
-            Login
-          </Link>
-          <Link
-            to="/register"
-            className="ml-4 inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-[#A55233] hover:bg-[#8e462b] transition-colors"
-          >
-            Sign Up as Customer
-          </Link>
+          <Link to="/user/login" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">Sign In</Link>
+          <Link to="/register" className="ml-4 inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#A55233] hover:bg-[#8e462b] transition-colors">Sign Up</Link>
         </>
       );
     }
 
+    // Case 2: A USER is logged in
     if (auth.userType === 'user') {
       return (
-        <ProfileDropdown
-          user={auth.user}
-          onLogout={logout}
-          onOpenProfile={() => setShowProfileModal(true)}
-        />
+        <>
+          <span className="text-sm font-medium text-gray-700">Hi, {auth.user.fullName.split(' ')[0]}</span>
+          <button
+            onClick={logout}
+            className="ml-4 text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors"
+          >
+            Sign Out
+          </button>
+        </>
       );
     }
 
+    // Case 3: An Artisan is logged in
     if (auth.userType === 'artisan') {
       return (
-        <ProfileDropdown
-          user={auth.user}
-          onLogout={logout}
-          onOpenProfile={() => setShowProfileModal(true)}
-        />
+        <>
+          <Link to={`/${auth.user.publicId}`} className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">
+            My Profile
+          </Link>
+          <Link to="/artisan/dashboard/account" className="ml-4 text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">Dashboard</Link>
+          <button
+            onClick={logout}
+            className="ml-4 text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors"
+          >
+            Sign Out
+          </button>
+        </>
       );
     }
   };
@@ -51,57 +63,36 @@ const Header = () => {
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="w-full py-4 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center">
+            {/* Logo */}
             <Link to="/" className="text-2xl font-bold text-[#A55233]">
-              {auth.userType === 'artisan' ? 'KalaSetu Artisan' : 'Kala'}<span className="text-gray-800">{auth.userType === 'artisan' ? '' : 'Setu'}</span>
+              Kala<span className="text-gray-800">Setu</span>
             </Link>
-            <div className="hidden md:flex">
-              <SearchBar />
-            </div>
-            <div className="hidden lg:flex items-center gap-6">
-              {auth.userType !== 'artisan' && (
-                <>
-                  <Link to="/" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Home</Link>
-                  <Link to="#" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Services</Link>
-                  <Link to="#" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">How it Works</Link>
-                  <Link to="/artisan/login" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">For Artisans</Link>
-                </>
-              )}
-              {auth.userType === 'artisan' && (
-                <>
-                  <Link to="/dashboard" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Dashboard</Link>
-                  <Link to="/dashboard/account" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Jobs</Link>
-                  <Link to="/messages" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Chat</Link>
-                  <Link to="/video-call" className="text-sm font-semibold text-gray-700 hover:text-[#A55233]">Calls</Link>
-                </>
-              )}
+            {/* Main Nav */}
+            <div className="hidden ml-10 space-x-8 lg:block">
+              <Link to="/category" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">Services</Link>
+              <button type="button" onClick={() => setShowHowItWorks(true)} className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">How It Works</button>
+              <button type="button" onClick={() => setShowArtisanInfo(true)} className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">For Artisans</button>
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
-            {/* Notifications placeholder */}
-            {auth.user && (
-              <button type="button" className="hidden sm:inline-flex relative h-9 w-9 items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50">
-                <span className="text-lg">🔔</span>
-                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-white bg-red-600 rounded-full">2</span>
-              </button>
-            )}
-            <div className="flex items-center">
+          
+          <div className="flex items-center space-x-4">
+            <button onClick={() => setShowNotifications(true)} aria-label="Notifications" className="relative text-gray-700 hover:text-[#A55233]">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] leading-3 px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
+            </button>
+            {/* Auth Links (Dynamic) */}
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
               {renderAuthLinks()}
             </div>
           </div>
         </div>
       </nav>
-
-      {/* Profile Modal */}
-      {showProfileModal && (
-        <ProfileModal
-          isOpen={showProfileModal}
-          onClose={() => setShowProfileModal(false)}
-          user={auth.user}
-          userType={auth.userType}
-        />
-      )}
+      {/* Modals */}
+      <ArtisanInfoModal isOpen={showArtisanInfo} onClose={() => setShowArtisanInfo(false)} />
+      <HowItWorksModal isOpen={showHowItWorks} onClose={() => setShowHowItWorks(false)} />
+      <NotificationPanel isOpen={showNotifications} onClose={() => setShowNotifications(false)} notifications={notifications} />
     </header>
   );
 };

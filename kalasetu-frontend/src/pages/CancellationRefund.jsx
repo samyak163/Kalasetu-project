@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 const CancellationRefund = () => {
   return (
@@ -19,7 +19,7 @@ const CancellationRefund = () => {
         <section className="space-y-4">
           <h2 className="text-2xl font-semibold text-gray-900 mt-8">2. Order Cancellation</h2>
           
-          <h3 className="text-xl font-semibold text-gray-900 mt-6">2.1 Cancellation by Customer</h3>
+          <h3 className="text-xl font-semibold text-gray-900 mt-6">2.1 Cancellation by USER</h3>
           <p>You can cancel your order in the following situations:</p>
           <ul className="list-disc pl-6 space-y-2">
             <li>
@@ -124,7 +124,7 @@ const CancellationRefund = () => {
               <strong>Defective/Wrong Product:</strong> KalaSetu will cover return shipping costs
             </li>
             <li>
-              <strong>Change of Mind:</strong> Customer is responsible for return shipping costs
+              <strong>Change of Mind:</strong> USER is responsible for return shipping costs
             </li>
             <li>
               <strong>Custom Orders:</strong> Returns not accepted unless defective
@@ -158,7 +158,7 @@ const CancellationRefund = () => {
           <h2 className="text-2xl font-semibold text-gray-900 mt-8">9. Dispute Resolution</h2>
           <p>
             If you have any disputes regarding cancellations, returns, or refunds, please contact our 
-            customer support team. We will make every effort to resolve the issue fairly and promptly.
+            USER support team. We will make every effort to resolve the issue fairly and promptly.
           </p>
         </section>
 

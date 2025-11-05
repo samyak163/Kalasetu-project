@@ -1,4 +1,4 @@
-import LogRocket from 'logrocket';
+﻿import LogRocket from 'logrocket';
 import setupLogRocketReact from 'logrocket-react';
 import { SESSION_REPLAY_CONFIG } from '../config/env.config.js';
 
@@ -7,7 +7,7 @@ import { SESSION_REPLAY_CONFIG } from '../config/env.config.js';
  */
 export const initLogRocket = () => {
   if (!SESSION_REPLAY_CONFIG.enabled || SESSION_REPLAY_CONFIG.provider !== 'logrocket') {
-    console.log('⚠️ LogRocket session replay is disabled');
+    console.log('âš ï¸ LogRocket session replay is disabled');
     return;
   }
 
@@ -65,9 +65,9 @@ export const initLogRocket = () => {
     // Setup React integration
     setupLogRocketReact(LogRocket);
 
-    console.log('✅ LogRocket initialized');
+    console.log('âœ… LogRocket initialized');
   } catch (error) {
-    console.error('❌ Failed to initialize LogRocket:', error.message);
+    console.error('âŒ Failed to initialize LogRocket:', error.message);
   }
 };
 
@@ -82,14 +82,14 @@ export const identifyLogRocketUser = (user) => {
     LogRocket.identify(user.id || user._id, {
       name: user.fullName || user.username,
       email: user.email,
-      accountType: user.role || 'customer',
+      accountType: user.role || 'USER',
       // Add custom traits
       verified: user.verified,
       createdAt: user.createdAt,
     });
-    console.log('✅ LogRocket user identified');
+    console.log('âœ… LogRocket user identified');
   } catch (error) {
-    console.error('❌ Failed to identify LogRocket user:', error.message);
+    console.error('âŒ Failed to identify LogRocket user:', error.message);
   }
 };
 
@@ -104,7 +104,7 @@ export const trackLogRocketEvent = (eventName, properties = {}) => {
   try {
     LogRocket.track(eventName, properties);
   } catch (error) {
-    console.error('❌ Failed to track LogRocket event:', error.message);
+    console.error('âŒ Failed to track LogRocket event:', error.message);
   }
 };
 
@@ -119,7 +119,7 @@ export const addLogRocketTag = (key, value) => {
   try {
     LogRocket.addTag(key, value);
   } catch (error) {
-    console.error('❌ Failed to add LogRocket tag:', error.message);
+    console.error('âŒ Failed to add LogRocket tag:', error.message);
   }
 };
 
@@ -139,7 +139,7 @@ export const captureLogRocketException = (error, extra = {}) => {
       },
     });
   } catch (err) {
-    console.error('❌ Failed to capture exception in LogRocket:', err.message);
+    console.error('âŒ Failed to capture exception in LogRocket:', err.message);
   }
 };
 
@@ -157,7 +157,7 @@ export const getLogRocketSessionURL = async () => {
       });
     });
   } catch (error) {
-    console.error('❌ Failed to get LogRocket session URL:', error.message);
+    console.error('âŒ Failed to get LogRocket session URL:', error.message);
     return null;
   }
 };

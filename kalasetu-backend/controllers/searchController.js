@@ -47,7 +47,7 @@ export const searchArtisans = asyncHandler(async (req, res) => {
       if (aroundRadius) searchParams.aroundRadius = parseInt(aroundRadius);
     }
 
-    const result = await index.search('', searchParams);
+    const result = await index.search(qParam || legacyQuery || '', searchParams);
 
     // Track search with PostHog
     trackEvent({

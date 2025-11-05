@@ -1,4 +1,4 @@
-# 🔌 External Integrations Guide
+﻿# ðŸ”Œ External Integrations Guide
 
 Complete guide for integrating third-party services with KalaSetu.
 
@@ -15,7 +15,7 @@ Complete guide for integrating third-party services with KalaSetu.
 ## Communication Tools
 
 ### Stream Chat (Real-time Messaging)
-**Purpose:** Chat between artisans and customers
+**Purpose:** Chat between artisans and USERs
 
 ```env
 # Backend
@@ -61,7 +61,7 @@ VITE_ONESIGNAL_APP_ID=your-app-id
 1. Sign up at [OneSignal](https://onesignal.com/)
 2. Create web push app
 3. Follow web push setup wizard
-4. Get credentials from Settings → Keys & IDs
+4. Get credentials from Settings â†’ Keys & IDs
 
 ---
 
@@ -123,7 +123,7 @@ VITE_LOGROCKET_APP_ID=your-app-id
 ## Payment Processing
 
 ### Razorpay
-**Purpose:** Payment collection from customers
+**Purpose:** Payment collection from USERs
 
 ```env
 # Backend
@@ -135,7 +135,7 @@ RAZORPAY_WEBHOOK_SECRET=your-webhook-secret
 **Setup:**
 1. Sign up at [Razorpay](https://razorpay.com/)
 2. Complete KYC verification
-3. Get API keys from Dashboard → Settings → API Keys
+3. Get API keys from Dashboard â†’ Settings â†’ API Keys
 4. Set up webhooks for payment events
 
 **Test Mode:**
@@ -260,7 +260,7 @@ EMAIL_FROM=your-email@gmail.com
 
 **Gmail Setup:**
 1. Enable 2-factor authentication
-2. Generate app password: Google Account → Security → App passwords
+2. Generate app password: Google Account â†’ Security â†’ App passwords
 3. Use app password in `SMTP_PASS`
 
 ---

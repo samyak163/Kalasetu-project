@@ -1,8 +1,8 @@
-import jwt from 'jsonwebtoken';
+﻿import jwt from 'jsonwebtoken';
 import asyncHandler from '../utils/asyncHandler.js';
 import User from '../models/userModel.js'; // <-- IMPORTANT: Imports User model
 
-// This middleware protects routes that only logged-in CUSTOMERS can access.
+// This middleware protects routes that only logged-in USERS can access.
 const userProtect = asyncHandler(async (req, res, next) => {
   let token;
 

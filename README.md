@@ -1,10 +1,10 @@
-# 🎨 KalaSetu - Artisan Marketplace Platform
+﻿# ðŸŽ¨ KalaSetu - Artisan Marketplace Platform
 
-KalaSetu is a full-stack web application connecting traditional artisans with customers. Built with React, Node.js, Express, and MongoDB.
+KalaSetu is a full-stack web application connecting traditional artisans with USERs. Built with React, Node.js, Express, and MongoDB.
 
 [![CI](https://github.com/samyak163/Kalasetu-project/actions/workflows/ci.yml/badge.svg)](https://github.com/samyak163/Kalasetu-project/actions/workflows/ci.yml)
 
-## 📋 Table of Contents
+## ðŸ“‹ Table of Contents
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
@@ -13,30 +13,30 @@ KalaSetu is a full-stack web application connecting traditional artisans with cu
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
 
-## ✨ Features
+## âœ¨ Features
 
 ### For Artisans
-- 🔐 Secure authentication (Email, Phone, Firebase OTP)
-- 👤 Professional profile management
-- 📸 Portfolio image uploads (Cloudinary)
-- 🎯 Custom public profile URLs
-- 🔒 Account security with login attempt tracking
+- ðŸ” Secure authentication (Email, Phone, Firebase OTP)
+- ðŸ‘¤ Professional profile management
+- ðŸ“¸ Portfolio image uploads (Cloudinary)
+- ðŸŽ¯ Custom public profile URLs
+- ðŸ”’ Account security with login attempt tracking
 
-### For Customers
-- 🔍 Browse and search artisans
-- 📧 Email-based authentication
-- 💬 View artisan profiles and portfolios
-- ⭐ Future: Reviews and ratings
+### For USERs
+- ðŸ” Browse and search artisans
+- ðŸ“§ Email-based authentication
+- ðŸ’¬ View artisan profiles and portfolios
+- â­ Future: Reviews and ratings
 
 ### Security & Performance
-- 🛡️ Helmet.js security headers
-- 🚦 Rate limiting
-- 🍪 HTTP-only cookie authentication
-- 🔑 JWT token management
-- ✅ Input validation with Zod
-- 📊 Environment variable validation
+- ðŸ›¡ï¸ Helmet.js security headers
+- ðŸš¦ Rate limiting
+- ðŸª HTTP-only cookie authentication
+- ðŸ”‘ JWT token management
+- âœ… Input validation with Zod
+- ðŸ“Š Environment variable validation
 
-## 🛠️ Tech Stack
+## ðŸ› ï¸ Tech Stack
 
 ### Frontend
 - **Framework:** React 19
@@ -66,7 +66,7 @@ KalaSetu is a full-stack web application connecting traditional artisans with cu
 
 ---
 
-## 🚀 Quick Start
+## ðŸš€ Quick Start
 
 ### Prerequisites
 - Node.js v18+ (v20+ recommended)
@@ -122,7 +122,7 @@ KalaSetu is a full-stack web application connecting traditional artisans with cu
 
 ---
 
-## 📚 Documentation
+## ðŸ“š Documentation
 
 Comprehensive guides are available in the `docs/` directory:
 
@@ -133,39 +133,39 @@ Comprehensive guides are available in the `docs/` directory:
 
 ---
 
-## 📁 Project Structure
+## ðŸ“ Project Structure
 
 ```
 kalasetu-project/
-├── kalasetu-backend/          # Express.js backend
-│   ├── config/                # Configuration files
-│   ├── controllers/           # Route controllers
-│   ├── middleware/            # Express middleware
-│   ├── models/                # Mongoose models
-│   ├── routes/                # API routes
-│   ├── utils/                 # Utility functions
-│   ├── jobs/                  # Background job handlers
-│   ├── scripts/               # CLI scripts
-│   └── server.js              # Entry point
-│
-├── kalasetu-frontend/         # React frontend
-│   ├── src/
-│   │   ├── components/        # Reusable components
-│   │   ├── pages/             # Page components
-│   │   ├── context/           # React Context providers
-│   │   ├── hooks/             # Custom hooks
-│   │   ├── lib/               # Third-party integrations
-│   │   └── App.jsx            # Root component
-│   └── vite.config.js         # Vite configuration
-│
-├── docs/                      # Documentation
-│   ├── SETUP.md
-│   ├── INTEGRATIONS.md
-│   ├── API.md
-│   └── CI-CD.md
-│
-└── .github/
-    └── workflows/             # GitHub Actions CI/CD
+â”œâ”€â”€ kalasetu-backend/          # Express.js backend
+â”‚   â”œâ”€â”€ config/                # Configuration files
+â”‚   â”œâ”€â”€ controllers/           # Route controllers
+â”‚   â”œâ”€â”€ middleware/            # Express middleware
+â”‚   â”œâ”€â”€ models/                # Mongoose models
+â”‚   â”œâ”€â”€ routes/                # API routes
+â”‚   â”œâ”€â”€ utils/                 # Utility functions
+â”‚   â”œâ”€â”€ jobs/                  # Background job handlers
+â”‚   â”œâ”€â”€ scripts/               # CLI scripts
+â”‚   â””â”€â”€ server.js              # Entry point
+â”‚
+â”œâ”€â”€ kalasetu-frontend/         # React frontend
+â”‚   â”œâ”€â”€ src/
+â”‚   â”‚   â”œâ”€â”€ components/        # Reusable components
+â”‚   â”‚   â”œâ”€â”€ pages/             # Page components
+â”‚   â”‚   â”œâ”€â”€ context/           # React Context providers
+â”‚   â”‚   â”œâ”€â”€ hooks/             # Custom hooks
+â”‚   â”‚   â”œâ”€â”€ lib/               # Third-party integrations
+â”‚   â”‚   â””â”€â”€ App.jsx            # Root component
+â”‚   â””â”€â”€ vite.config.js         # Vite configuration
+â”‚
+â”œâ”€â”€ docs/                      # Documentation
+â”‚   â”œâ”€â”€ SETUP.md
+â”‚   â”œâ”€â”€ INTEGRATIONS.md
+â”‚   â”œâ”€â”€ API.md
+â”‚   â””â”€â”€ CI-CD.md
+â”‚
+â””â”€â”€ .github/
+    â””â”€â”€ workflows/             # GitHub Actions CI/CD
 ```
 
 ---
@@ -176,32 +176,32 @@ kalasetu-project/
 - **File Upload:** Cloudinary
 - **Security:** Helmet, CORS, Rate Limiting
 
-## 📁 Project Structure
+## ðŸ“ Project Structure
 
 ```
 kalasetu-project/
-├── kalasetu-backend/       # Node.js/Express API
-│   ├── config/            # Configuration files (DB, Cloudinary, Firebase)
-│   ├── controllers/       # Route handlers
-│   ├── middleware/        # Auth, error handling
-│   ├── models/           # Mongoose schemas
-│   ├── routes/           # API routes
-│   ├── utils/            # Helper functions
-│   └── server.js         # Entry point
-│
-├── kalasetu-frontend/     # React application
-│   ├── src/
-│   │   ├── components/   # Reusable components
-│   │   ├── context/      # React Context (Auth)
-│   │   ├── lib/          # Axios, Firebase config
-│   │   ├── pages/        # Route pages
-│   │   └── App.jsx       # Main app component
-│   └── index.html
-│
-└── README.md             # This file
+â”œâ”€â”€ kalasetu-backend/       # Node.js/Express API
+â”‚   â”œâ”€â”€ config/            # Configuration files (DB, Cloudinary, Firebase)
+â”‚   â”œâ”€â”€ controllers/       # Route handlers
+â”‚   â”œâ”€â”€ middleware/        # Auth, error handling
+â”‚   â”œâ”€â”€ models/           # Mongoose schemas
+â”‚   â”œâ”€â”€ routes/           # API routes
+â”‚   â”œâ”€â”€ utils/            # Helper functions
+â”‚   â””â”€â”€ server.js         # Entry point
+â”‚
+â”œâ”€â”€ kalasetu-frontend/     # React application
+â”‚   â”œâ”€â”€ src/
+â”‚   â”‚   â”œâ”€â”€ components/   # Reusable components
+â”‚   â”‚   â”œâ”€â”€ context/      # React Context (Auth)
+â”‚   â”‚   â”œâ”€â”€ lib/          # Axios, Firebase config
+â”‚   â”‚   â”œâ”€â”€ pages/        # Route pages
+â”‚   â”‚   â””â”€â”€ App.jsx       # Main app component
+â”‚   â””â”€â”€ index.html
+â”‚
+â””â”€â”€ README.md             # This file
 ```
 
-## 🚀 Getting Started
+## ðŸš€ Getting Started
 
 ### Prerequisites
 
@@ -257,7 +257,7 @@ npm run dev
 
 The frontend will start on `http://localhost:5173`
 
-## 🌐 Deployment
+## ðŸŒ Deployment
 
 ### Backend Deployment (Render.com)
 
@@ -300,15 +300,15 @@ The frontend will start on `http://localhost:5173`
 
 ### Post-Deployment Checklist
 
-- ✅ Backend health check: `https://your-backend.onrender.com/`
-- ✅ Frontend loads correctly
-- ✅ CORS is configured (add frontend URL to backend `CORS_ORIGINS`)
-- ✅ Database connection works
-- ✅ Image uploads work (Cloudinary)
-- ✅ Authentication flows work
-- ✅ Cookie credentials work cross-origin
+- âœ… Backend health check: `https://your-backend.onrender.com/`
+- âœ… Frontend loads correctly
+- âœ… CORS is configured (add frontend URL to backend `CORS_ORIGINS`)
+- âœ… Database connection works
+- âœ… Image uploads work (Cloudinary)
+- âœ… Authentication flows work
+- âœ… Cookie credentials work cross-origin
 
-## 🔐 Environment Variables
+## ðŸ” Environment Variables
 
 ### Backend (.env)
 
@@ -338,7 +338,7 @@ The frontend will start on `http://localhost:5173`
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | Firebase messaging ID | No | From Firebase console |
 | `VITE_FIREBASE_APP_ID` | Firebase app ID | No | From Firebase console |
 
-## 📚 API Documentation
+## ðŸ“š API Documentation
 
 ### Base URL
 - Development: `http://localhost:5000/api`
@@ -382,9 +382,9 @@ POST /auth/logout
 Cookie: ks_auth=<jwt_token>
 ```
 
-### Customer Authentication
+### USER Authentication
 
-#### Register Customer
+#### Register USER
 ```http
 POST /users/register
 Content-Type: application/json
@@ -396,7 +396,7 @@ Content-Type: application/json
 }
 ```
 
-#### Login Customer
+#### Login USER
 ```http
 POST /users/login
 Content-Type: application/json
@@ -426,7 +426,7 @@ GET /artisans/:publicId
 GET /uploads/signature?folder=artisan/profiles
 ```
 
-## 🤝 Contributing
+## ðŸ¤ Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
@@ -434,15 +434,15 @@ GET /uploads/signature?folder=artisan/profiles
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📝 License
+## ðŸ“ License
 
 This project is private and proprietary.
 
-## 👥 Authors
+## ðŸ‘¥ Authors
 
 - **Samyak** - [samyak163](https://github.com/samyak163)
 
-## 🙏 Acknowledgments
+## ðŸ™ Acknowledgments
 
 - React team for the amazing framework
 - Express.js community

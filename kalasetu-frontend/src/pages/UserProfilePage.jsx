@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import ProfileTab from '../components/profile/tabs/ProfileTab.jsx';
 import RatingsTab from '../components/profile/tabs/RatingsTab.jsx';
 import BookmarksTab from '../components/profile/tabs/BookmarksTab.jsx';
@@ -8,16 +8,16 @@ import AppearanceTab from '../components/profile/tabs/AppearanceTab.jsx';
 import HelpSupportTab from '../components/profile/tabs/HelpSupportTab.jsx';
 
 const tabs = [
-  { key: 'profile', label: 'Your Profile', icon: '👤' },
-  { key: 'ratings', label: 'Ratings & Reviews', icon: '⭐' },
-  { key: 'saved', label: 'Saved Artisans', icon: '🔖' },
-  { key: 'orders', label: 'Order History', icon: '📋' },
-  { key: 'notifications', label: 'Notifications & Preferences', icon: '🔔' },
-  { key: 'appearance', label: 'Appearance', icon: '🎨' },
-  { key: 'help', label: 'Help & Support', icon: '❓' },
+  { key: 'profile', label: 'Your Profile', icon: 'ðŸ‘¤' },
+  { key: 'ratings', label: 'Ratings & Reviews', icon: 'â­' },
+  { key: 'saved', label: 'Saved Artisans', icon: 'ðŸ”–' },
+  { key: 'orders', label: 'Order History', icon: 'ðŸ“‹' },
+  { key: 'notifications', label: 'Notifications & Preferences', icon: 'ðŸ””' },
+  { key: 'appearance', label: 'Appearance', icon: 'ðŸŽ¨' },
+  { key: 'help', label: 'Help & Support', icon: 'â“' },
 ];
 
-export default function CustomerProfilePage() {
+export default function UserProfilePage() {
   const [activeTab, setActiveTab] = useState('profile');
 
   return (
@@ -58,4 +58,4 @@ export default function CustomerProfilePage() {
   );
 }
 
-
+ 

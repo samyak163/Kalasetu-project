@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Link } from 'react-router-dom';
 
 export default function RegisterSelector() {
@@ -11,14 +11,14 @@ export default function RegisterSelector() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <Link to="/customer/register" className="group block rounded-xl border border-gray-200 bg-white hover:shadow-lg transition p-8">
-            <div className="text-4xl mb-4">👤</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Sign up as Customer</h3>
+          <Link to="/user/register" className="group block rounded-xl border border-gray-200 bg-white hover:shadow-lg transition p-8">
+            <div className="text-4xl mb-4">ðŸ‘¤</div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Sign up as USER</h3>
             <p className="text-gray-600">Find artisans, book services and track orders.</p>
           </Link>
 
           <Link to="/artisan/register" className="group block rounded-xl border border-gray-200 bg-white hover:shadow-lg transition p-8">
-            <div className="text-4xl mb-4">🔧</div>
+            <div className="text-4xl mb-4">ðŸ”§</div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Sign up as Artisan</h3>
             <p className="text-gray-600">Get leads, manage jobs and grow your business.</p>
           </Link>
@@ -26,7 +26,7 @@ export default function RegisterSelector() {
 
         <div className="text-center mt-8 text-sm text-gray-700">
           Already have an account?{' '}
-          <Link to="/login" className="text-[#A55233] font-semibold hover:underline">Log In</Link>
+          <Link to="/artisan/login" className="text-[#A55233] font-semibold hover:underline">Log In</Link>
         </div>
       </div>
     </div>

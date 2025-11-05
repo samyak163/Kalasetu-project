@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+﻿import React, { useEffect, useState, useContext } from 'react';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 
 const PortfolioTab = () => {
@@ -39,7 +39,7 @@ const PortfolioTab = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Portfolio & Gallery</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Showcase your best work to attract customers
+            Showcase your best work to attract USERs
           </p>
         </div>
         <div className="flex gap-2">
@@ -61,12 +61,12 @@ const PortfolioTab = () => {
       {/* Empty State */}
       {portfolio.length === 0 && (
         <div className="text-center py-16 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-          <div className="text-6xl mb-4">📸</div>
+          <div className="text-6xl mb-4">ðŸ“¸</div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             Build Your Portfolio
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-            Artisans with portfolios get 3x more bookings! Upload photos of your best work to attract customers.
+            Artisans with portfolios get 3x more bookings! Upload photos of your best work to attract USERs.
           </p>
           <div className="flex justify-center gap-3">
             <button
@@ -83,7 +83,7 @@ const PortfolioTab = () => {
             </button>
           </div>
           <div className="mt-6 text-sm text-gray-500 dark:text-gray-400">
-            <p>💡 Tip: Add before/after photos to show your transformation work</p>
+            <p>ðŸ’¡ Tip: Add before/after photos to show your transformation work</p>
           </div>
         </div>
       )}
