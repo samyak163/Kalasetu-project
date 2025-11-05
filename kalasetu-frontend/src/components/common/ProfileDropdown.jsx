@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 
-const ProfileDropdown = ({ user, onLogout, onOpenProfile }) => {
+const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -26,16 +25,23 @@ const ProfileDropdown = ({ user, onLogout, onOpenProfile }) => {
 
   const handleLogout = async () => {
     setIsOpen(false);
-    if (window.confirm('Are you sure you want to sign out?')) {
+    if (globalThis.confirm('Are you sure you want to sign out?')) {
       await onLogout();
     }
   };
 
   const handleOpenProfileTab = (tab = 'profile') => {
     setIsOpen(false);
-    // Dispatch custom event with tab parameter (ProfileModal will listen for this)
-    const event = new CustomEvent('open-profile', { detail: { tab } });
-    window.dispatchEvent(event);
+    // For normal users, open ProfileModal with specific tab
+    if (userType === 'user') {
+      const event = new CustomEvent('open-profile', { detail: { tab } });
+      globalThis.dispatchEvent(event);
+      return;
+    }
+    // For artisans, delegate to parent (usually navigates to dashboard)
+    if (userType === 'artisan' && typeof onOpenProfile === 'function') {
+      onOpenProfile();
+    }
   };
 
   const avatarUrl = user?.profileImageUrl || '';
@@ -165,3 +171,14 @@ const ProfileDropdown = ({ user, onLogout, onOpenProfile }) => {
 };
 
 export default ProfileDropdown;
+
+ProfileDropdown.propTypes = {
+  user: PropTypes.shape({
+    fullName: PropTypes.string,
+    profileImageUrl: PropTypes.string,
+    email: PropTypes.string,
+  }),
+  userType: PropTypes.oneOf(['user', 'artisan']).isRequired,
+  onLogout: PropTypes.func.isRequired,
+  onOpenProfile: PropTypes.func,
+};

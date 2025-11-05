@@ -20,11 +20,11 @@ const Header = () => {
     // For users: dispatch custom event for ProfileModal
     if (auth.userType === 'user') {
       const event = new CustomEvent('open-profile');
-      window.dispatchEvent(event);
+      globalThis.dispatchEvent(event);
     }
     // For artisans: navigate to dashboard
     else if (auth.userType === 'artisan') {
-      window.location.href = '/artisan/dashboard/account';
+      globalThis.location.href = '/artisan/dashboard/account';
     }
   };
 
@@ -43,6 +43,7 @@ const Header = () => {
     return (
       <ProfileDropdown 
         user={auth.user}
+        userType={auth.userType}
         onLogout={logout}
         onOpenProfile={handleOpenProfile}
       />
