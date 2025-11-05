@@ -460,12 +460,6 @@ const ProfileTab = ({ user, onSave }) => {
       {/* Action Buttons */}
       <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
         <button
-          onClick={() => window.dispatchEvent(new CustomEvent('close-profile'))}
-          className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-        >
-          Cancel
-        </button>
-        <button
           onClick={handleSaveProfile}
           disabled={loading || uploadingImage}
           className="px-6 py-3 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
