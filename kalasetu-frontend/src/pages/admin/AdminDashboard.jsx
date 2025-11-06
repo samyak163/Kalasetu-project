@@ -104,7 +104,7 @@ const AdminDashboard = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Artisans</h3>
           <div className="space-y-3">
-            {stats?.recentActivity?.artisans?.map((artisan) => (
+            {(stats?.recentActivity?.artisans || []).map((artisan) => (
               <div key={artisan._id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"><Briefcase className="w-5 h-5 text-blue-600" /></div>
@@ -124,7 +124,7 @@ const AdminDashboard = () => {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Users</h3>
           <div className="space-y-3">
-            {stats?.recentActivity?.users?.map((user) => (
+            {(stats?.recentActivity?.users || []).map((user) => (
               <div key={user._id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center"><Users className="w-5 h-5 text-green-600" /></div>
