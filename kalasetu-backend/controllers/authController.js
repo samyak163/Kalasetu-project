@@ -136,7 +136,7 @@ export const register = async (req, res, next) => {
             message: 'Registration successful',
             artisan: artisanPublic,
             token, // Include token in response for frontend
-            redirectTo: '/artisan/dashboard' // Tell frontend where to redirect
+            redirectTo: '/artisan/dashboard/account' // Tell frontend where to redirect
         });
     } catch (err) {
         console.error('Registration error:', err);
