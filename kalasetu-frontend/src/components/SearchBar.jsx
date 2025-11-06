@@ -4,9 +4,9 @@ import axios from 'axios';
 import { API_CONFIG } from '../config/env.config.js';
 import { optimizeImage } from '../utils/cloudinary.js';
 
-const SearchBar = ({ showFilters = false }) => {
+const SearchBar = ({ showFilters = false, initialQuery = '', onSearch }) => {
   const navigate = useNavigate();
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery || '');
   const [results, setResults] = useState({ artisans: [], categories: [] });
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -86,10 +86,21 @@ const SearchBar = ({ showFilters = false }) => {
   const handleSearch = (e) => {
     e.preventDefault();
     if (query.trim()) {
-      navigate(`/search?q=${encodeURIComponent(query)}`);
+      if (onSearch) {
+        onSearch(query);
+      } else {
+        navigate(`/search?q=${encodeURIComponent(query)}`);
+      }
       setShowDropdown(false);
     }
   };
+
+  // Sync with initialQuery prop
+  useEffect(() => {
+    if (initialQuery !== undefined && initialQuery !== query) {
+      setQuery(initialQuery);
+    }
+  }, [initialQuery]);
 
   const handleArtisanClick = (artisan) => {
     const artisanId = artisan.publicId || artisan.id || artisan._id;

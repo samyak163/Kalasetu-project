@@ -175,13 +175,20 @@ const artisanSchema = new mongoose.Schema({
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
 
+  // Email verification (initial account verification)
+  emailVerificationToken: { type: String },
+  emailVerificationExpires: { type: Date },
+  emailVerified: { type: Boolean, default: false },
   // Contact change verification (OTP flows)
   pendingEmail: { type: String, default: '' },
   emailVerificationCode: { type: String, default: '' },
-  emailVerificationExpires: { type: Date },
   pendingPhoneNumber: { type: String, default: '' },
   phoneVerificationCode: { type: String, default: '' },
   phoneVerificationExpires: { type: Date },
+  // OTP fields for registration/login verification
+  otpCode: { type: String },
+  otpExpires: { type: Date },
+  otpAttempts: { type: Number, default: 0 },
 }, { timestamps: true });
 
 // Add helpers to model for login lockout

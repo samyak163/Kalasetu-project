@@ -8,6 +8,7 @@ import { indexArtisan } from '../utils/algolia.js';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '../utils/email.js';
 import { trackEvent } from '../utils/posthog.js';
 import * as Sentry from '@sentry/node';
+import { RECAPTCHA_CONFIG } from '../config/env.config.js';
 
 const registerSchema = z.object({
     fullName: z.string().min(2),
@@ -44,22 +45,56 @@ const resetPasswordSchema = z.object({
 
 export const register = async (req, res, next) => {
     try {
-        const { fullName, email, phoneNumber, password } = registerSchema.parse(req.body);
+        const { fullName, email, phoneNumber, password, otp, recaptchaToken } = req.body;
         
-        // Check for existing email if provided
-        if (email) {
-            const existingEmail = await Artisan.findOne({ email });
-            if (existingEmail) {
-                return res.status(400).json({ message: 'This email is already registered' });
+        // Verify reCAPTCHA if provided
+        if (recaptchaToken && RECAPTCHA_CONFIG.enabled) {
+            const { verifyRecaptcha } = await import('../utils/recaptcha.js');
+            const recaptchaResult = await verifyRecaptcha(recaptchaToken, RECAPTCHA_CONFIG.secretKey);
+            if (!recaptchaResult.success) {
+                return res.status(400).json({ 
+                    success: false,
+                    message: 'reCAPTCHA verification failed. Please try again.' 
+                });
             }
         }
         
-        // Check for existing phone if provided
-        if (phoneNumber) {
-            const existingPhone = await Artisan.findOne({ phoneNumber });
-            if (existingPhone) {
-                return res.status(400).json({ message: 'This phone number is already registered' });
+        // Verify OTP if provided (for enhanced security)
+        if (otp && email) {
+            const OTP = (await import('../models/otpModel.js')).default;
+            const otpRecord = await OTP.findOne({ identifier: email, verified: true });
+            if (!otpRecord) {
+                // Also check user document
+                const user = await Artisan.findOne({ email }).select('otpCode otpExpires');
+                if (!user || !user.otpCode) {
+                    return res.status(400).json({ 
+                        success: false,
+                        message: 'Please verify your email with OTP first' 
+                    });
+                }
+                const { verifyOTP } = await import('../utils/otp.js');
+                const isValid = verifyOTP(otp, user.otpCode, user.otpExpires);
+                if (!isValid) {
+                    return res.status(400).json({ 
+                        success: false,
+                        message: 'Invalid OTP code' 
+                    });
+                }
             }
+        }
+        
+        // Check for existing email/phone in parallel (optimize query)
+        const [existingEmail, existingPhone] = await Promise.all([
+            email ? Artisan.findOne({ email }).select('_id').lean() : null,
+            phoneNumber ? Artisan.findOne({ phoneNumber }).select('_id').lean() : null,
+        ]);
+        
+        if (existingEmail) {
+            return res.status(400).json({ message: 'This email is already registered' });
+        }
+        
+        if (existingPhone) {
+            return res.status(400).json({ message: 'This phone number is already registered' });
         }
         
         const salt = await bcrypt.genSalt(10);
@@ -74,14 +109,33 @@ export const register = async (req, res, next) => {
         const token = signJwt(artisan._id);
         setAuthCookie(res, token);
         
-        // Index artisan in Algolia
-        await indexArtisan(artisan);
-        
-        // Send welcome email (async, don't wait)
-        if (artisan.email) {
-            sendWelcomeEmail(artisan.email, artisan.fullName).catch(err => {
-                console.error('Failed to send welcome email:', err);
+        // Index artisan in Algolia (non-blocking, fire and forget)
+        // Use setTimeout to avoid blocking the response
+        setTimeout(() => {
+            indexArtisan(artisan).catch(err => {
+                console.error('Failed to index artisan in Algolia (non-critical):', err.message);
             });
+        }, 0);
+        
+        // Send welcome email and verification email (async, don't wait)
+        if (artisan.email) {
+            const { sendWelcomeEmail, sendVerificationEmail } = await import('../utils/email.js');
+            const verificationToken = crypto.randomBytes(32).toString('hex');
+            
+            // Store verification token
+            artisan.emailVerificationToken = verificationToken;
+            artisan.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+            await artisan.save({ validateBeforeSave: false });
+
+            // Send emails (non-blocking)
+            Promise.all([
+                sendWelcomeEmail(artisan.email, artisan.fullName).catch(err => {
+                    console.error('Failed to send welcome email:', err);
+                }),
+                sendVerificationEmail(artisan.email, artisan.fullName, verificationToken).catch(err => {
+                    console.error('Failed to send verification email:', err);
+                }),
+            ]);
         }
         
     // Return response WITHOUT sensitive fields
@@ -279,8 +333,12 @@ export const firebaseLogin = async (req, res, next) => {
                 password: hashedPassword,
             });
             
-            // Index new artisan in Algolia
-            await indexArtisan(artisan);
+            // Index new artisan in Algolia (non-blocking)
+            setTimeout(() => {
+                indexArtisan(artisan).catch(err => {
+                    console.error('Failed to index artisan in Algolia (non-critical):', err.message);
+                });
+            }, 0);
         } else if (!artisan.firebaseUid) {
             // Link existing artisan with this Firebase UID if not already linked
             artisan.firebaseUid = uid;

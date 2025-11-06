@@ -1,15 +1,63 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import Review from '../models/reviewModel.js';
 import Artisan from '../models/artisanModel.js';
+import Booking from '../models/bookingModel.js';
 import { sendEmail } from '../utils/email.js';
 
 export const createReview = asyncHandler(async (req, res) => {
   const userId = req.user._id || req.user.id;
   const { artisanId, bookingId, rating, comment, images = [] } = req.body;
 
-  if (!artisanId || !rating) return res.status(400).json({ success: false, message: 'artisanId and rating are required' });
+  if (!artisanId || !rating) {
+    return res.status(400).json({ success: false, message: 'artisanId and rating are required' });
+  }
 
-  const review = await Review.create({ artisan: artisanId, user: userId, booking: bookingId, rating, comment, images });
+  // Check if user has a completed booking with this artisan (required for review)
+  const bookingQuery = {
+    artisan: artisanId,
+    user: userId,
+    status: { $in: ['completed', 'confirmed'] }, // Allow reviews for completed or confirmed bookings
+  };
+
+  // If bookingId is provided, verify it belongs to the user and artisan
+  if (bookingId) {
+    bookingQuery._id = bookingId;
+  }
+
+  const validBooking = await Booking.findOne(bookingQuery).lean();
+
+  if (!validBooking) {
+    return res.status(403).json({
+      success: false,
+      message: 'You can only leave a review for artisans you have booked and completed services with.',
+    });
+  }
+
+  // Check if user already reviewed this artisan for this booking
+  const existingReview = await Review.findOne({
+    artisan: artisanId,
+    user: userId,
+    booking: bookingId || validBooking._id,
+  });
+
+  if (existingReview) {
+    return res.status(400).json({
+      success: false,
+      message: 'You have already reviewed this booking.',
+    });
+  }
+
+  // Create review with verified booking (mark as verified since booking exists)
+  const review = await Review.create({
+    artisan: artisanId,
+    user: userId,
+    booking: bookingId || validBooking._id,
+    rating,
+    comment,
+    images,
+    isVerified: true, // Verified purchase - user has completed booking
+  });
+
   await recomputeRating(artisanId);
   
   // Send email notification to artisan (non-blocking, errors won't crash the request)

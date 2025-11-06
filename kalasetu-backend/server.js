@@ -46,6 +46,8 @@ import contactRoutes from './routes/contactRoutes.js';
 import artisanProfileRoutes from './routes/artisanProfileRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import availabilityRoutes from './routes/availabilityRoutes.js';
+import authHelpersRoutes from './routes/authHelpersRoutes.js';
+import otpRoutes from './routes/otpRoutes.js';
 
 
 // --- Load Environment Variables ---
@@ -154,7 +156,11 @@ app.use('/api/artisan', artisanProfileRoutes);
 // /api/auth -> Handles ARTISAN authentication
 app.use('/api/auth', authRoutes);
 // /api/users -> Handles USER authentication
-app.use('/api/users', userAuthRoutes); 
+app.use('/api/users', userAuthRoutes);
+// /api/auth-helpers -> reCAPTCHA verification and OTP helpers
+app.use('/api/auth-helpers', authHelpersRoutes);
+// /api/otp -> OTP sending and verification
+app.use('/api/otp', otpRoutes); 
 // /api/uploads -> Cloudinary signed upload helpers
 app.use('/api/uploads', uploadRoutes);
 // /api/search -> Search endpoints

@@ -68,7 +68,14 @@ export const indexArtisan = async (artisan) => {
       createdAt: artisan.createdAt,
     };
 
-    const result = await index.saveObject(record);
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Algolia indexing timeout')), 5000)
+    );
+
+    const savePromise = index.saveObject(record);
+    const result = await Promise.race([savePromise, timeoutPromise]);
+    
     console.log(`✅ Indexed artisan ${artisan.publicId}`);
     return result;
   } catch (error) {

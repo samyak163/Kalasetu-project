@@ -27,6 +27,14 @@ const userSchema = new mongoose.Schema({
     loginAttempts: { type: Number, default: 0 },
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
+    // Email verification
+    emailVerificationToken: { type: String },
+    emailVerificationExpires: { type: Date },
+    emailVerified: { type: Boolean, default: false },
+    // OTP fields for verification
+    otpCode: { type: String },
+    otpExpires: { type: Date },
+    otpAttempts: { type: Number, default: 0 },
     bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artisan' }],
 }, { timestamps: true });
 

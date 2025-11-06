@@ -201,6 +201,74 @@ export const sendPasswordResetEmail = async (to, name, resetToken) => {
 };
 
 /**
+ * Send OTP code via email
+ * @param {string} to - Recipient email
+ * @param {string} name - Recipient name
+ * @param {string} otpCode - 6-digit OTP code
+ * @param {string} purpose - Purpose of OTP (registration, login, etc.)
+ * @returns {Promise<Object|null>} Email response
+ */
+export const sendOTPEmail = async (to, name, otpCode, purpose = 'verification') => {
+  const purposeText = purpose === 'registration' ? 'registration' : 
+                     purpose === 'login' ? 'login' : 'verification';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Verification Code</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #667eea; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .otp-code { font-size: 32px; font-weight: bold; text-align: center; letter-spacing: 8px; color: #667eea; background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🔐 Verification Code</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${name}!</h2>
+          <p>Your verification code for ${purposeText} is:</p>
+          
+          <div class="otp-code">${otpCode}</div>
+          
+          <div class="warning">
+            <strong>⚠️ Security Notice:</strong>
+            <ul style="margin: 10px 0 0 0;">
+              <li>This code will expire in 10 minutes</li>
+              <li>Never share this code with anyone</li>
+              <li>If you didn't request this, please ignore this email</li>
+            </ul>
+          </div>
+
+          <p style="margin-top: 20px; color: #666; font-size: 14px;">
+            Enter this code in the verification form to complete your ${purposeText}.
+          </p>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} KalaSetu. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Your KalaSetu Verification Code - ${otpCode}`,
+    html,
+  });
+};
+
+/**
  * Send email verification
  * @param {string} to - Recipient email
  * @param {string} name - Recipient name
@@ -481,6 +549,7 @@ export default {
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendVerificationEmail,
+  sendOTPEmail,
   sendOrderConfirmationEmail,
   sendNotificationEmail,
   sendBatchEmails,

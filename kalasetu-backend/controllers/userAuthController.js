@@ -36,16 +36,51 @@ const resetPasswordSchema = z.object({
 // @route   POST /api/users/register
 // @access  Public
 export const registerUser = asyncHandler(async (req, res, next) => {
-  const { fullName, email, phoneNumber, password } = registerSchema.parse(req.body);
+  const { fullName, email, phoneNumber, password, otp, recaptchaToken } = req.body;
 
-  const userExists = await User.findOne({ email });
+  // Verify reCAPTCHA if provided
+  if (recaptchaToken) {
+    const { RECAPTCHA_CONFIG } = await import('../config/env.config.js');
+    if (RECAPTCHA_CONFIG.enabled && RECAPTCHA_CONFIG.secretKey) {
+      const { verifyRecaptcha } = await import('../utils/recaptcha.js');
+      const recaptchaResult = await verifyRecaptcha(recaptchaToken, RECAPTCHA_CONFIG.secretKey);
+      if (!recaptchaResult.success) {
+        res.status(400);
+        throw new Error('reCAPTCHA verification failed. Please try again.');
+      }
+    }
+  }
+
+  // Verify OTP if provided
+  if (otp && email) {
+    const OTP = (await import('../models/otpModel.js')).default;
+    const otpRecord = await OTP.findOne({ identifier: email, verified: true });
+    if (!otpRecord) {
+      const user = await User.findOne({ email }).select('otpCode otpExpires');
+      if (!user || !user.otpCode) {
+        res.status(400);
+        throw new Error('Please verify your email with OTP first');
+      }
+      const { verifyOTP } = await import('../utils/otp.js');
+      const isValid = verifyOTP(otp, user.otpCode, user.otpExpires);
+      if (!isValid) {
+        res.status(400);
+        throw new Error('Invalid OTP code');
+      }
+    }
+  }
+
+  // Check for existing email/phone in parallel (optimize query)
+  const [userExists, phoneExists] = await Promise.all([
+    User.findOne({ email }).select('_id').lean(),
+    User.findOne({ phoneNumber }).select('_id').lean(),
+  ]);
 
   if (userExists) {
     res.status(400); // Bad Request
     throw new Error('User with this email already exists');
   }
 
-  const phoneExists = await User.findOne({ phoneNumber });
   if (phoneExists) {
     res.status(400);
     throw new Error('User with this phone number already exists');
@@ -62,6 +97,28 @@ export const registerUser = asyncHandler(async (req, res, next) => {
   if (user) {
     const token = signJwt(user._id);
     setAuthCookie(res, token); // Set HTTP-only cookie
+
+    // Send welcome email and verification email (async, don't wait)
+    if (user.email) {
+      const { sendWelcomeEmail, sendVerificationEmail } = await import('../utils/email.js');
+      const crypto = await import('crypto');
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      
+      // Store verification token
+      user.emailVerificationToken = verificationToken;
+      user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      await user.save({ validateBeforeSave: false });
+
+      // Send emails (non-blocking)
+      Promise.all([
+        sendWelcomeEmail(user.email, user.fullName).catch(err => {
+          console.error('Failed to send welcome email:', err);
+        }),
+        sendVerificationEmail(user.email, user.fullName, verificationToken).catch(err => {
+          console.error('Failed to send verification email:', err);
+        }),
+      ]);
+    }
 
     res.status(201).json({
       _id: user._id,

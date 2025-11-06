@@ -128,6 +128,15 @@ export const EMAIL_CONFIG = {
 // SMS Service Configuration (Twilio/MSG91/Kaleyra)
 // Removed SMS providers (not in use)
 
+// reCAPTCHA Configuration
+export const RECAPTCHA_CONFIG = {
+  enabled: process.env.RECAPTCHA_ENABLED !== 'false',
+  siteKey: process.env.RECAPTCHA_SITE_KEY,
+  secretKey: process.env.RECAPTCHA_SECRET_KEY,
+  version: process.env.RECAPTCHA_VERSION || 'v3', // v2 or v3
+  minScore: parseFloat(process.env.RECAPTCHA_MIN_SCORE || '0.5'), // For v3, minimum score (0.0-1.0)
+};
+
 // Push Notifications Configuration (OneSignal/FCM)
 export const PUSH_CONFIG = {
   enabled: true,
