@@ -237,7 +237,8 @@ export const JOBS_CONFIG = {
     if (typeof process.env.JOBS_ENABLED !== 'undefined') {
       return process.env.JOBS_ENABLED === 'true';
     }
-    return Boolean(process.env.QSTASH_TOKEN) && (process.env.NODE_ENV === 'production');
+    // Disabled by default to avoid quota issues - set JOBS_ENABLED=true to enable
+    return false;
   })(),
   provider: 'qstash',
   // Public webhook base used by QStash to call your backend's job webhook
