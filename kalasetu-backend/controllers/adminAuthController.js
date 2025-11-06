@@ -25,10 +25,13 @@ export const login = async (req, res) => {
     await admin.save();
     const token = admin.getSignedJwtToken();
     const cookieName = 'admin_token';
+    // Set cookie for cross-site usage (Vercel frontend -> Render backend)
+    // In production, use SameSite=None and Secure=true so the browser will send it on cross-site requests
+    // In development, relax to SameSite=Lax so it works on http://localhost
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000
     };
     res.cookie(cookieName, token, cookieOptions);
