@@ -46,8 +46,16 @@ export const AdminAuthProvider = ({ children }) => {
         navigate('/admin/dashboard');
         return { success: true };
       }
+      // Fallback if response doesn't have success flag
+      return { success: false, message: response.data.message || 'An unknown error occurred.' };
     } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'Login failed' };
+      console.error('Admin login error:', error.response || error);
+      
+      // Extract the specific error message from the backend's JSON response
+      const message = error.response?.data?.message || 
+                      'Login failed. Server is unreachable or an error occurred.';
+      
+      return { success: false, message: message };
     }
   };
 
