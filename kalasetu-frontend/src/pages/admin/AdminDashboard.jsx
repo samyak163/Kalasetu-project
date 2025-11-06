@@ -1,22 +1,29 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../lib/axios';
 import { Users, Briefcase, Star, DollarSign, TrendingUp, TrendingDown, Activity } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [period, setPeriod] = useState('30days');
 
   useEffect(() => { fetchStats(); }, [period]);
 
   const fetchStats = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await axios.get(`/api/admin/dashboard/stats?period=${period}`, { withCredentials: true });
-      setStats(response.data.data);
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
+      const response = await api.get(`/api/admin/dashboard/stats?period=${period}`);
+      if (response.data.success) {
+        setStats(response.data.data);
+      } else {
+        setError(response.data.message || 'Failed to load stats.');
+      }
+    } catch (err) {
+      console.error('Failed to fetch stats:', err);
+      setError(err.response?.data?.message || 'An error occurred while fetching dashboard data.');
     } finally {
       setLoading(false);
     }
@@ -26,6 +33,33 @@ const AdminDashboard = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+          <p className="font-bold">Error</p>
+          <p>{error}</p>
+          <button 
+            onClick={fetchStats} 
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="p-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
+        <p>No statistics available.</p>
       </div>
     );
   }
