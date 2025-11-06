@@ -11,6 +11,8 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "seed": "node scripts/seedArtisans.js",
+    "seed:users": "node scripts/seedDemoUsers.js",
+    "seed:all": "npm run seed && npm run seed:users",
     "seed:index": "npm run seed && node scripts/indexArtisans.js",
     "cleanup:dry": "node scripts/cleanupProfiles.js --dry-run",
     "cleanup": "node scripts/cleanupProfiles.js",

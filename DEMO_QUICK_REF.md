@@ -12,26 +12,44 @@ All 20 demo artisans are verified and showing on your website!
 # Verify existing demo artisans
 npm run verify:demos
 
+# Create demo users with bookmarks
+npm run seed:users
+
+# Seed everything (artisans + users)
+npm run seed:all
+
 # Clean database (keep demos only)
 npm run cleanup
 
 # Re-seed 20 verified demo artisans
 npm run seed
 
-# Clean + Re-seed
-npm run cleanup && npm run seed
+# Clean + Re-seed everything
+npm run cleanup && npm run seed:all
 ```
 
 ---
 
 ## Demo Login Credentials
 
+### Artisan Accounts
 **Any of these 20 emails** + password `Password123`:
 
 - rajesh.patil@demo.kalasetu.com
 - priya.sharma@demo.kalasetu.com
 - amit.kulkarni@demo.kalasetu.com
 - *(see DEMO_VERIFICATION.md for full list)*
+
+### User Accounts
+**Test customer experience:**
+
+| Email | Password |
+|-------|----------|
+| demo.user@kalasetu.com | DemoUser123 |
+| test.customer@kalasetu.com | TestCustomer123 |
+| sample.buyer@kalasetu.com | SampleBuyer123 |
+
+All users have 3-6 pre-bookmarked artisans!
 
 ---
 
@@ -64,14 +82,15 @@ npm run cleanup && npm run seed
 
 **Before demo:**
 ```bash
-npm run cleanup  # Remove test accounts
-npm run seed     # Re-add 20 verified demos
+npm run cleanup   # Remove test accounts
+npm run seed:all  # Re-add 20 verified artisans + 3 demo users
 ```
 
 **During demo:**
 - All artisans visible immediately
 - No waiting for email verification
-- Can login with any demo account
+- Can login with any demo account (artisan or user)
+- Demo users have pre-populated bookmarks
 - Full booking/messaging functionality
 
 ---

@@ -120,6 +120,8 @@ Comprehensive guides are available in the `docs/` directory:
 - **[API Documentation](docs/API.md)** - REST API endpoints reference
 - **[CI/CD Guide](docs/CI-CD.md)** - Deployment and automation setup
 - **Data Cleanup Script** – See "Demo Data Reset" section below for keeping only demo artisans.
+- **[Demo Users Guide](docs/DEMO_USERS.md)** - Setup demo users with bookmarks for testing
+- **[Demo Setup Guide](DEMO_SETUP_GUIDE.md)** - Complete demo setup in one place
 
 ---
 
@@ -471,7 +473,57 @@ Re-seed after cleanup (optional):
 npm run seed
 ```
 
-## ✅ Demo Artisan Email Verification
+## 👥 Demo Users with Pre-populated Data
+
+To test the user experience with bookmarks and interactions, demo users are provided.
+
+### Commands
+
+```bash
+# Create demo users with bookmarks
+npm run seed:users
+
+# Seed everything (artisans + users)
+npm run seed:all
+```
+
+### Demo User Credentials
+
+| Email | Password | Bookmarks |
+|-------|----------|-----------|
+| `demo.user@kalasetu.com` | `DemoUser123` | 3-6 random artisans |
+| `test.customer@kalasetu.com` | `TestCustomer123` | 3-6 random artisans |
+| `sample.buyer@kalasetu.com` | `SampleBuyer123` | 3-6 random artisans |
+
+### What Gets Pre-Populated
+
+- **Bookmarks**: Each user has 3-6 random demo artisans bookmarked
+- **Email Verified**: All demo users are pre-verified
+- **Ready to Use**: Can login immediately and see bookmarked artisans
+
+### Features to Test
+
+- Login as a demo user
+- View bookmarked artisans in profile
+- Add/remove bookmarks
+- Search for artisans
+- View artisan profiles
+- Browse artisan listings
+- Send messages (if implemented)
+- Create bookings (if implemented)
+
+### When to Use
+
+- Testing user flows and UI
+- Demonstrating user features
+- QA testing bookmark functionality
+- Presentation demos showing user perspective
+
+**Note**: Run `npm run seed:users` after seeding artisans (`npm run seed`) to ensure artisans exist for bookmarking.
+
+---
+
+
 
 All seeded demo artisans are **automatically verified** so they appear immediately on the website without email verification.
 

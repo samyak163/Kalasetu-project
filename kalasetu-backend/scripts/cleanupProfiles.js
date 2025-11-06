@@ -37,6 +37,13 @@ const DEMO_ARTISAN_EMAILS = [
   'asha.deshpande@demo.kalasetu.com',
 ];
 
+// Demo user emails preserved (from seedDemoUsers.js)
+const DEMO_USER_EMAILS = [
+  'demo.user@kalasetu.com',
+  'test.customer@kalasetu.com',
+  'sample.buyer@kalasetu.com',
+];
+
 const isDryRun = process.argv.includes('--dry-run');
 
 async function connectDB() {
@@ -52,6 +59,7 @@ async function connectDB() {
 async function cleanup() {
   console.log('\n🧹 Starting profile cleanup');
   console.log(`🔒 Preserving ${DEMO_ARTISAN_EMAILS.length} demo artisans`);
+  console.log(`🔒 Preserving ${DEMO_USER_EMAILS.length} demo users`);
   console.log(isDryRun ? '💡 Dry run mode (no deletions will occur)' : '⚠️ LIVE mode (documents will be deleted)');
 
   // Artisans to delete: all whose email NOT in the preserve list OR missing email
@@ -62,13 +70,20 @@ async function cleanup() {
     ],
   }).select('email fullName');
 
-  const usersToDelete = await User.find({}).select('email fullName');
+  // Users to delete: all whose email NOT in the preserve list OR missing email
+  const usersToDelete = await User.find({
+    $or: [
+      { email: { $nin: DEMO_USER_EMAILS } },
+      { email: { $exists: false } },
+    ],
+  }).select('email fullName');
 
   console.log(`\n📦 Found artisans total: ${(await Artisan.countDocuments())}`);
   console.log(`   → Will delete: ${artisansToDelete.length}`);
   console.log(`   → Will keep: ${DEMO_ARTISAN_EMAILS.length}`);
   console.log(`👥 Found users total: ${(await User.countDocuments())}`);
-  console.log(`   → Will delete all users: ${usersToDelete.length}`);
+  console.log(`   → Will delete: ${usersToDelete.length}`);
+  console.log(`   → Will keep: ${DEMO_USER_EMAILS.length}`);
 
   if (isDryRun) {
     console.log('\n🔍 Dry-run listing (first 15 artisans to delete):');
@@ -85,11 +100,13 @@ async function cleanup() {
 
   // Perform deletions
   const artisanEmailsDeleted = artisansToDelete.map(a => a.email).filter(Boolean);
+  const userEmailsDeleted = usersToDelete.map(u => u.email).filter(Boolean);
+  
   await Artisan.deleteMany({ _id: { $in: artisansToDelete.map(a => a._id) } });
   await User.deleteMany({ _id: { $in: usersToDelete.map(u => u._id) } });
 
   console.log('\n🗑️ Deleted artisans:', artisanEmailsDeleted.length);
-  console.log('🗑️ Deleted users:', usersToDelete.length);
+  console.log('🗑️ Deleted users:', userEmailsDeleted.length);
   console.log('📊 Remaining artisans:', await Artisan.countDocuments());
   console.log('📊 Remaining users:', await User.countDocuments());
   console.log('\n✅ Cleanup complete');
