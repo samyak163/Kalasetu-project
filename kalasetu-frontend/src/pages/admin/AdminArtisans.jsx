@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Search, CheckCircle, Ban, Trash2, Eye, Mail, Phone, Calendar } from 'lucide-react';
+import api from '../../lib/axios';
+import { Search, CheckCircle, Ban, Trash2, Eye, Mail, Phone, Calendar, RefreshCcw, AlertTriangle } from 'lucide-react';
+import { DEFAULT_PAGE_SIZE, SKELETON_ROWS, getPaginationRange } from '../../config/constants.js';
 
 const AdminArtisans = () => {
   const [artisans, setArtisans] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [verified, setVerified] = useState('all');
@@ -15,15 +17,28 @@ const AdminArtisans = () => {
 
   const fetchArtisans = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await axios.get('/api/admin/artisans', {
-        params: { page, search, status, verified, limit: 10 },
-        withCredentials: true
+      const response = await api.get('/api/admin/artisans', {
+        params: { page, search, status, verified, limit: DEFAULT_PAGE_SIZE }
       });
-      setArtisans(response.data.data);
-      setPagination(response.data.pagination);
-    } catch (error) {
-      console.error('Failed to fetch artisans:', error);
+      // Expecting shape: { data: [...], pagination: { total, pages } }
+      const list = Array.isArray(response.data?.data) ? response.data.data : [];
+      setArtisans(list);
+      setPagination(response.data?.pagination || null);
+    } catch (err) {
+      console.error('Failed to fetch artisans:', {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      if (err.response?.status === 403) {
+        setError('Permission denied: your admin role lacks required permissions for artisans.');
+      } else {
+        setError(err.response?.data?.message || 'Failed to load artisans');
+      }
+      setArtisans([]);
     } finally {
       setLoading(false);
     }
@@ -32,7 +47,7 @@ const AdminArtisans = () => {
   const handleVerify = async (id, isVerified) => {
     if (!window.confirm(`Are you sure you want to ${isVerified ? 'verify' : 'unverify'} this artisan?`)) return;
     try {
-      await axios.put(`/api/admin/artisans/${id}/verify`, { verified: isVerified }, { withCredentials: true });
+      await api.put(`/api/admin/artisans/${id}/verify`, { verified: isVerified });
       fetchArtisans();
       alert(`Artisan ${isVerified ? 'verified' : 'unverified'} successfully`);
     } catch {
@@ -44,7 +59,7 @@ const AdminArtisans = () => {
     const reason = prompt(`Please provide a reason for ${isActive ? 'activating' : 'suspending'} this artisan:`);
     if (!reason) return;
     try {
-      await axios.put(`/api/admin/artisans/${id}/status`, { isActive, reason }, { withCredentials: true });
+      await api.put(`/api/admin/artisans/${id}/status`, { isActive, reason });
       fetchArtisans();
       alert(`Artisan ${isActive ? 'activated' : 'suspended'} successfully`);
     } catch {
@@ -60,7 +75,7 @@ const AdminArtisans = () => {
       return;
     }
     try {
-      await axios.delete(`/api/admin/artisans/${id}`, { withCredentials: true });
+      await api.delete(`/api/admin/artisans/${id}`);
       fetchArtisans();
       alert('Artisan deleted successfully');
     } catch (error) {
@@ -97,11 +112,58 @@ const AdminArtisans = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>
-        ) : artisans.length === 0 ? (
+        {error && !loading && (
+          <div className="bg-red-50 border-b border-red-200 px-6 py-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-700">{error}</p>
+              <p className="text-xs text-red-600 mt-1">Check admin authentication and CORS configuration. You can retry the request.</p>
+            </div>
+            <button onClick={fetchArtisans} className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700">
+              <RefreshCcw className="w-4 h-4" /> Retry
+            </button>
+          </div>
+        )}
+        {loading && (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artisan</th>
+                  <th className="px-6 py-3"/>
+                  <th className="px-6 py-3"/>
+                  <th className="px-6 py-3"/>
+                  <th className="px-6 py-3"/>
+                  <th className="px-6 py-3"/>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {Array.from({ length: SKELETON_ROWS }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-gray-200" />
+                        <div>
+                          <div className="h-3 w-32 bg-gray-200 rounded mb-2" />
+                          <div className="h-3 w-20 bg-gray-200 rounded" />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4"><div className="h-3 w-40 bg-gray-200 rounded mb-2" /><div className="h-3 w-24 bg-gray-200 rounded" /></td>
+                    <td className="px-6 py-4"><div className="h-5 w-16 bg-gray-200 rounded" /></td>
+                    <td className="px-6 py-4"><div className="h-5 w-20 bg-gray-200 rounded" /></td>
+                    <td className="px-6 py-4"><div className="h-3 w-24 bg-gray-200 rounded" /></td>
+                    <td className="px-6 py-4"><div className="h-5 w-28 bg-gray-200 rounded" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {!loading && !error && artisans.length === 0 && (
           <div className="text-center py-12"><p className="text-gray-500">No artisans found</p></div>
-        ) : (
+        )}
+        {!loading && !error && artisans.length > 0 && (
           <>
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -141,7 +203,7 @@ const AdminArtisans = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><div className="flex items-center gap-2"><Calendar className="w-4 h-4" />{new Date(artisan.createdAt).toLocaleDateString()}</div></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => window.open(`/artisan/${artisan.publicId}`, '_blank')} className="text-blue-600 hover:text-blue-900" title="View Profile"><Eye className="w-5 h-5" /></button>
+                          <button onClick={() => window.open(`/artisan/${artisan.publicId || artisan._id}`, '_blank')} className="text-blue-600 hover:text-blue-900" title="View Profile"><Eye className="w-5 h-5" /></button>
                           <button onClick={() => handleVerify(artisan._id, !artisan.isVerified)} className={artisan.isVerified ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'} title={artisan.isVerified ? 'Unverify' : 'Verify'}><CheckCircle className="w-5 h-5" /></button>
                           <button onClick={() => handleStatusChange(artisan._id, !artisan.isActive)} className={artisan.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} title={artisan.isActive ? 'Suspend' : 'Activate'}><Ban className="w-5 h-5" /></button>
                           <button onClick={() => handleDelete(artisan._id)} className="text-red-600 hover:text-red-900" title="Delete (Super Admin Only)"><Trash2 className="w-5 h-5" /></button>
@@ -154,7 +216,9 @@ const AdminArtisans = () => {
             </div>
             {pagination && pagination.pages > 1 && (
               <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                <div className="text-sm text-gray-700">Showing <span className="font-medium">{((page - 1) * 10) + 1}</span> to <span className="font-medium">{Math.min(page * 10, pagination.total)}</span> of <span className="font-medium">{pagination.total}</span> results</div>
+                <div className="text-sm text-gray-700">
+                  {(() => { const rng = getPaginationRange(page, pagination.total, DEFAULT_PAGE_SIZE); return <>Showing <span className="font-medium">{rng.start}</span> to <span className="font-medium">{rng.end}</span> of <span className="font-medium">{pagination.total}</span> results</>; })()}
+                </div>
                 <div className="flex gap-2">
                   <button onClick={() => setPage(page - 1)} disabled={page === 1} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
                   <button onClick={() => setPage(page + 1)} disabled={page >= pagination.pages} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">Next</button>

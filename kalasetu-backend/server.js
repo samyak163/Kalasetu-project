@@ -119,24 +119,40 @@ app.use('/api', apiLimiter);
 app.use('/api', trackApiRequest);
 
 // CORS Configuration
-const allowedOrigins = new Set((process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean));
+// Support exact origins and simple wildcard entries like *.vercel.app
+const corsOriginEntries = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+const exactOrigins = new Set();
+const wildcardSuffixes = [];
+for (const entry of corsOriginEntries) {
+  if (entry.startsWith('*.')) {
+    wildcardSuffixes.push(entry.slice(1)); // store ".vercel.app"
+  } else if (entry) {
+    exactOrigins.add(entry);
+  }
+}
+
 app.use(cors({
-    origin: (origin, callback) => {
-        // Allow requests with no origin (like Postman, mobile apps, server-to-server)
-        if (!origin) return callback(null, true);
-        
-        // Allow specific origins from environment
-        if (allowedOrigins.has(origin)) return callback(null, true);
-        
-        // In development, allow localhost origins
-        if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
-            return callback(null, true);
-        }
-        
-        // Block everything else with a clean JSON error
-        return callback(Object.assign(new Error('Not allowed by CORS'), { code: 'CORS_NOT_ALLOWED' }));
-    },
-    credentials: true,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like Postman, mobile apps, server-to-server)
+    if (!origin) return callback(null, true);
+
+    // Allow specific origins from environment
+    if (exactOrigins.has(origin)) return callback(null, true);
+
+    // Allow wildcard suffix matches (e.g., *.vercel.app)
+    if (wildcardSuffixes.some(suffix => origin.endsWith(suffix))) {
+      return callback(null, true);
+    }
+
+    // In development, allow localhost origins
+    if (process.env.NODE_ENV !== 'production' && origin.includes('localhost')) {
+      return callback(null, true);
+    }
+
+    // Block everything else with a clean JSON error
+    return callback(Object.assign(new Error('Not allowed by CORS'), { code: 'CORS_NOT_ALLOWED' }));
+  },
+  credentials: true,
 }));
 
 // --- API Routes ---

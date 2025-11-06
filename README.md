@@ -12,10 +12,6 @@ KalaSetu is a full-stack web application connecting traditional artisans with US
 - [Documentation](#documentation)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
-
-## ✨ Features
-
-### For Artisans
 - 🔐 Secure authentication (Email, Phone, Firebase OTP)
 - 👤 Professional profile management
 - 📸 Portfolio image uploads (Cloudinary)
@@ -103,13 +99,6 @@ KalaSetu is a full-stack web application connecting traditional artisans with US
    cd ../kalasetu-frontend
    copy .env.example .env
    # Edit .env with your configuration
-   ```
-
-4. **Start development servers**
-   ```bash
-   # Backend (Terminal 1)
-   cd kalasetu-backend
-   npm run dev
    
    # Frontend (Terminal 2)
    cd kalasetu-frontend
@@ -130,6 +119,7 @@ Comprehensive guides are available in the `docs/` directory:
 - **[Integrations Guide](docs/INTEGRATIONS.md)** - External services setup (Firebase, Cloudinary, etc.)
 - **[API Documentation](docs/API.md)** - REST API endpoints reference
 - **[CI/CD Guide](docs/CI-CD.md)** - Deployment and automation setup
+- **Data Cleanup Script** – See "Demo Data Reset" section below for keeping only demo artisans.
 
 ---
 
@@ -144,8 +134,6 @@ kalasetu-project/
    - models/                  # Mongoose models
    - routes/                  # API routes
    - utils/                   # Utility functions
-   - jobs/                    # Background job handlers
-   - scripts/                 # CLI scripts
    - server.js                # Entry point
 
 - kalasetu-frontend/         # React frontend
@@ -243,16 +231,10 @@ The backend will start on `http://localhost:5000`
 cd kalasetu-frontend
 
 # Install dependencies
-npm install
 
 # Create .env file from example
 cp .env.example .env
-
-# Edit .env and add your actual values
-# See Environment Variables section below
-
 # Start development server
-npm run dev
 ```
 
 The frontend will start on `http://localhost:5173`
@@ -452,3 +434,68 @@ This project is private and proprietary.
 ---
 
 **Need Help?** Open an issue on GitHub or contact the maintainers.
+
+## 🧹 Demo Data Reset
+
+To reset your database and keep ONLY the seeded demo artisans (useful for presentations), a cleanup script is provided.
+
+### Commands
+
+```bash
+# Dry run (shows what would be deleted)
+npm run cleanup:dry
+
+# Perform deletion (removes all users and non-demo artisans)
+npm run cleanup
+```
+
+### What It Does
+- Preserves demo artisans from `seedArtisans.js` (20 emails ending with `@demo.kalasetu.com`).
+- Deletes all other `Artisan` documents.
+- Deletes ALL `User` documents.
+- Provides a dry-run summary first so you can verify counts.
+
+### When to Use
+- Before a live demo to ensure only curated demo profiles exist.
+- After bulk testing or QA that created test accounts.
+
+### Safety Tips
+- Always run the dry run first.
+- Consider taking a MongoDB backup before executing: `mongodump --uri "$MONGO_URI" --out backup/$(date +%Y%m%d)`
+- Do NOT run in production unless you fully understand consequences.
+
+Script location: `kalasetu-backend/scripts/cleanupProfiles.js`
+
+Re-seed after cleanup (optional):
+```bash
+npm run seed
+```
+
+## ✅ Demo Artisan Email Verification
+
+All seeded demo artisans are **automatically verified** so they appear immediately on the website without email verification.
+
+### Commands
+
+```bash
+# Verify all demo artisans (if they become unverified)
+npm run verify:demos
+```
+
+### What Gets Auto-Verified
+
+- All 20 demo artisans (emails ending with `@demo.kalasetu.com`)
+- Sets `emailVerified: true` on their accounts
+- Removes any pending verification tokens
+- Ensures they show in search results and listings
+
+### When to Use
+
+- After database restore/migration
+- If demo artisans accidentally get marked as unverified
+- Before a presentation to ensure all demos are ready
+
+**Note**: Regular artisans (non-demo) still require email verification via the link sent to their inbox.
+
+---
+

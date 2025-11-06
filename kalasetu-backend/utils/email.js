@@ -78,6 +78,12 @@ export const sendEmail = async (options) => {
  * @returns {Promise<Object|null>} Email response
  */
 export const sendWelcomeEmail = async (to, name) => {
+  // 🚀 DEVELOPMENT: Log welcome email info
+  console.log('\n📧 ===== WELCOME EMAIL =====');
+  console.log(`👤 To: ${to} (${name})`);
+  console.log(`✅ Account created successfully!`);
+  console.log('===========================\n');
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -277,6 +283,12 @@ export const sendOTPEmail = async (to, name, otpCode, purpose = 'verification') 
  */
 export const sendVerificationEmail = async (to, name, verificationToken) => {
   const verifyUrl = `${EMAIL_CONFIG.appUrl}/verify-email?token=${verificationToken}`;
+
+  // 🚀 DEVELOPMENT: Log verification link to console for testing
+  console.log('\n📧 ===== EMAIL VERIFICATION LINK =====');
+  console.log(`👤 To: ${to}`);
+  console.log(`🔗 Verification URL: ${verifyUrl}`);
+  console.log('=====================================\n');
 
   const html = `
     <!DOCTYPE html>

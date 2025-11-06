@@ -426,6 +426,8 @@ const seedArtisans = async () => {
         languagesSpoken: artisanData.languagesSpoken,
         businessType: artisanData.businessType,
         serviceRadius: artisanData.serviceRadius,
+        // ✅ AUTO-VERIFY DEMO ARTISANS (so they show on website immediately)
+        emailVerified: true,
         location: {
           type: 'Point',
           coordinates: location.coordinates, // [longitude, latitude]

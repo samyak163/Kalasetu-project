@@ -27,10 +27,14 @@ function getServiceAccount() {
 if (!admin.apps.length) {
   const creds = getServiceAccount();
   if (creds) {
-    admin.initializeApp({
-      credential: admin.credential.cert(creds)
-    });
-    console.log('✅ Firebase Admin initialized');
+    try {
+      admin.initializeApp({
+        credential: admin.credential.cert(creds)
+      });
+      console.log('✅ Firebase Admin initialized');
+    } catch (e) {
+      console.warn('⚠️  Firebase Admin not initialized: invalid service account credentials:', e.message);
+    }
   } else {
     console.warn('⚠️  Firebase Admin not initialized: missing service account');
   }

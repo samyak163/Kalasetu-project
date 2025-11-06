@@ -11,7 +11,10 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "seed": "node scripts/seedArtisans.js",
-    "seed:index": "npm run seed && node scripts/indexArtisans.js"
+    "seed:index": "npm run seed && node scripts/indexArtisans.js",
+    "cleanup:dry": "node scripts/cleanupProfiles.js --dry-run",
+    "cleanup": "node scripts/cleanupProfiles.js",
+    "verify:demos": "node scripts/verifyDemoArtisans.js"
   },
   "keywords": [],
   "author": "",
