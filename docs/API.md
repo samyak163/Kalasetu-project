@@ -1,4 +1,4 @@
-﻿# 📡 API Documentation
+# 📡 API Documentation
 
 REST API documentation for KalaSetu backend.
 
@@ -45,20 +45,20 @@ Content-Type: application/json
 }
 ```
 
-### Register USER
+### Register Customer
 ```http
 POST /api/users/register
 Content-Type: application/json
 
 {
-  "fullName": "Jane USER",
+  "fullName": "Jane Customer",
   "email": "jane@example.com",
   "phoneNumber": "+919876543210",
   "password": "SecurePass123"
 }
 ```
 
-### Login USER
+### Login Customer
 ```http
 POST /api/users/login
 Content-Type: application/json
@@ -72,13 +72,13 @@ Content-Type: application/json
 ### Get Current User
 ```http
 GET /api/auth/me          // For artisans
-GET /api/users/me         // For USERs
+GET /api/users/me         // For customers
 ```
 
 ### Logout
 ```http
 POST /api/auth/logout     // For artisans
-POST /api/users/logout    // For USERs
+POST /api/users/logout    // For customers
 ```
 
 ---
@@ -276,7 +276,7 @@ Content-Type: application/json
 
 {
   "artisanId": "artisan-mongodb-id",
-  "USERId": "USER-mongodb-id"
+  "customerId": "customer-mongodb-id"
 }
 ```
 

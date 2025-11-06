@@ -1,4 +1,4 @@
-﻿# 🔌 External Integrations Guide
+# 🔌 External Integrations Guide
 
 Complete guide for integrating third-party services with KalaSetu.
 
@@ -15,7 +15,7 @@ Complete guide for integrating third-party services with KalaSetu.
 ## Communication Tools
 
 ### Stream Chat (Real-time Messaging)
-**Purpose:** Chat between artisans and USERs
+**Purpose:** Chat between artisans and customers
 
 ```env
 # Backend
@@ -123,7 +123,7 @@ VITE_LOGROCKET_APP_ID=your-app-id
 ## Payment Processing
 
 ### Razorpay
-**Purpose:** Payment collection from USERs
+**Purpose:** Payment collection from customers
 
 ```env
 # Backend

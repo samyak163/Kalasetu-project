@@ -17,13 +17,11 @@ const connectDB = async () => {
 const createSuperAdmin = async () => {
   try {
     console.log('🔐 Creating Super Admin...\n');
-    const existingAdmin = await Admin.findOne({ role: 'super_admin' });
-    if (existingAdmin) {
-      console.log('⚠️  Super admin already exists!');
-      console.log(`Email: ${existingAdmin.email}`);
-      console.log('\nIf you forgot the password, delete this admin from database and run script again.\n');
-      return;
-    }
+    
+    // Delete ALL existing admins
+    console.log('🗑️  Deleting existing admin(s)...');
+    const deleteResult = await Admin.deleteMany({});
+    console.log(`✅ Deleted ${deleteResult.deletedCount} admin(s)\n`);
     const superAdminData = {
       fullName: 'Super Admin',
       email: 'samdoshi163@gmail.com',
