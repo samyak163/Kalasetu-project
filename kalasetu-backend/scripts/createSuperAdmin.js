@@ -24,7 +24,7 @@ const createSuperAdmin = async () => {
     console.log(`✅ Deleted ${deleteResult.deletedCount} admin(s)\n`);
     const superAdminData = {
       fullName: 'Super Admin',
-      email: 'samdoshi163@gmail.com',
+      email: 'btmanime7@gmail.com',
       password: 'SuperAdmin@123',
       role: 'super_admin',
       permissions: {
