@@ -45,42 +45,32 @@ const resetPasswordSchema = z.object({
 
 export const register = async (req, res, next) => {
     try {
-        const { fullName, email, phoneNumber, password, otp, recaptchaToken } = req.body;
+        const { fullName, email, phoneNumber, password, recaptchaToken } = req.body;
         
-        // Verify reCAPTCHA if provided
-        if (recaptchaToken && RECAPTCHA_CONFIG.enabled) {
+        // Verify reCAPTCHA if provided (non-blocking - verify but don't block registration)
+        if (recaptchaToken && RECAPTCHA_CONFIG.enabled && RECAPTCHA_CONFIG.secretKey) {
             const { verifyRecaptcha } = await import('../utils/recaptcha.js');
-            const recaptchaResult = await verifyRecaptcha(recaptchaToken, RECAPTCHA_CONFIG.secretKey);
-            if (!recaptchaResult.success) {
-                return res.status(400).json({ 
-                    success: false,
-                    message: 'reCAPTCHA verification failed. Please try again.' 
+            // Start verification but don't await - let it run in background
+            verifyRecaptcha(recaptchaToken, RECAPTCHA_CONFIG.secretKey)
+                .then(recaptchaResult => {
+                    if (!recaptchaResult.success) {
+                        // Log suspicious activity but don't block user
+                        console.warn('⚠️ Suspicious registration detected:', {
+                            email: email || 'no-email',
+                            phoneNumber: phoneNumber || 'no-phone',
+                            ip: req.ip,
+                            score: recaptchaResult.score,
+                            errorCodes: recaptchaResult.errorCodes
+                        });
+                        // TODO: Mark account for manual review or add to suspicious list
+                    } else {
+                        console.log('✅ reCAPTCHA verified for:', email || phoneNumber);
+                    }
+                })
+                .catch(err => {
+                    // Don't block user if reCAPTCHA service fails
+                    console.error('reCAPTCHA verification error (non-critical):', err.message);
                 });
-            }
-        }
-        
-        // Verify OTP if provided (for enhanced security)
-        if (otp && email) {
-            const OTP = (await import('../models/otpModel.js')).default;
-            const otpRecord = await OTP.findOne({ identifier: email, verified: true });
-            if (!otpRecord) {
-                // Also check user document
-                const user = await Artisan.findOne({ email }).select('otpCode otpExpires');
-                if (!user || !user.otpCode) {
-                    return res.status(400).json({ 
-                        success: false,
-                        message: 'Please verify your email with OTP first' 
-                    });
-                }
-                const { verifyOTP } = await import('../utils/otp.js');
-                const isValid = verifyOTP(otp, user.otpCode, user.otpExpires);
-                if (!isValid) {
-                    return res.status(400).json({ 
-                        success: false,
-                        message: 'Invalid OTP code' 
-                    });
-                }
-            }
         }
         
         // Check for existing email/phone in parallel (optimize query)
@@ -117,28 +107,39 @@ export const register = async (req, res, next) => {
             });
         }, 0);
         
-        // Send welcome email and verification email (async, don't wait)
+        
+        // Send welcome email and verification email (async, non-blocking)
         if (artisan.email) {
             const { sendWelcomeEmail, sendVerificationEmail } = await import('../utils/email.js');
             const verificationToken = crypto.randomBytes(32).toString('hex');
             
-            // Store verification token
-            artisan.emailVerificationToken = verificationToken;
-            artisan.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-            await artisan.save({ validateBeforeSave: false });
-
-            // Send emails (non-blocking)
-            Promise.all([
-                sendWelcomeEmail(artisan.email, artisan.fullName).catch(err => {
-                    console.error('Failed to send welcome email:', err);
-                }),
-                sendVerificationEmail(artisan.email, artisan.fullName, verificationToken).catch(err => {
-                    console.error('Failed to send verification email:', err);
-                }),
-            ]);
-        }
-        
-    // Return response WITHOUT sensitive fields
+            // Store verification token in background
+            setImmediate(() => {
+                Artisan.findByIdAndUpdate(
+                    artisan._id,
+                    {
+                        emailVerificationToken: verificationToken,
+                        emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+                    },
+                    { validateBeforeSave: false }
+                ).catch(err => {
+                    console.error('Failed to save verification token:', err);
+                });
+            });
+            
+            // Send emails (non-blocking, fire and forget)
+            Promise.allSettled([
+                sendWelcomeEmail(artisan.email, artisan.fullName),
+                sendVerificationEmail(artisan.email, artisan.fullName, verificationToken)
+            ]).then(results => {
+                results.forEach((result, index) => {
+                    const emailType = index === 0 ? 'welcome' : 'verification';
+                    if (result.status === 'rejected') {
+                        console.error(`Failed to send ${emailType} email:`, result.reason);
+                    }
+                });
+            });
+        }    // Return response WITHOUT sensitive fields
     const artisanPublic = artisan.toObject();
     delete artisanPublic.password;
     delete artisanPublic.resetPasswordToken;

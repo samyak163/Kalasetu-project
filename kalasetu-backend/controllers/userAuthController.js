@@ -36,37 +36,34 @@ const resetPasswordSchema = z.object({
 // @route   POST /api/users/register
 // @access  Public
 export const registerUser = asyncHandler(async (req, res, next) => {
-  const { fullName, email, phoneNumber, password, otp, recaptchaToken } = req.body;
+  const { fullName, email, phoneNumber, password, recaptchaToken } = req.body;
 
-  // Verify reCAPTCHA if provided
+  // Verify reCAPTCHA if provided (non-blocking - verify but don't block registration)
   if (recaptchaToken) {
     const { RECAPTCHA_CONFIG } = await import('../config/env.config.js');
     if (RECAPTCHA_CONFIG.enabled && RECAPTCHA_CONFIG.secretKey) {
       const { verifyRecaptcha } = await import('../utils/recaptcha.js');
-      const recaptchaResult = await verifyRecaptcha(recaptchaToken, RECAPTCHA_CONFIG.secretKey);
-      if (!recaptchaResult.success) {
-        res.status(400);
-        throw new Error('reCAPTCHA verification failed. Please try again.');
-      }
-    }
-  }
-
-  // Verify OTP if provided
-  if (otp && email) {
-    const OTP = (await import('../models/otpModel.js')).default;
-    const otpRecord = await OTP.findOne({ identifier: email, verified: true });
-    if (!otpRecord) {
-      const user = await User.findOne({ email }).select('otpCode otpExpires');
-      if (!user || !user.otpCode) {
-        res.status(400);
-        throw new Error('Please verify your email with OTP first');
-      }
-      const { verifyOTP } = await import('../utils/otp.js');
-      const isValid = verifyOTP(otp, user.otpCode, user.otpExpires);
-      if (!isValid) {
-        res.status(400);
-        throw new Error('Invalid OTP code');
-      }
+      // Start verification but don't await - let it run in background
+      verifyRecaptcha(recaptchaToken, RECAPTCHA_CONFIG.secretKey)
+        .then(recaptchaResult => {
+          if (!recaptchaResult.success) {
+            // Log suspicious activity but don't block user
+            console.warn('⚠️ Suspicious user registration detected:', {
+              email: email || 'no-email',
+              phoneNumber: phoneNumber || 'no-phone',
+              ip: req.ip,
+              score: recaptchaResult.score,
+              errorCodes: recaptchaResult.errorCodes
+            });
+            // TODO: Mark account for manual review or add to suspicious list
+          } else {
+            console.log('✅ reCAPTCHA verified for user:', email || phoneNumber);
+          }
+        })
+        .catch(err => {
+          // Don't block user if reCAPTCHA service fails
+          console.error('reCAPTCHA verification error (non-critical):', err.message);
+        });
     }
   }
 
@@ -98,26 +95,38 @@ export const registerUser = asyncHandler(async (req, res, next) => {
     const token = signJwt(user._id);
     setAuthCookie(res, token); // Set HTTP-only cookie
 
-    // Send welcome email and verification email (async, don't wait)
+    // Send welcome email and verification email (async, non-blocking)
     if (user.email) {
       const { sendWelcomeEmail, sendVerificationEmail } = await import('../utils/email.js');
       const crypto = await import('crypto');
       const verificationToken = crypto.randomBytes(32).toString('hex');
       
-      // Store verification token
-      user.emailVerificationToken = verificationToken;
-      user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-      await user.save({ validateBeforeSave: false });
-
-      // Send emails (non-blocking)
-      Promise.all([
-        sendWelcomeEmail(user.email, user.fullName).catch(err => {
-          console.error('Failed to send welcome email:', err);
-        }),
-        sendVerificationEmail(user.email, user.fullName, verificationToken).catch(err => {
-          console.error('Failed to send verification email:', err);
-        }),
-      ]);
+      // Store verification token in background
+      setImmediate(() => {
+        User.findByIdAndUpdate(
+          user._id,
+          {
+            emailVerificationToken: verificationToken,
+            emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+          },
+          { validateBeforeSave: false }
+        ).catch(err => {
+          console.error('Failed to save user verification token:', err);
+        });
+      });
+      
+      // Send emails (non-blocking, fire and forget)
+      Promise.allSettled([
+        sendWelcomeEmail(user.email, user.fullName),
+        sendVerificationEmail(user.email, user.fullName, verificationToken)
+      ]).then(results => {
+        results.forEach((result, index) => {
+          const emailType = index === 0 ? 'welcome' : 'verification';
+          if (result.status === 'rejected') {
+            console.error(`Failed to send ${emailType} email:`, result.reason);
+          }
+        });
+      });
     }
 
     res.status(201).json({

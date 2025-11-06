@@ -20,9 +20,7 @@ export const verifyRecaptcha = async (token, secretKey) => {
           secret: secretKey,
           response: token,
         },
-      },
-      {
-        timeout: 5000, // 5 second timeout
+        timeout: 10000, // 10 second timeout (increased from 5s)
       }
     );
 

@@ -89,6 +89,11 @@ Complete list of environment variables needed for Kalasetu deployment.
 ### Optional/Security
 - ⚠️ `FIELD_ENCRYPTION_KEY` - For field-level encryption (if used)
 
+### reCAPTCHA (Bot Protection) - Recommended
+- ✅ `RECAPTCHA_ENABLED` - Set to `true` to enable reCAPTCHA verification (default: false)
+- ✅ `RECAPTCHA_SITE_KEY` - reCAPTCHA site key (public key)
+- ✅ `RECAPTCHA_SECRET_KEY` - reCAPTCHA secret key (private, backend only)
+
 ---
 
 ## 🎯 FRONTEND (Vercel) - Required Variables
@@ -141,6 +146,9 @@ Complete list of environment variables needed for Kalasetu deployment.
 
 ### Daily.co (Video Calls)
 - ✅ `VITE_DAILY_DOMAIN` - Daily.co domain
+
+### reCAPTCHA (Bot Protection) - Recommended
+- ✅ `VITE_RECAPTCHA_SITE_KEY` - reCAPTCHA site key (public key, same as backend RECAPTCHA_SITE_KEY)
 
 ### Optional
 - ⚠️ `VITE_APP_VERSION` - App version (default: 1.0.0)
