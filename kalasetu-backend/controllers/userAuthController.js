@@ -36,36 +36,9 @@ const resetPasswordSchema = z.object({
 // @route   POST /api/users/register
 // @access  Public
 export const registerUser = asyncHandler(async (req, res, next) => {
-  const { fullName, email, phoneNumber, password, recaptchaToken } = req.body;
+  const { fullName, email, phoneNumber, password } = req.body;
 
-  // Verify reCAPTCHA if provided (non-blocking - verify but don't block registration)
-  if (recaptchaToken) {
-    const { RECAPTCHA_CONFIG } = await import('../config/env.config.js');
-    if (RECAPTCHA_CONFIG.enabled && RECAPTCHA_CONFIG.secretKey) {
-      const { verifyRecaptcha } = await import('../utils/recaptcha.js');
-      // Start verification but don't await - let it run in background
-      verifyRecaptcha(recaptchaToken, RECAPTCHA_CONFIG.secretKey)
-        .then(recaptchaResult => {
-          if (!recaptchaResult.success) {
-            // Log suspicious activity but don't block user
-            console.warn('⚠️ Suspicious user registration detected:', {
-              email: email || 'no-email',
-              phoneNumber: phoneNumber || 'no-phone',
-              ip: req.ip,
-              score: recaptchaResult.score,
-              errorCodes: recaptchaResult.errorCodes
-            });
-            // TODO: Mark account for manual review or add to suspicious list
-          } else {
-            console.log('✅ reCAPTCHA verified for user:', email || phoneNumber);
-          }
-        })
-        .catch(err => {
-          // Don't block user if reCAPTCHA service fails
-          console.error('reCAPTCHA verification error (non-critical):', err.message);
-        });
-    }
-  }
+  // reCAPTCHA removed for demo - will be added back when going public with custom domain
 
   // Check for existing email/phone in parallel (optimize query)
   const [userExists, phoneExists] = await Promise.all([

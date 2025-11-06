@@ -8,7 +8,7 @@ import { indexArtisan } from '../utils/algolia.js';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '../utils/email.js';
 import { trackEvent } from '../utils/posthog.js';
 import * as Sentry from '@sentry/node';
-import { RECAPTCHA_CONFIG } from '../config/env.config.js';
+// RECAPTCHA_CONFIG import removed - reCAPTCHA disabled for demo (will add back with custom domain)
 
 const registerSchema = z.object({
     fullName: z.string().min(2),
@@ -45,33 +45,9 @@ const resetPasswordSchema = z.object({
 
 export const register = async (req, res, next) => {
     try {
-        const { fullName, email, phoneNumber, password, recaptchaToken } = req.body;
+        const { fullName, email, phoneNumber, password } = req.body;
         
-        // Verify reCAPTCHA if provided (non-blocking - verify but don't block registration)
-        if (recaptchaToken && RECAPTCHA_CONFIG.enabled && RECAPTCHA_CONFIG.secretKey) {
-            const { verifyRecaptcha } = await import('../utils/recaptcha.js');
-            // Start verification but don't await - let it run in background
-            verifyRecaptcha(recaptchaToken, RECAPTCHA_CONFIG.secretKey)
-                .then(recaptchaResult => {
-                    if (!recaptchaResult.success) {
-                        // Log suspicious activity but don't block user
-                        console.warn('⚠️ Suspicious registration detected:', {
-                            email: email || 'no-email',
-                            phoneNumber: phoneNumber || 'no-phone',
-                            ip: req.ip,
-                            score: recaptchaResult.score,
-                            errorCodes: recaptchaResult.errorCodes
-                        });
-                        // TODO: Mark account for manual review or add to suspicious list
-                    } else {
-                        console.log('✅ reCAPTCHA verified for:', email || phoneNumber);
-                    }
-                })
-                .catch(err => {
-                    // Don't block user if reCAPTCHA service fails
-                    console.error('reCAPTCHA verification error (non-critical):', err.message);
-                });
-        }
+        // reCAPTCHA removed for demo - will be added back when going public with custom domain
         
         // Check for existing email/phone in parallel (optimize query)
         const [existingEmail, existingPhone] = await Promise.all([
