@@ -11,6 +11,8 @@ export const createReview = asyncHandler(async (req, res) => {
 
   const review = await Review.create({ artisan: artisanId, user: userId, booking: bookingId, rating, comment, images });
   await recomputeRating(artisanId);
+  
+  // Send email notification to artisan (non-blocking, errors won't crash the request)
   try {
     const artisan = await Artisan.findById(artisanId).select('email fullName').lean();
     if (artisan?.email) {
@@ -20,7 +22,11 @@ export const createReview = asyncHandler(async (req, res) => {
         text: `You have a new review: ${rating}★\n\n${comment || ''}`,
       });
     }
-  } catch {}
+  } catch (emailError) {
+    // Log error but don't fail the review creation
+    console.error('Failed to send review notification email:', emailError);
+  }
+  
   res.status(201).json({ success: true, data: review });
 });
 

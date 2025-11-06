@@ -67,16 +67,28 @@ const Header = () => {
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
               {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] leading-3 px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
             </button>
-            {/* Chat & Call (visible when logged in) */}
+            {/* Chat & Call buttons - for both users and artisans */}
             {auth.user && (
-              <div className="hidden sm:flex items-center gap-2 mr-1">
-                <Link to="/messages" className="px-3 py-1.5 rounded-md text-sm font-semibold text-gray-700 hover:text-white hover:bg-[#A55233] transition-colors">
-                  Chat
+              <>
+                <Link
+                  to={auth.userType === 'artisan' ? '/artisan/chat' : '/messages'}
+                  className="relative p-2 text-gray-700 hover:text-[#A55233] transition-colors"
+                  aria-label="Chat"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
                 </Link>
-                <Link to="/video-call" className="px-3 py-1.5 rounded-md text-sm font-semibold text-gray-700 hover:text-white hover:bg-[#A55233] transition-colors">
-                  Call
+                <Link
+                  to={auth.userType === 'artisan' ? '/artisan/calls' : '/video-call'}
+                  className="relative p-2 text-gray-700 hover:text-[#A55233] transition-colors"
+                  aria-label="Calls"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
                 </Link>
-              </div>
+              </>
             )}
             {/* Auth Links (Dynamic) */}
           <div className="flex items-center gap-3">

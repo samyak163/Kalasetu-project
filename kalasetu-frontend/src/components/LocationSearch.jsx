@@ -54,14 +54,32 @@ const LocationSearch = ({ onLocationSelect, initialLocation = null }) => {
   const handlePredictionSelect = (placeId) => {
     if (!placesService.current) return;
     placesService.current.getDetails(
-      { placeId, fields: ['geometry', 'formatted_address', 'name'] },
+      { 
+        placeId, 
+        fields: ['geometry', 'formatted_address', 'name', 'address_components'] 
+      },
       (place, status) => {
           if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+            // Extract address components
+            const addressComponents = place.address_components || [];
+            const city = addressComponents.find(c => 
+              c.types.includes('locality') || c.types.includes('administrative_area_level_2')
+            )?.long_name || '';
+            const state = addressComponents.find(c => 
+              c.types.includes('administrative_area_level_1')
+            )?.long_name || '';
+            const country = addressComponents.find(c => 
+              c.types.includes('country')
+            )?.long_name || '';
+            
             const location = {
               lat: place.geometry.location.lat(),
               lng: place.geometry.location.lng(),
               address: place.formatted_address,
-              name: place.name
+              name: place.name,
+              city,
+              state,
+              country
             };
             
             setSelectedLocation(location);

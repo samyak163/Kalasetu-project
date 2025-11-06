@@ -92,65 +92,110 @@ const updateArtisanProfile = async (req, res) => {
 // Nearby artisans with filters and distance in km
 const getNearbyArtisans = async (req, res) => {
     try {
-        const { lat, lng, radiusKm = 50, limit = 20, skills = '', minRating = 0 } = req.query;
+        const { lat, lng, radius = 50, radiusKm = 50, limit = 20, skills = '', minRating = 0 } = req.query;
 
-        if (lat == null || lng == null) {
-            return res.status(400).json({ message: 'lat and lng query parameters are required' });
+        if (!lat || !lng) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Latitude and longitude are required' 
+            });
         }
 
         const latitude = parseFloat(lat);
         const longitude = parseFloat(lng);
-        const rKm = parseFloat(radiusKm) || 50;
-        const maxDistance = Math.max(0, rKm) * 1000;
-        const maxResults = Math.min(100, Math.max(1, parseInt(limit)));
 
-        const pipeline = [
-            {
-                $geoNear: {
-                    near: { type: 'Point', coordinates: [longitude, latitude] },
-                    distanceField: 'distance',
-                    maxDistance,
-                    spherical: true,
-                    key: 'location',
+        // Validate coordinates
+        if (isNaN(latitude) || isNaN(longitude)) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Invalid coordinates' 
+            });
+        }
+
+        // Use radius or radiusKm (radius is in km)
+        const radiusInKm = parseFloat(radius) || parseFloat(radiusKm) || 50;
+        const radiusInMeters = radiusInKm * 1000;
+        const maxResults = Math.min(100, Math.max(1, parseInt(limit) || 20));
+
+        // Set timeout for the query
+        const queryTimeout = 10000; // 10 seconds
+
+        try {
+            // Try geospatial search first
+            const pipeline = [
+                {
+                    $geoNear: {
+                        near: { type: 'Point', coordinates: [longitude, latitude] },
+                        distanceField: 'distance',
+                        maxDistance: radiusInMeters,
+                        spherical: true,
+                        key: 'location',
+                    },
                 },
-            },
-            { $addFields: { distanceKm: { $round: [{ $divide: ['$distance', 1000] }, 1] } } },
-        ];
+                { $addFields: { distanceKm: { $round: [{ $divide: ['$distance', 1000] }, 1] } } },
+            ];
 
-        const match = {};
-        if (skills) {
-            const skillsArray = String(skills).split(',').map(s => s.trim()).filter(Boolean);
-            if (skillsArray.length) match.skills = { $in: skillsArray };
-        }
-        if (parseFloat(minRating) > 0) {
-            match.rating = { $gte: parseFloat(minRating) };
-        }
-        if (Object.keys(match).length) pipeline.push({ $match: match });
-
-        pipeline.push({ $project: { password: 0 } }, { $limit: maxResults });
-
-        const results = await Artisan.aggregate(pipeline);
-
-        // Track with PostHog
-        trackEvent({
-            distinctId: req.user?.id || req.user?._id || 'anonymous',
-            event: 'nearby_artisans_searched',
-            properties: {
-                latitude,
-                longitude,
-                radius: radiusKm,
-                results_count: results.length,
-                has_skills_filter: !!skills
+            const match = {};
+            if (skills) {
+                const skillsArray = String(skills).split(',').map(s => s.trim()).filter(Boolean);
+                if (skillsArray.length) match.skills = { $in: skillsArray };
             }
-        });
+            if (parseFloat(minRating) > 0) {
+                match.rating = { $gte: parseFloat(minRating) };
+            }
+            // Note: isActive field may not exist in all schemas
 
-        return res.status(200).json({
-            success: true,
-            artisans: results,
-            count: results.length,
-            searchCenter: { latitude, longitude },
-            radiusKm: rKm,
-        });
+            if (Object.keys(match).length) pipeline.push({ $match: match });
+
+            pipeline.push({ $project: { password: 0 } }, { $limit: maxResults });
+
+            // Execute with timeout
+            const queryPromise = Artisan.aggregate(pipeline);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Query timeout')), queryTimeout)
+            );
+
+            const results = await Promise.race([queryPromise, timeoutPromise]);
+
+            // Track with PostHog
+            trackEvent({
+                distinctId: req.user?.id || req.user?._id || 'anonymous',
+                event: 'nearby_artisans_searched',
+                properties: {
+                    latitude,
+                    longitude,
+                    radius: radiusInKm,
+                    results_count: results.length,
+                    has_skills_filter: !!skills
+                }
+            });
+
+            return res.status(200).json({
+                success: true,
+                artisans: results,
+                count: results.length,
+                searchCenter: { latitude, longitude },
+                radiusKm: radiusInKm,
+            });
+        } catch (geoError) {
+            console.warn('Geospatial query failed or timed out, using fallback:', geoError.message);
+            
+            // Fallback: return top-rated artisans
+            const fallbackArtisans = await Artisan.find({})
+                .select('fullName businessName profileImageUrl profileImage profilePicture craft category location address rating publicId')
+                .sort({ 'rating.average': -1 })
+                .limit(maxResults)
+                .lean();
+
+            return res.status(200).json({
+                success: true,
+                artisans: fallbackArtisans,
+                count: fallbackArtisans.length,
+                searchCenter: { latitude, longitude },
+                radiusKm: radiusInKm,
+                message: 'No artisans found nearby. Showing top-rated artisans.'
+            });
+        }
     } catch (error) {
         console.error('Error fetching nearby artisans:', error);
         
@@ -158,11 +203,27 @@ const getNearbyArtisans = async (req, res) => {
             Sentry.captureException(error);
         }
 
-        return res.status(500).json({ 
-            success: false,
-            message: 'Failed to fetch nearby artisans',
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
+        // Final fallback: return top-rated artisans on any error
+        try {
+            const fallbackArtisans = await Artisan.find({})
+                .select('fullName businessName profileImageUrl profileImage profilePicture craft category location address rating publicId')
+                .sort({ 'rating.average': -1 })
+                .limit(20)
+                .lean();
+
+            return res.status(200).json({
+                success: true,
+                artisans: fallbackArtisans,
+                count: fallbackArtisans.length,
+                message: 'Showing top-rated artisans'
+            });
+        } catch (fallbackError) {
+            return res.status(500).json({ 
+                success: false,
+                message: 'Failed to fetch artisans',
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
     }
 };
  

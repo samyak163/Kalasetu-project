@@ -31,22 +31,24 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
   };
 
   const handleOpenProfileTab = (tab = 'profile') => {
-    // Close dropdown first to avoid event being swallowed by state updates
+    // Close dropdown immediately
     setIsOpen(false);
-    const trigger = () => {
-      if (userType === 'user') {
-        const event = new CustomEvent('open-profile', { detail: { tab } });
-        // Dispatch on globalThis for broader compatibility
-        globalThis.dispatchEvent(event);
-      } else if (userType === 'artisan' && typeof onOpenProfile === 'function') {
+    
+    // For artisans, navigate directly without delays
+    if (userType === 'artisan') {
+      if (typeof onOpenProfile === 'function') {
         onOpenProfile();
+      } else {
+        // Fallback: navigate directly
+        window.location.href = '/artisan/dashboard/account';
       }
-    };
-    // Defer to the next frame to ensure dropdown has closed before opening modal
-    if (typeof globalThis.requestAnimationFrame === 'function') {
-      globalThis.requestAnimationFrame(() => trigger());
-    } else {
-      setTimeout(trigger, 0);
+      return;
+    }
+    
+    // For users, dispatch event synchronously
+    if (userType === 'user') {
+      const event = new CustomEvent('open-profile', { detail: { tab } });
+      globalThis.dispatchEvent(event);
     }
   };
 
