@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/axios';
 import { useNavigate } from 'react-router-dom';
 
 const AdminAuthContext = createContext();
@@ -24,7 +24,7 @@ export const AdminAuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const response = await axios.get('/api/admin/auth/me', { withCredentials: true });
+      const response = await api.get('/api/admin/auth/me');
       if (response.data.success) {
         setAdmin(response.data.admin);
         setIsAuthenticated(true);
@@ -39,7 +39,7 @@ export const AdminAuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/admin/auth/login', { email, password }, { withCredentials: true });
+      const response = await api.post('/api/admin/auth/login', { email, password });
       if (response.data.success) {
         setAdmin(response.data.admin);
         setIsAuthenticated(true);
@@ -53,7 +53,7 @@ export const AdminAuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post('/api/admin/auth/logout', {}, { withCredentials: true });
+      await api.post('/api/admin/auth/logout', {});
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
