@@ -19,8 +19,12 @@ const LoginPage = () => {
         setError(null);
         try {
             const user = await artisanLogin({ loginIdentifier, password });
-            // After successful login, take artisans to their account page
-            navigate('/artisan/dashboard/account');
+            // After successful login, take artisans to their dashboard
+            if (user?.publicId) {
+                navigate('/dashboard');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
             setError(err.response?.data?.message || err.message || 'An unexpected error occurred.');
         } finally {
