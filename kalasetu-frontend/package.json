@@ -35,7 +35,9 @@
     "react-onesignal": "^3.4.0",
     "react-router-dom": "^7.9.5",
     "stream-chat": "^9.25.0",
-    "stream-chat-react": "^13.10.2"
+    "stream-chat-react": "^13.10.2",
+    "lucide-react": "^0.475.0",
+    "recharts": "^2.13.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",

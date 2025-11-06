@@ -5,7 +5,8 @@
 
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'https://kalasetu-api-k2d8.onrender.com',
+  // Use local proxy in dev by default to avoid cross-origin/timeout issues
+  BASE_URL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : '/api'),
   TIMEOUT: 10000,
   WITH_CREDENTIALS: true,
 };

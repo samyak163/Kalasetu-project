@@ -18,7 +18,8 @@ const BookmarksTab = ({ user }) => {
   const fetchBookmarks = async () => {
     try {
       const res = await api.get('/api/users/bookmarks');
-      setBookmarks(res.data || []);
+      const data = res?.data;
+      setBookmarks(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch bookmarks:', error);
       showToast('Failed to load bookmarks', 'error');

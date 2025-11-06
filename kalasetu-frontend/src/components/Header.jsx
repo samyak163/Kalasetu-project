@@ -56,7 +56,7 @@ const Header = () => {
             </Link>
             {/* Main Nav */}
             <div className="hidden ml-10 space-x-8 lg:block">
-              <Link to="/category" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">Services</Link>
+              <Link to="/services" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">Services</Link>
               <button type="button" onClick={() => setShowHowItWorks(true)} className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">How It Works</button>
               <button type="button" onClick={() => setShowArtisanInfo(true)} className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">For Artisans</button>
             </div>

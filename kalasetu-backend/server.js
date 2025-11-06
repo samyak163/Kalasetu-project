@@ -46,6 +46,7 @@ import contactRoutes from './routes/contactRoutes.js';
 import artisanProfileRoutes from './routes/artisanProfileRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import availabilityRoutes from './routes/availabilityRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import authHelpersRoutes from './routes/authHelpersRoutes.js';
 import otpRoutes from './routes/otpRoutes.js';
 
@@ -186,6 +187,8 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/reviews', reviewRoutes);
 // /api/artisan/availability -> Availability endpoints (artisan auth)
 app.use('/api/artisan/availability', availabilityRoutes);
+// /api/admin -> Admin endpoints
+app.use('/api/admin', adminRoutes);
 
 // --- Debug Logging (Updated) ---
 // This is now accurate for our new structure

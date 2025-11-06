@@ -45,6 +45,12 @@ const CallsHistory = lazy(() => import('./pages/dashboard/artisan/CallsHistory.j
 
 // Auth Components
 import RequireAuth from './components/RequireAuth.jsx';
+import { AdminAuthProvider } from './context/AdminAuthContext.jsx';
+import AdminLayout from './components/admin/AdminLayout.jsx';
+import AdminLogin from './pages/admin/AdminLogin.jsx';
+import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import AdminArtisans from './pages/admin/AdminArtisans.jsx';
+import AdminUsers from './pages/admin/AdminUsers.jsx';
 
 function App() {
   return (
@@ -120,6 +126,8 @@ function App() {
 
         {/* Search Results */}
         <Route path="search" element={<SearchResults />} />
+        {/* Graceful alias to prevent 404s when clicking a generic Services link */}
+        <Route path="services" element={<SearchResults />} />
 
         {/* Messages Page (Protected - Both artisans and USERs) */}
         <Route 
@@ -166,6 +174,19 @@ function App() {
         {/* USER protected routes can be added here in future releases */}
 
       </Route>
+      {/* Admin Routes (separate from main site layout) */}
+      <Route path="/admin/login" element={<AdminAuthProvider><AdminLogin /></AdminAuthProvider>} />
+      <Route path="/admin/*" element={
+        <AdminAuthProvider>
+          <AdminLayout>
+            <Routes>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="artisans" element={<AdminArtisans />} />
+              <Route path="users" element={<AdminUsers />} />
+            </Routes>
+          </AdminLayout>
+        </AdminAuthProvider>
+      } />
     </Routes>
     </Suspense>
   );

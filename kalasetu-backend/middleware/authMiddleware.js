@@ -23,3 +23,43 @@ export const protect = async (req, res, next) => {
 };
 
 
+export const protectAdmin = async (req, res, next) => {
+    try {
+        const token = req.cookies?.admin_token;
+        if (!token) {
+            res.status(401);
+            throw new Error('Not authorized to access this route');
+        }
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.role !== 'admin') {
+            res.status(403);
+            throw new Error('Admin access required');
+        }
+        const { default: Admin } = await import('../models/adminModel.js');
+        const admin = await Admin.findById(decoded.id);
+        if (!admin) {
+            res.status(401);
+            throw new Error('Admin not found');
+        }
+        if (!admin.isActive) {
+            res.status(403);
+            throw new Error('Admin account is suspended');
+        }
+        req.user = admin;
+        next();
+    } catch (err) {
+        res.status(res.statusCode === 200 ? 401 : res.statusCode);
+        next(err);
+    }
+};
+
+export const checkPermission = (resource, action) => {
+    return (req, res, next) => {
+        if (!req?.user?.permissions?.[resource] || req.user.permissions[resource][action] !== true) {
+            res.status(403);
+            return next(new Error('You do not have permission to perform this action'));
+        }
+        next();
+    };
+};
+

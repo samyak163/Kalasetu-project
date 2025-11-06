@@ -118,9 +118,9 @@ export default function NearbyArtisans() {
                 className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow"
               >
                 <div className="flex items-start gap-3">
-                  {artisan.profileImage && (
+                  {(artisan.profileImage || artisan.profileImageUrl) && (
                     <img
-                      src={artisan.profileImage}
+                      src={artisan.profileImage || artisan.profileImageUrl}
                       alt={artisan.fullName}
                       className="w-16 h-16 rounded-full object-cover"
                     />

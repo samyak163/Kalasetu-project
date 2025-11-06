@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
+import { GOOGLE_MAPS_CONFIG } from '../config/env.config.js';
 
 const LocationSearch = ({ onLocationSelect, initialLocation = null }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -10,12 +11,34 @@ const LocationSearch = ({ onLocationSelect, initialLocation = null }) => {
   const placesService = useRef(null);
   const searchRef = useRef(null);
 
+  // Initialize Places services with retry until the Google script is loaded
   useEffect(() => {
-    if (window.google && window.google.maps) {
-      autocompleteService.current = new window.google.maps.places.AutocompleteService();
-      const map = new window.google.maps.Map(document.createElement('div'));
-      placesService.current = new window.google.maps.places.PlacesService(map);
-    }
+    let attempts = 0;
+    const maxAttempts = 40; // ~8s total with 200ms interval
+    const interval = setInterval(() => {
+      attempts += 1;
+      if (window.google?.maps?.places) {
+        try {
+          if (!autocompleteService.current) {
+            autocompleteService.current = new window.google.maps.places.AutocompleteService();
+          }
+          if (!placesService.current) {
+            const map = new window.google.maps.Map(document.createElement('div'));
+            placesService.current = new window.google.maps.places.PlacesService(map);
+          }
+        } catch (_) {
+          // swallow
+        } finally {
+          if (autocompleteService.current && placesService.current) {
+            clearInterval(interval);
+          }
+        }
+      }
+      if (attempts >= maxAttempts) {
+        clearInterval(interval);
+      }
+    }, 200);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -40,6 +63,7 @@ const LocationSearch = ({ onLocationSelect, initialLocation = null }) => {
   }, [searchQuery]);
 
   const fetchPredictions = () => {
+    if (!autocompleteService.current || !window.google?.maps?.places) return;
     autocompleteService.current.getPlacePredictions(
       { input: searchQuery, componentRestrictions: { country: 'in' }, types: ['geocode'] },
       (results, status) => {
@@ -174,6 +198,8 @@ const LocationSearch = ({ onLocationSelect, initialLocation = null }) => {
     }
   };
 
+  const apiKey = GOOGLE_MAPS_CONFIG.apiKey;
+
   return (
     <div className="space-y-4">
       <div ref={searchRef} className="relative">
@@ -250,18 +276,24 @@ const LocationSearch = ({ onLocationSelect, initialLocation = null }) => {
       </button>
 
       {/* Map */}
-      <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
-        <div className="h-80 rounded-lg overflow-hidden border-2 border-gray-200">
-          <Map
-            center={selectedLocation}
-            zoom={13}
-            onClick={handleMapClick}
-            mapId="location-picker-map"
-          >
-            <Marker position={selectedLocation} />
-          </Map>
+      {apiKey ? (
+        <APIProvider apiKey={apiKey} libraries={['places']}>
+          <div className="h-80 rounded-lg overflow-hidden border-2 border-gray-200">
+            <Map
+              center={selectedLocation}
+              zoom={13}
+              onClick={handleMapClick}
+              mapId="location-picker-map"
+            >
+              <Marker position={selectedLocation} />
+            </Map>
+          </div>
+        </APIProvider>
+      ) : (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
+          Location map and suggestions are disabled because Google Maps API key is not configured.
         </div>
-      </APIProvider>
+      )}
 
       {/* Selected Location Info */}
       {searchQuery && (

@@ -23,6 +23,11 @@ const connectDB = async () => {
 // Pune locations with actual coordinates [longitude, latitude]
 const puneLocations = [
   {
+    name: 'MIT-WPU, Kothrud',
+    coordinates: [73.8297, 18.5165],
+    address: 'MIT World Peace University, Kothrud, Pune 411038'
+  },
+  {
     name: 'Kothrud',
     coordinates: [73.8077, 18.5074],
     address: 'Kothrud, Pune, Maharashtra 411038'
