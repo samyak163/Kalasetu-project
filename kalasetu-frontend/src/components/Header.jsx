@@ -1,4 +1,4 @@
-﻿import React, { useContext, useState } from 'react';
+﻿import React, { useContext, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 import ArtisanInfoModal from './ArtisanInfoModal.jsx';
@@ -19,6 +19,30 @@ const Header = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [headerLocation, setHeaderLocation] = useState(null);
   const [showHeaderLocationSearch, setShowHeaderLocationSearch] = useState(false);
+  const locationRef = useRef(null);
+
+  // Load saved location from localStorage on mount
+  useEffect(() => {
+    const savedLocation = localStorage.getItem('userLocation');
+    if (savedLocation) {
+      try {
+        setHeaderLocation(JSON.parse(savedLocation));
+      } catch (error) {
+        console.error('Error loading saved location:', error);
+      }
+    }
+  }, []);
+
+  // Close location dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (locationRef.current && !locationRef.current.contains(e.target)) {
+        setShowHeaderLocationSearch(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleOpenProfile = () => {
     // Only artisans use this handler (users open modal from ProfileDropdown directly)
@@ -70,7 +94,7 @@ const Header = () => {
           <div className="hidden lg:flex flex-1 max-w-2xl mx-8 min-w-0">
             <div className="flex gap-2 w-full">
               {/* Location Dropdown */}
-              <div className="relative flex-shrink-0">
+              <div className="relative flex-shrink-0" ref={locationRef}>
                 <button
                   onClick={() => setShowHeaderLocationSearch(!showHeaderLocationSearch)}
                   className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap text-sm"
@@ -82,11 +106,14 @@ const Header = () => {
                   <span className="text-sm text-gray-700 truncate max-w-24">
                     {headerLocation ? headerLocation.city || headerLocation.address : 'Location'}
                   </span>
+                  <svg className={`w-4 h-4 text-gray-500 transition-transform ${showHeaderLocationSearch ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
                 {showHeaderLocationSearch && (
                   <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-gray-900 text-sm">Select Location</h3>
+                      <h3 className="font-semibold text-gray-900 text-sm">Set Your Location</h3>
                       <button
                         onClick={() => setShowHeaderLocationSearch(false)}
                         className="text-gray-400 hover:text-gray-600"
@@ -100,15 +127,68 @@ const Header = () => {
                       onLocationSelect={(location) => {
                         setHeaderLocation(location);
                         setShowHeaderLocationSearch(false);
+                        // Store in localStorage for persistence
+                        localStorage.setItem('userLocation', JSON.stringify(location));
                       }}
                       defaultValue={headerLocation?.address || ''}
                       showMap={false}
                     />
+                    {/* Current Location Button */}
+                    <button
+                      onClick={() => {
+                        if ('geolocation' in navigator) {
+                          navigator.geolocation.getCurrentPosition(
+                            async (position) => {
+                              const { latitude, longitude } = position.coords;
+                              
+                              try {
+                                const response = await fetch(
+                                  `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+                                );
+                                const data = await response.json();
+                                
+                                if (data.results[0]) {
+                                  const addressComponents = data.results[0].address_components || [];
+                                  const location = {
+                                    lat: latitude,
+                                    lng: longitude,
+                                    address: data.results[0].formatted_address,
+                                    city: addressComponents.find(c => 
+                                      c.types.includes('locality') || 
+                                      c.types.includes('administrative_area_level_2')
+                                    )?.long_name || ''
+                                  };
+                                  setHeaderLocation(location);
+                                  setShowHeaderLocationSearch(false);
+                                  localStorage.setItem('userLocation', JSON.stringify(location));
+                                }
+                              } catch (error) {
+                                console.error('Geocoding error:', error);
+                                alert('Failed to get location. Please enter manually.');
+                              }
+                            },
+                            (error) => {
+                              console.error('Geolocation error:', error);
+                              alert('Unable to access your location. Please enter manually.');
+                            }
+                          );
+                        } else {
+                          alert('Geolocation is not supported by your browser.');
+                        }
+                      }}
+                      className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-2 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors text-sm"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" />
+                      </svg>
+                      Use Current Location
+                    </button>
                   </div>
                 )}
               </div>
               {/* Search Bar */}
-              <SearchBar className="flex-1 min-w-0" showLocationSearch={false} />
+              <SearchBar className="flex-1 min-w-0" showLocationSearch={false} userLocation={headerLocation} />
             </div>
           </div>
           
@@ -151,7 +231,7 @@ const Header = () => {
         {/* Mobile Search - Below header */}
         <div className="lg:hidden w-full pb-3">
           <div className="flex gap-2">
-            <div className="relative flex-shrink-0">
+            <div className="relative flex-shrink-0" ref={locationRef}>
               <button
                 onClick={() => setShowHeaderLocationSearch(!showHeaderLocationSearch)}
                 className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap text-sm"
@@ -160,23 +240,86 @@ const Header = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 </svg>
                 <span className="text-sm text-gray-700">
-                  {headerLocation ? headerLocation.city : 'Location'}
+                  {headerLocation ? headerLocation.city || headerLocation.address : 'Set Location'}
                 </span>
               </button>
               {showHeaderLocationSearch && (
                 <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-gray-900 text-sm">Set Your Location</h3>
+                    <button
+                      onClick={() => setShowHeaderLocationSearch(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                   <LocationSearch
                     onLocationSelect={(location) => {
                       setHeaderLocation(location);
                       setShowHeaderLocationSearch(false);
+                      localStorage.setItem('userLocation', JSON.stringify(location));
                     }}
                     defaultValue={headerLocation?.address || ''}
                     showMap={false}
                   />
+                  {/* Current Location Button */}
+                  <button
+                    onClick={() => {
+                      if ('geolocation' in navigator) {
+                        navigator.geolocation.getCurrentPosition(
+                          async (position) => {
+                            const { latitude, longitude } = position.coords;
+                            
+                            try {
+                              const response = await fetch(
+                                `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+                              );
+                              const data = await response.json();
+                              
+                              if (data.results[0]) {
+                                const addressComponents = data.results[0].address_components || [];
+                                const location = {
+                                  lat: latitude,
+                                  lng: longitude,
+                                  address: data.results[0].formatted_address,
+                                  city: addressComponents.find(c => 
+                                    c.types.includes('locality') || 
+                                    c.types.includes('administrative_area_level_2')
+                                  )?.long_name || ''
+                                };
+                                setHeaderLocation(location);
+                                setShowHeaderLocationSearch(false);
+                                localStorage.setItem('userLocation', JSON.stringify(location));
+                              }
+                            } catch (error) {
+                              console.error('Geocoding error:', error);
+                              alert('Failed to get location. Please enter manually.');
+                            }
+                          },
+                          (error) => {
+                            console.error('Geolocation error:', error);
+                            alert('Unable to access your location. Please enter manually.');
+                          }
+                        );
+                      } else {
+                        alert('Geolocation is not supported by your browser.');
+                      }
+                    }}
+                    className="w-full mt-3 flex items-center justify-center gap-2 px-4 py-2 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors text-sm"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" />
+                    </svg>
+                    Use Current Location
+                  </button>
                 </div>
               )}
             </div>
-            <SearchBar className="flex-1" showLocationSearch={false} />
+            <SearchBar className="flex-1" showLocationSearch={false} userLocation={headerLocation} />
           </div>
         </div>
       </nav>

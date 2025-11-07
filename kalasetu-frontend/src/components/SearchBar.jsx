@@ -10,7 +10,7 @@ const searchClient = SEARCH_CONFIG.enabled && SEARCH_CONFIG.algolia.appId && SEA
   ? algoliasearch(SEARCH_CONFIG.algolia.appId, SEARCH_CONFIG.algolia.searchApiKey)
   : null;
 
-const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '', onSearch }) => {
+const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '', onSearch, userLocation }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState(initialQuery || '');
   const [hits, setHits] = useState([]);
@@ -115,7 +115,18 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
       if (onSearch) {
         onSearch(query);
       } else {
-        navigate(`/search?q=${encodeURIComponent(query)}`);
+        const params = new URLSearchParams({ q: query });
+        
+        // Add location if available
+        if (userLocation) {
+          params.append('lat', userLocation.lat);
+          params.append('lng', userLocation.lng);
+          if (userLocation.city) {
+            params.append('city', userLocation.city);
+          }
+        }
+        
+        navigate(`/search?${params.toString()}`);
       }
       setShowDropdown(false);
     }
@@ -293,7 +304,18 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
               {(hits.length > 0 || categories.length > 0) && (
                 <button
                   onClick={() => {
-                    navigate(`/search?q=${encodeURIComponent(query)}`);
+                    const params = new URLSearchParams({ q: query });
+                    
+                    // Add location if available
+                    if (userLocation) {
+                      params.append('lat', userLocation.lat);
+                      params.append('lng', userLocation.lng);
+                      if (userLocation.city) {
+                        params.append('city', userLocation.city);
+                      }
+                    }
+                    
+                    navigate(`/search?${params.toString()}`);
                     setShowDropdown(false);
                   }}
                   className="w-full px-4 py-3 text-indigo-600 hover:bg-indigo-50 font-medium transition-colors border-t border-gray-200 text-sm md:text-base"

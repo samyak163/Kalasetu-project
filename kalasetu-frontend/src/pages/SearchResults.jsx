@@ -17,7 +17,10 @@ const SearchResults = () => {
   
   const query = searchParams.get('q') || '';
   const category = searchParams.get('category') || '';
-  const location = searchParams.get('location') || '';
+  const location = searchParams.get('location') || ''; // Legacy support
+  const lat = searchParams.get('lat');
+  const lng = searchParams.get('lng');
+  const city = searchParams.get('city') || location; // Prefer city, fallback to location
 
   const [artisans, setArtisans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,22 +33,41 @@ const SearchResults = () => {
     verifiedOnly: false
   });
 
-  // Get user location
+  // Get user location from URL params or localStorage or geolocation
   useEffect(() => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        () => {
-          console.log('Location access denied');
+    // First, try URL params
+    if (lat && lng) {
+      setUserLocation({
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+        city: city || ''
+      });
+    } else {
+      // Try localStorage
+      const savedLocation = localStorage.getItem('userLocation');
+      if (savedLocation) {
+        try {
+          const location = JSON.parse(savedLocation);
+          setUserLocation(location);
+        } catch (error) {
+          console.error('Error loading saved location:', error);
         }
-      );
+      } else if ('geolocation' in navigator) {
+        // Fallback to geolocation
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setUserLocation({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            });
+          },
+          () => {
+            // Location access denied - silently fail
+          }
+        );
+      }
     }
-  }, []);
+  }, [lat, lng, city]);
 
   // Search artisans
   useEffect(() => {
@@ -117,7 +139,7 @@ const SearchResults = () => {
           const params = new URLSearchParams();
           if (query) params.set('q', query);
           if (category) params.set('category', category);
-          if (location) params.set('city', location);
+          if (city) params.set('city', city);
           if (userLocation) {
             params.set('lat', userLocation.lat);
             params.set('lng', userLocation.lng);
@@ -183,7 +205,7 @@ const SearchResults = () => {
     <div className="min-h-screen bg-gray-50">
       <SEO
         title={`${category ? `${category} Artisans` : query ? `Search Results for "${query}"` : 'Search Artisans'} | KalaSetu`}
-        description={`Find skilled artisans${category ? ` in ${category}` : ''}${location ? ` near ${location}` : ''}`}
+        description={`Find skilled artisans${category ? ` in ${category}` : ''}${city ? ` near ${city}` : ''}`}
       />
 
       <div className="container mx-auto px-4 py-8">

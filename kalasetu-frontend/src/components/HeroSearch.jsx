@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from './SearchBar.jsx';
 import LocationSearch from './LocationSearch.jsx';
@@ -7,6 +7,18 @@ const HeroSearch = () => {
   const navigate = useNavigate();
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showLocationSearch, setShowLocationSearch] = useState(false);
+
+  // Load saved location from localStorage on mount
+  useEffect(() => {
+    const savedLocation = localStorage.getItem('userLocation');
+    if (savedLocation) {
+      try {
+        setSelectedLocation(JSON.parse(savedLocation));
+      } catch (error) {
+        console.error('Error loading saved location:', error);
+      }
+    }
+  }, []);
 
   return (
     <section className="relative text-white py-20 md:py-32 px-4 sm:px-8">
@@ -68,6 +80,8 @@ const HeroSearch = () => {
                     onLocationSelect={(location) => {
                       setSelectedLocation(location);
                       setShowLocationSearch(false);
+                      // Store in localStorage for persistence
+                      localStorage.setItem('userLocation', JSON.stringify(location));
                     }}
                     defaultValue={selectedLocation?.address || ''}
                     showMap={false}
@@ -81,6 +95,7 @@ const HeroSearch = () => {
               <SearchBar 
                 showLocationSearch={false}
                 className="w-full"
+                userLocation={selectedLocation}
               />
             </div>
           </div>
