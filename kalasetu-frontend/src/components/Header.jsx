@@ -8,6 +8,8 @@ import { useNotifications } from '../context/NotificationContext.jsx';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 import ProfileDropdown from './common/ProfileDropdown.jsx';
 import ProfileModal from './profile/ProfileModal.jsx';
+import SearchBar from './SearchBar.jsx';
+import LocationSearch from './LocationSearch.jsx';
 
 const Header = () => {
   const { auth, logout } = useContext(AuthContext);
@@ -15,6 +17,8 @@ const Header = () => {
   const [showArtisanInfo, setShowArtisanInfo] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [headerLocation, setHeaderLocation] = useState(null);
+  const [showHeaderLocationSearch, setShowHeaderLocationSearch] = useState(false);
 
   const handleOpenProfile = () => {
     // Only artisans use this handler (users open modal from ProfileDropdown directly)
@@ -48,10 +52,10 @@ const Header = () => {
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
-        <div className="w-full py-4 flex items-center justify-between">
-          <div className="flex items-center">
+        <div className="w-full py-4 flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center flex-1 min-w-0">
             {/* Logo */}
-            <Link to="/" className="text-2xl font-bold text-[#A55233]">
+            <Link to="/" className="text-2xl font-bold text-[#A55233] flex-shrink-0">
               Kala<span className="text-gray-800">Setu</span>
             </Link>
             {/* Main Nav */}
@@ -61,8 +65,54 @@ const Header = () => {
               <button type="button" onClick={() => setShowArtisanInfo(true)} className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">For Artisans</button>
             </div>
           </div>
+
+          {/* Search Bar - Hidden on mobile, shown on desktop */}
+          <div className="hidden lg:flex flex-1 max-w-2xl mx-8 min-w-0">
+            <div className="flex gap-2 w-full">
+              {/* Location Dropdown */}
+              <div className="relative flex-shrink-0">
+                <button
+                  onClick={() => setShowHeaderLocationSearch(!showHeaderLocationSearch)}
+                  className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap text-sm"
+                >
+                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-sm text-gray-700 truncate max-w-24">
+                    {headerLocation ? headerLocation.city || headerLocation.address : 'Location'}
+                  </span>
+                </button>
+                {showHeaderLocationSearch && (
+                  <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-gray-900 text-sm">Select Location</h3>
+                      <button
+                        onClick={() => setShowHeaderLocationSearch(false)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <LocationSearch
+                      onLocationSelect={(location) => {
+                        setHeaderLocation(location);
+                        setShowHeaderLocationSearch(false);
+                      }}
+                      defaultValue={headerLocation?.address || ''}
+                      showMap={false}
+                    />
+                  </div>
+                )}
+              </div>
+              {/* Search Bar */}
+              <SearchBar className="flex-1 min-w-0" showLocationSearch={false} />
+            </div>
+          </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 flex-shrink-0">
             <button onClick={() => setShowNotifications(true)} aria-label="Notifications" className="relative text-gray-700 hover:text-[#A55233]">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
               {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] leading-3 px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
@@ -95,6 +145,38 @@ const Header = () => {
             <LanguageSwitcher />
               {renderAuthLinks()}
             </div>
+          </div>
+        </div>
+        
+        {/* Mobile Search - Below header */}
+        <div className="lg:hidden w-full pb-3">
+          <div className="flex gap-2">
+            <div className="relative flex-shrink-0">
+              <button
+                onClick={() => setShowHeaderLocationSearch(!showHeaderLocationSearch)}
+                className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap text-sm"
+              >
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                </svg>
+                <span className="text-sm text-gray-700">
+                  {headerLocation ? headerLocation.city : 'Location'}
+                </span>
+              </button>
+              {showHeaderLocationSearch && (
+                <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4">
+                  <LocationSearch
+                    onLocationSelect={(location) => {
+                      setHeaderLocation(location);
+                      setShowHeaderLocationSearch(false);
+                    }}
+                    defaultValue={headerLocation?.address || ''}
+                    showMap={false}
+                  />
+                </div>
+              )}
+            </div>
+            <SearchBar className="flex-1" showLocationSearch={false} />
           </div>
         </div>
       </nav>

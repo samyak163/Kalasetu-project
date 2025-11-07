@@ -1,20 +1,28 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import algoliasearch from 'algoliasearch/lite';
 import axios from 'axios';
-import { API_CONFIG } from '../config/env.config.js';
+import { SEARCH_CONFIG, API_CONFIG } from '../config/env.config.js';
 import { optimizeImage } from '../utils/cloudinary.js';
 
-const SearchBar = ({ showFilters = false, initialQuery = '', onSearch }) => {
+// Initialize Algolia search client
+const searchClient = SEARCH_CONFIG.enabled && SEARCH_CONFIG.algolia.appId && SEARCH_CONFIG.algolia.searchApiKey
+  ? algoliasearch(SEARCH_CONFIG.algolia.appId, SEARCH_CONFIG.algolia.searchApiKey)
+  : null;
+
+const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '', onSearch }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState(initialQuery || '');
-  const [results, setResults] = useState({ artisans: [], categories: [] });
+  const [hits, setHits] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
   const searchRef = useRef(null);
 
+  // Close dropdown on outside click
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
         setShowDropdown(false);
       }
     };
@@ -22,59 +30,70 @@ const SearchBar = ({ showFilters = false, initialQuery = '', onSearch }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced search with categories
+  // Debounced Algolia search with API fallback
   useEffect(() => {
     if (query.length < 2) {
-      setResults({ artisans: [], categories: [] });
+      setHits([]);
+      setCategories([]);
       setShowDropdown(false);
       return;
     }
 
     const timer = setTimeout(async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const response = await axios.get(`${API_CONFIG.BASE_URL}/api/search`, {
-          params: { q: query, limit: 5 }
-        });
-        
-        if (response.data?.success) {
-          setResults({
-            artisans: response.data.artisans || [],
-            categories: response.data.categories || []
-          });
+        if (searchClient) {
+          // Use Algolia direct search
+          const index = searchClient.initIndex(SEARCH_CONFIG.algolia.indexName || 'artisans');
+          
+          // Multi-query search: artisans + categories
+          const [artisanResults, categoryResults] = await Promise.all([
+            index.search(query, {
+              hitsPerPage: 5,
+              attributesToRetrieve: [
+                'objectID',
+                'fullName',
+                'businessName',
+                'profileImage',
+                'category',
+                'craft',
+                'address',
+                'rating',
+                'publicId',
+                'services',
+                'skills',
+                'tagline'
+              ],
+              attributesToHighlight: ['fullName', 'businessName', 'category', 'craft', 'services', 'tagline']
+            }),
+            index.searchForFacetValues('category', query, {
+              maxFacetHits: 5
+            }).catch(() => ({ facetHits: [] }))
+          ]);
+
+          setHits(artisanResults.hits || []);
+          setCategories(categoryResults.facetHits?.map(f => f.value) || []);
           setShowDropdown(true);
         } else {
-          // Fallback to suggestions API
-          const fallbackResponse = await axios.get(
-            `${API_CONFIG.BASE_URL}/api/search/suggestions`,
-            { params: { q: query } }
-          );
-          if (fallbackResponse.data?.success) {
-            setResults({
-              artisans: fallbackResponse.data.suggestions || [],
-              categories: []
-            });
+          // Fallback to API search
+          const response = await axios.get(`${API_CONFIG.BASE_URL}/api/search`, {
+            params: { q: query, limit: 5 }
+          });
+          
+          if (response.data?.success) {
+            setHits(response.data.artisans || []);
+            setCategories(response.data.categories || []);
             setShowDropdown(true);
+          } else {
+            setHits([]);
+            setCategories([]);
           }
         }
       } catch (error) {
         console.error('Search error:', error);
-        // Try fallback API
-        try {
-          const fallbackResponse = await axios.get(
-            `${API_CONFIG.BASE_URL}/api/search/suggestions`,
-            { params: { q: query } }
-          );
-          if (fallbackResponse.data?.success) {
-            setResults({
-              artisans: fallbackResponse.data.suggestions || [],
-              categories: []
-            });
-            setShowDropdown(true);
-          }
-        } catch (fallbackError) {
-          console.error('Fallback search error:', fallbackError);
-        }
+        // Fallback to empty results
+        setHits([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -83,7 +102,14 @@ const SearchBar = ({ showFilters = false, initialQuery = '', onSearch }) => {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const handleSearch = (e) => {
+  // Sync with initialQuery prop
+  useEffect(() => {
+    if (initialQuery !== undefined && initialQuery !== query) {
+      setQuery(initialQuery);
+    }
+  }, [initialQuery]);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (query.trim()) {
       if (onSearch) {
@@ -95,16 +121,18 @@ const SearchBar = ({ showFilters = false, initialQuery = '', onSearch }) => {
     }
   };
 
-  // Sync with initialQuery prop
-  useEffect(() => {
-    if (initialQuery !== undefined && initialQuery !== query) {
-      setQuery(initialQuery);
-    }
-  }, [initialQuery]);
-
   const handleArtisanClick = (artisan) => {
-    const artisanId = artisan.publicId || artisan.id || artisan._id;
-    navigate(`/artisan/${artisanId}`);
+    // If exact name match, go directly to profile
+    const isExactMatch = 
+      artisan.fullName?.toLowerCase() === query.toLowerCase() ||
+      artisan.businessName?.toLowerCase() === query.toLowerCase();
+    
+    if (isExactMatch) {
+      navigate(`/${artisan.publicId || artisan.objectID}`);
+    } else {
+      navigate(`/search?q=${encodeURIComponent(query)}`);
+    }
+    
     setShowDropdown(false);
     setQuery('');
   };
@@ -115,134 +143,160 @@ const SearchBar = ({ showFilters = false, initialQuery = '', onSearch }) => {
     setQuery('');
   };
 
+  const highlightText = (text, highlight) => {
+    if (!highlight || !text) return text;
+    const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+    return parts.map((part, i) =>
+      part.toLowerCase() === highlight.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-200">{part}</mark>
+      ) : (
+        part
+      )
+    );
+  };
+
   return (
-    <div ref={searchRef} className="relative w-full max-w-2xl">
-      <form onSubmit={handleSearch} className="relative">
-        <div className="relative">
+    <div className={`relative ${className}`} ref={searchRef}>
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        {/* Search Input */}
+        <div className="relative flex-1">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => query.length >= 2 && setShowDropdown(true)}
-            placeholder="Search for artisans, skills, or crafts..."
-            className="w-full px-5 py-3 pl-12 pr-12 text-gray-900 border-2 border-gray-200 rounded-full focus:border-orange-500 focus:ring-4 focus:ring-orange-100 transition-all"
+            placeholder="Search artisans, services, categories..."
+            className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base"
           />
-          
-          <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          <button
+            type="submit"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          {query && (
-            <button
-              type="button"
-              onClick={() => {
-                setQuery('');
-                setResults({ artisans: [], categories: [] });
-              }}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
         </div>
-        <button type="submit" className="hidden">Search</button>
+        {/* Search Button (optional for mobile) */}
+        <button
+          type="submit"
+          className="hidden md:block px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm md:text-base"
+        >
+          Search
+        </button>
       </form>
 
       {/* Dropdown Results */}
       {showDropdown && (
-        <div className="absolute z-50 w-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-white rounded-lg shadow-2xl border border-gray-200 max-h-96 overflow-y-auto">
           {loading ? (
-            <div className="p-4 text-center text-gray-500">
-              Searching...
+            <div className="p-6 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-indigo-600"></div>
+              <p className="mt-2 text-sm text-gray-500">Searching...</p>
             </div>
           ) : (
             <>
               {/* Artisan Results */}
-              {results.artisans.length > 0 && (
+              {hits.length > 0 && (
                 <div className="border-b border-gray-200">
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
-                    Artisans
+                  <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Artisans & Services
                   </div>
-                  {results.artisans.map((artisan) => {
-                    const artisanId = artisan.publicId || artisan.id || artisan._id;
-                    const artisanName = artisan.fullName || artisan.businessName || artisan.name;
-                    const artisanImage = artisan.profileImage || artisan.profileImageUrl || artisan.profilePicture || artisan.image;
+                  {hits.map((hit) => {
+                    const artisanName = hit.fullName || hit.businessName || 'Unknown';
+                    const artisanImage = hit.profileImage || '/default-avatar.png';
+                    const artisanId = hit.publicId || hit.objectID;
                     return (
                       <button
-                        key={artisanId}
-                        onClick={() => handleArtisanClick(artisan)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                        key={hit.objectID}
+                        onClick={() => handleArtisanClick(hit)}
+                        className="w-full flex items-center gap-4 px-4 py-3 hover:bg-indigo-50 transition-colors text-left group"
                       >
-                        {artisanImage ? (
-                          <img
-                            src={optimizeImage(artisanImage, { width: 40, height: 40 })}
-                            alt={artisanName}
-                            loading="lazy"
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-semibold text-sm">
-                            {artisanName?.charAt(0) || 'A'}
+                        <img
+                          src={optimizeImage(artisanImage, { width: 48, height: 48 })}
+                          alt={artisanName}
+                          className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                          onError={(e) => {
+                            e.target.src = '/default-avatar.png';
+                          }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 truncate group-hover:text-indigo-600">
+                            {highlightText(artisanName, query)}
+                          </div>
+                          <div className="text-sm text-gray-600 truncate">
+                            {hit.category || hit.craft} • {hit.address?.city || 'India'}
+                          </div>
+                          {hit.tagline && (
+                            <div className="text-xs text-gray-500 truncate mt-1">
+                              {hit.tagline}
+                            </div>
+                          )}
+                          {(hit.services && hit.services.length > 0) && (
+                            <div className="text-xs text-gray-500 truncate mt-1">
+                              {hit.services.slice(0, 2).join(', ')}
+                            </div>
+                          )}
+                        </div>
+                        {hit.rating?.average > 0 && (
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <svg className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <span className="text-sm font-medium text-gray-700">
+                              {hit.rating.average.toFixed(1)}
+                            </span>
                           </div>
                         )}
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900">
-                            {artisanName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {artisan.category || artisan.craft} {artisan.city ? `• ${artisan.city}` : ''}
-                          </div>
-                        </div>
                       </button>
                     );
                   })}
                 </div>
               )}
 
-              {/* Category Results */}
-              {results.categories.length > 0 && (
+              {/* Category Suggestions */}
+              {categories.length > 0 && (
                 <div className="border-b border-gray-200">
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">
+                  <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Categories
                   </div>
-                  {results.categories.map((category, idx) => (
-                    <button
-                      key={category || idx}
-                      onClick={() => handleCategoryClick(category)}
-                      className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-                    >
-                      <div className="font-medium text-gray-900">{category}</div>
-                    </button>
-                  ))}
+                  <div className="p-2 flex flex-wrap gap-2">
+                    {categories.map((category) => (
+                      <button
+                        key={category}
+                        onClick={() => handleCategoryClick(category)}
+                        className="px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium hover:bg-indigo-200 transition-colors"
+                      >
+                        {category}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
               {/* No Results */}
-              {results.artisans.length === 0 && results.categories.length === 0 && !loading && (
-                <div className="p-4 text-center text-gray-500">
-                  No results found for "{query}"
+              {hits.length === 0 && categories.length === 0 && (
+                <div className="p-6 text-center">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <p className="mt-2 text-sm text-gray-500">
+                    No results found for "<span className="font-medium">{query}</span>"
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Try different keywords or browse categories
+                  </p>
                 </div>
               )}
 
               {/* View All Results */}
-              {(results.artisans.length > 0 || results.categories.length > 0) && (
+              {(hits.length > 0 || categories.length > 0) && (
                 <button
                   onClick={() => {
                     navigate(`/search?q=${encodeURIComponent(query)}`);
                     setShowDropdown(false);
                   }}
-                  className="w-full px-4 py-3 text-[#A55233] hover:bg-orange-50 font-medium transition-colors"
+                  className="w-full px-4 py-3 text-indigo-600 hover:bg-indigo-50 font-medium transition-colors border-t border-gray-200 text-sm md:text-base"
                 >
                   View all results for "{query}"
                 </button>
@@ -256,5 +310,3 @@ const SearchBar = ({ showFilters = false, initialQuery = '', onSearch }) => {
 };
 
 export default SearchBar;
-
-

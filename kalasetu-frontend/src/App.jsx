@@ -51,6 +51,10 @@ import AdminLogin from './pages/admin/AdminLogin.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminArtisans from './pages/admin/AdminArtisans.jsx';
 import AdminUsers from './pages/admin/AdminUsers.jsx';
+import AdminReviews from './pages/admin/AdminReviews.jsx';
+import AdminPayments from './pages/admin/AdminPayments.jsx';
+import AdminBookings from './pages/admin/AdminBookings.jsx';
+import AdminSettings from './pages/admin/AdminSettings.jsx';
 
 function App() {
   return (
@@ -183,6 +187,10 @@ function App() {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="artisans" element={<AdminArtisans />} />
               <Route path="users" element={<AdminUsers />} />
+              <Route path="reviews" element={<AdminReviews />} />
+              <Route path="payments" element={<AdminPayments />} />
+              <Route path="bookings" element={<AdminBookings />} />
+              <Route path="settings" element={<AdminSettings />} />
             </Routes>
           </AdminLayout>
         </AdminAuthProvider>

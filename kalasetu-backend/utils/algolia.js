@@ -42,7 +42,7 @@ export const getAlgoliaIndex = (indexName = SEARCH_CONFIG.algolia.indexName) => 
 };
 
 /**
- * Index artisan data to Algolia
+ * Index artisan data to Algolia with all searchable fields
  * @param {Object} artisan - Artisan object
  * @returns {Promise<Object|null>} Result or null
  */
@@ -54,18 +54,43 @@ export const indexArtisan = async (artisan) => {
     const record = {
       objectID: artisan._id.toString(),
       fullName: artisan.fullName,
-      email: artisan.email,
-      phoneNumber: artisan.phoneNumber,
-      craft: artisan.craft,
-      bio: artisan.bio,
-      businessName: artisan.businessName,
-      languagesSpoken: artisan.languagesSpoken,
-      location: artisan.location,
+      businessName: artisan.businessName || '',
+      tagline: artisan.tagline || '',
+      category: artisan.craft || artisan.category || '', // Use craft as category
+      craft: artisan.craft || '',
+      artform: artisan.craft || '', // Alias for craft
+      skills: artisan.languagesSpoken || [], // Using languages as skills for now
+      services: [], // Can be extracted from bio or craft if needed
+      bio: artisan.bio || '',
+      address: {
+        city: artisan.location?.city || '',
+        state: artisan.location?.state || '',
+        country: artisan.location?.country || 'India',
+        fullAddress: artisan.location?.address || ''
+      },
+      profileImage: artisan.profileImageUrl || artisan.profileImage || '',
+      portfolioImages: artisan.portfolioImageUrls || [],
       publicId: artisan.publicId,
-      profileImage: artisan.profileImageUrl || artisan.profileImage,
-      rating: artisan.averageRating,
-      reviewCount: artisan.totalReviews,
-      createdAt: artisan.createdAt,
+      rating: {
+        average: artisan.averageRating || 0,
+        count: artisan.totalReviews || 0
+      },
+      verifications: {
+        email: {
+          verified: artisan.emailVerified || false
+        }
+      },
+      badges: artisan.certifications?.map(c => c.name) || [],
+      _geoloc: artisan.location?.coordinates ? {
+        lat: artisan.location.coordinates[1], // latitude
+        lng: artisan.location.coordinates[0]  // longitude
+      } : null,
+      yearsOfExperience: artisan.yearsOfExperience || '',
+      teamSize: artisan.teamSize || '',
+      languagesSpoken: artisan.languagesSpoken || [],
+      isActive: artisan.isActive !== false, // Default to true
+      isVerified: artisan.emailVerified || false,
+      createdAt: artisan.createdAt ? new Date(artisan.createdAt).getTime() : Date.now()
     };
 
     // Add timeout to prevent hanging
@@ -127,7 +152,7 @@ export const deleteArtisanIndex = async (artisanId) => {
 };
 
 /**
- * Bulk index artisans
+ * Bulk index artisans with enhanced fields
  * @param {Array} artisans - Array of artisan objects
  * @returns {Promise<Object|null>} Result or null
  */
@@ -139,16 +164,43 @@ export const bulkIndexArtisans = async (artisans) => {
     const records = artisans.map(artisan => ({
       objectID: artisan._id.toString(),
       fullName: artisan.fullName,
-      email: artisan.email,
-      craft: artisan.craft,
-      bio: artisan.bio,
-      businessName: artisan.businessName,
-      languagesSpoken: artisan.languagesSpoken,
-      location: artisan.location,
+      businessName: artisan.businessName || '',
+      tagline: artisan.tagline || '',
+      category: artisan.craft || artisan.category || '',
+      craft: artisan.craft || '',
+      artform: artisan.craft || '',
+      skills: artisan.languagesSpoken || [],
+      services: [],
+      bio: artisan.bio || '',
+      address: {
+        city: artisan.location?.city || '',
+        state: artisan.location?.state || '',
+        country: artisan.location?.country || 'India',
+        fullAddress: artisan.location?.address || ''
+      },
+      profileImage: artisan.profileImageUrl || artisan.profileImage || '',
+      portfolioImages: artisan.portfolioImageUrls || [],
       publicId: artisan.publicId,
-      profileImage: artisan.profileImageUrl || artisan.profileImage,
-      rating: artisan.averageRating,
-      reviewCount: artisan.totalReviews,
+      rating: {
+        average: artisan.averageRating || 0,
+        count: artisan.totalReviews || 0
+      },
+      verifications: {
+        email: {
+          verified: artisan.emailVerified || false
+        }
+      },
+      badges: artisan.certifications?.map(c => c.name) || [],
+      _geoloc: artisan.location?.coordinates ? {
+        lat: artisan.location.coordinates[1],
+        lng: artisan.location.coordinates[0]
+      } : null,
+      yearsOfExperience: artisan.yearsOfExperience || '',
+      teamSize: artisan.teamSize || '',
+      languagesSpoken: artisan.languagesSpoken || [],
+      isActive: artisan.isActive !== false,
+      isVerified: artisan.emailVerified || false,
+      createdAt: artisan.createdAt ? new Date(artisan.createdAt).getTime() : Date.now()
     }));
 
     const result = await index.saveObjects(records);
@@ -161,7 +213,7 @@ export const bulkIndexArtisans = async (artisans) => {
 };
 
 /**
- * Configure Algolia index settings
+ * Configure Algolia index settings with advanced search configuration
  * @returns {Promise<Object|null>} Result or null
  */
 export const configureAlgoliaIndex = async () => {
@@ -173,14 +225,31 @@ export const configureAlgoliaIndex = async () => {
       searchableAttributes: [
         'fullName',
         'businessName',
+        'category',
         'craft',
+        'artform',
+        'skills',
+        'services',
         'bio',
-        'languagesSpoken',
-        'location'
+        'tagline',
+        'address.city',
+        'address.state',
+        'address.country'
       ],
       attributesForFaceting: [
-        'craft',
-        'location'
+        'searchable(category)',
+        'searchable(craft)',
+        'searchable(address.city)',
+        'searchable(address.state)',
+        'filterOnly(rating.average)',
+        'filterOnly(verifications.email.verified)',
+        'filterOnly(isActive)',
+        'filterOnly(isVerified)'
+      ],
+      customRanking: [
+        'desc(rating.average)',
+        'desc(rating.count)',
+        'desc(isVerified)'
       ],
       ranking: [
         'typo',
@@ -192,10 +261,41 @@ export const configureAlgoliaIndex = async () => {
         'exact',
         'custom'
       ],
-      attributesToHighlight: ['fullName', 'businessName', 'craft', 'bio'],
+      attributesToRetrieve: [
+        'objectID',
+        'fullName',
+        'businessName',
+        'profileImage',
+        'portfolioImages',
+        'category',
+        'craft',
+        'skills',
+        'services',
+        'address',
+        'rating',
+        'publicId',
+        'verifications',
+        'badges',
+        '_geoloc',
+        'tagline',
+        'bio'
+      ],
+      attributesToHighlight: [
+        'fullName',
+        'businessName',
+        'category',
+        'craft',
+        'skills',
+        'services',
+        'bio',
+        'tagline'
+      ],
       attributesToSnippet: ['bio:20'],
       highlightPreTag: '<mark>',
       highlightPostTag: '</mark>',
+      typoTolerance: true,
+      minWordSizefor1Typo: 4,
+      minWordSizefor2Typos: 8,
       hitsPerPage: 20,
       maxValuesPerFacet: 100
     });
@@ -206,4 +306,7 @@ export const configureAlgoliaIndex = async () => {
     return null;
   }
 };
+
+// Alias for backward compatibility
+export const configureIndex = configureAlgoliaIndex;
 

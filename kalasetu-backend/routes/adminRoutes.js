@@ -8,8 +8,18 @@ import {
   updateArtisanStatus,
   deleteArtisan,
   getAllReviews,
+  getReviewsStats,
   moderateReview,
-  deleteReview
+  deleteReview,
+  restoreReview,
+  getAllPayments,
+  getPaymentsStats,
+  processRefund,
+  getAllBookings,
+  getBookingsStats,
+  cancelBooking,
+  getSettings,
+  updateSettings
 } from '../controllers/adminDashboardController.js';
 import { protectAdmin, checkPermission } from '../middleware/authMiddleware.js';
 
@@ -30,8 +40,21 @@ router.delete('/artisans/:id', protectAdmin, checkPermission('artisans', 'delete
 router.get('/users', protectAdmin, checkPermission('users', 'view'), getAllUsers);
 
 router.get('/reviews', protectAdmin, checkPermission('reviews', 'view'), getAllReviews);
+router.get('/reviews/stats', protectAdmin, checkPermission('reviews', 'view'), getReviewsStats);
 router.put('/reviews/:id/moderate', protectAdmin, checkPermission('reviews', 'moderate'), moderateReview);
 router.delete('/reviews/:id', protectAdmin, checkPermission('reviews', 'delete'), deleteReview);
+router.patch('/reviews/:id/restore', protectAdmin, checkPermission('reviews', 'moderate'), restoreReview);
+
+router.get('/payments', protectAdmin, checkPermission('payments', 'view'), getAllPayments);
+router.get('/payments/stats', protectAdmin, checkPermission('payments', 'view'), getPaymentsStats);
+router.post('/payments/:id/refund', protectAdmin, checkPermission('payments', 'refund'), processRefund);
+
+router.get('/bookings', protectAdmin, checkPermission('bookings', 'view'), getAllBookings);
+router.get('/bookings/stats', protectAdmin, checkPermission('bookings', 'view'), getBookingsStats);
+router.patch('/bookings/:id/cancel', protectAdmin, checkPermission('bookings', 'cancel'), cancelBooking);
+
+router.get('/settings', protectAdmin, checkPermission('settings', 'view'), getSettings);
+router.put('/settings', protectAdmin, checkPermission('settings', 'edit'), updateSettings);
 
 export default router;
 

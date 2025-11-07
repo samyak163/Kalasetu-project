@@ -1,50 +1,22 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
-import { GOOGLE_MAPS_CONFIG } from '../config/env.config.js';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
+import { getGoogleMapsApiKey } from '../lib/googleMaps.js';
 
-const LocationSearch = ({ onLocationSelect, initialLocation = null }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState(initialLocation || { lat: 18.5204, lng: 73.8567 });
-  const [predictions, setPredictions] = useState([]);
-  const [showPredictions, setShowPredictions] = useState(false);
-  const autocompleteService = useRef(null);
-  const placesService = useRef(null);
-  const searchRef = useRef(null);
+const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', showMap = false }) => {
+  const [autocomplete, setAutocomplete] = useState(null);
+  const [inputValue, setInputValue] = useState(defaultValue);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const inputRef = useRef(null);
 
-  // Initialize Places services with retry until the Google script is loaded
-  useEffect(() => {
-    let attempts = 0;
-    const maxAttempts = 40; // ~8s total with 200ms interval
-    const interval = setInterval(() => {
-      attempts += 1;
-      if (window.google?.maps?.places) {
-        try {
-          if (!autocompleteService.current) {
-            autocompleteService.current = new window.google.maps.places.AutocompleteService();
-          }
-          if (!placesService.current) {
-            const map = new window.google.maps.Map(document.createElement('div'));
-            placesService.current = new window.google.maps.places.PlacesService(map);
-          }
-        } catch (_) {
-          // swallow
-        } finally {
-          if (autocompleteService.current && placesService.current) {
-            clearInterval(interval);
-          }
-        }
-      }
-      if (attempts >= maxAttempts) {
-        clearInterval(interval);
-      }
-    }, 200);
-    return () => clearInterval(interval);
-  }, []);
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: getGoogleMapsApiKey(),
+    libraries: ['places']
+  });
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowPredictions(false);
+    const handleClickOutside = (e) => {
+      if (inputRef.current && !inputRef.current.contains(e.target)) {
+        setShowDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -52,145 +24,102 @@ const LocationSearch = ({ onLocationSelect, initialLocation = null }) => {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (searchQuery.length >= 3 && autocompleteService.current) {
-        fetchPredictions();
-      } else {
-        setPredictions([]);
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+    if (defaultValue && defaultValue !== inputValue) {
+      setInputValue(defaultValue);
+    }
+  }, [defaultValue]);
 
-  const fetchPredictions = () => {
-    if (!autocompleteService.current || !window.google?.maps?.places) return;
-    autocompleteService.current.getPlacePredictions(
-      { input: searchQuery, componentRestrictions: { country: 'in' }, types: ['geocode'] },
-      (results, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-          setPredictions(results);
-          setShowPredictions(true);
+  const onLoad = useCallback((autocompleteInstance) => {
+    setAutocomplete(autocompleteInstance);
+  }, []);
+
+  const onPlaceChanged = () => {
+    if (autocomplete !== null) {
+      const place = autocomplete.getPlace();
+      
+      if (place.geometry) {
+        const addressComponents = place.address_components || [];
+        const location = {
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+          address: place.formatted_address,
+          city: addressComponents.find(c => 
+            c.types.includes('locality') || 
+            c.types.includes('administrative_area_level_2')
+          )?.long_name || '',
+          state: addressComponents.find(c => 
+            c.types.includes('administrative_area_level_1')
+          )?.long_name || '',
+          country: addressComponents.find(c => 
+            c.types.includes('country')
+          )?.long_name || 'India'
+        };
+        
+        setInputValue(place.formatted_address);
+        setShowDropdown(false);
+        if (onLocationSelect) {
+          onLocationSelect(location);
         }
       }
-    );
+    }
   };
 
-  const handlePredictionSelect = (placeId) => {
-    if (!placesService.current) return;
-    placesService.current.getDetails(
-      { 
-        placeId, 
-        fields: ['geometry', 'formatted_address', 'name', 'address_components'] 
-      },
-      (place, status) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-            // Extract address components
-            const addressComponents = place.address_components || [];
-            const city = addressComponents.find(c => 
-              c.types.includes('locality') || c.types.includes('administrative_area_level_2')
-            )?.long_name || '';
-            const state = addressComponents.find(c => 
-              c.types.includes('administrative_area_level_1')
-            )?.long_name || '';
-            const country = addressComponents.find(c => 
-              c.types.includes('country')
-            )?.long_name || '';
-            
-            const location = {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng(),
-              address: place.formatted_address,
-              name: place.name,
-              city,
-              state,
-              country
-            };
-            
-            setSelectedLocation(location);
-            setSearchQuery(place.formatted_address);
-            setShowPredictions(false);
-            
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value);
+    if (e.target.value.length > 0) {
+      setShowDropdown(true);
+    }
+  };
+
+  const handleUseCurrentLocation = () => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          // Reverse geocode using Google Maps API
+          if (window.google && window.google.maps) {
+            const geocoder = new window.google.maps.Geocoder();
+            geocoder.geocode(
+              { location: { lat: latitude, lng: longitude } },
+              (results, status) => {
+                if (status === 'OK' && results[0]) {
+                  const addressComponents = results[0].address_components || [];
+                  const location = {
+                    lat: latitude,
+                    lng: longitude,
+                    address: results[0].formatted_address,
+                    city: addressComponents.find(c => 
+                      c.types.includes('locality') || 
+                      c.types.includes('administrative_area_level_2')
+                    )?.long_name || '',
+                    state: addressComponents.find(c => 
+                      c.types.includes('administrative_area_level_1')
+                    )?.long_name || '',
+                    country: addressComponents.find(c => 
+                      c.types.includes('country')
+                    )?.long_name || 'India'
+                  };
+                  setInputValue(results[0].formatted_address);
+                  setShowDropdown(false);
+                  if (onLocationSelect) {
+                    onLocationSelect(location);
+                  }
+                }
+              }
+            );
+          } else {
+            // Fallback: just use coordinates
+            const location = { lat: latitude, lng: longitude, address: `${latitude}, ${longitude}` };
+            setInputValue(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
             if (onLocationSelect) {
               onLocationSelect(location);
             }
-            // Track with PostHog
-            if (window.posthog) {
-              window.posthog.capture('location_selected', {
-                has_coordinates: true,
-                source: 'search'
-              });
-            }
-          }
-      }
-    );
-  };
-
-  const handleMapClick = useCallback((event) => {
-    const location = {
-      lat: event.detail.latLng.lat,
-      lng: event.detail.latLng.lng
-    };
-    
-    setSelectedLocation(location);
-    
-    // Reverse geocode to get address
-    if (window.google && window.google.maps) {
-      const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode({ location }, (results, status) => {
-        if (status === 'OK' && results[0]) {
-          location.address = results[0].formatted_address;
-          setSearchQuery(results[0].formatted_address);
-          
-          if (onLocationSelect) {
-            onLocationSelect(location);
-          }
-        }
-      });
-    }
-    // Track with PostHog
-    if (window.posthog) {
-      window.posthog.capture('location_selected', {
-        has_coordinates: true,
-        source: 'map_click'
-      });
-    }
-  }, [onLocationSelect]);
-
-  const handleUseCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          
-          setSelectedLocation(location);
-          // Reverse geocode
-          if (window.google && window.google.maps) {
-            const geocoder = new window.google.maps.Geocoder();
-            geocoder.geocode({ location }, (results, status) => {
-              if (status === 'OK' && results[0]) {
-                location.address = results[0].formatted_address;
-                setSearchQuery(results[0].formatted_address);
-                
-                if (onLocationSelect) {
-                  onLocationSelect(location);
-                }
-              }
-            });
-          }
-          // Track with PostHog
-          if (window.posthog) {
-            window.posthog.capture('location_selected', {
-              has_coordinates: true,
-              source: 'current_location'
-            });
           }
         },
         (error) => {
           console.error('Geolocation error:', error);
-          alert('Unable to get your location. Please enable location access or search manually.');
+          alert('Unable to get your location. Please enter manually.');
         }
       );
     } else {
@@ -198,118 +127,102 @@ const LocationSearch = ({ onLocationSelect, initialLocation = null }) => {
     }
   };
 
-  const apiKey = GOOGLE_MAPS_CONFIG.apiKey;
+  if (loadError) {
+    return (
+      <div className={`text-red-500 text-sm ${className}`}>
+        Error loading maps. Please check your API key.
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className={`animate-pulse ${className}`}>
+        <div className="h-10 bg-gray-200 rounded-lg"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      <div ref={searchRef} className="relative">
-        <div className="relative">
+    <div className={`relative ${className}`} ref={inputRef}>
+      <div className="relative">
+        {isLoaded ? (
+          <Autocomplete
+            onLoad={onLoad}
+            onPlaceChanged={onPlaceChanged}
+            restrictions={{ country: 'in' }}
+            options={{
+              types: ['(cities)'],
+              componentRestrictions: { country: 'in' }
+            }}
+          >
+            <input
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              onFocus={() => inputValue.length > 0 && setShowDropdown(true)}
+              placeholder="Enter city or location..."
+              className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base"
+            />
+          </Autocomplete>
+        ) : (
           <input
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => predictions.length > 0 && setShowPredictions(true)}
-            placeholder="Search for a location..."
-            className="w-full px-4 py-3 pl-12 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:ring-4 focus:ring-orange-100"
+            value={inputValue}
+            onChange={handleInputChange}
+            placeholder="Enter city or location..."
+            className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base"
           />
-          
-          <svg
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        )}
+        
+        {/* Location Icon */}
+        <svg
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        
+        {/* Clear Button */}
+        {inputValue && (
+          <button
+            type="button"
+            onClick={() => {
+              setInputValue('');
+              if (onLocationSelect) {
+                onLocationSelect(null);
+              }
+            }}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
-        </div>
-        {/* Predictions Dropdown */}
-        {showPredictions && predictions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50 max-h-60 overflow-y-auto">
-            {predictions.map((prediction) => (
-              <button
-                key={prediction.place_id}
-                onClick={() => handlePredictionSelect(prediction.place_id)}
-                className="w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors flex items-start space-x-3"
-              >
-                <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                </svg>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">
-                    {prediction.structured_formatting.main_text}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {prediction.structured_formatting.secondary_text}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         )}
       </div>
 
-      {/* Current Location Button */}
-      <button
-        onClick={handleUseCurrentLocation}
-        className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center space-x-2"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" />
-        </svg>
-        <span>Use My Current Location</span>
-      </button>
+      {/* Helper text */}
+      <p className="mt-1 text-xs text-gray-500">
+        Start typing to see suggestions
+      </p>
 
-      {/* Map */}
-      {apiKey ? (
-        <APIProvider apiKey={apiKey} libraries={['places']}>
-          <div className="h-80 rounded-lg overflow-hidden border-2 border-gray-200">
-            <Map
-              center={selectedLocation}
-              zoom={13}
-              onClick={handleMapClick}
-              mapId="location-picker-map"
-            >
-              <Marker position={selectedLocation} />
-            </Map>
-          </div>
-        </APIProvider>
-      ) : (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
-          Location map and suggestions are disabled because Google Maps API key is not configured.
-        </div>
-      )}
-
-      {/* Selected Location Info */}
-      {searchQuery && (
-        <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-          <div className="flex items-start space-x-3">
-            <svg className="w-5 h-5 text-orange-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      {/* Use Current Location Button (optional, can be shown in dropdown) */}
+      {showDropdown && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
+          <button
+            onClick={handleUseCurrentLocation}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors text-sm md:text-base"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" />
             </svg>
-            <div>
-              <p className="font-medium text-orange-900">Selected Location</p>
-              <p className="text-sm text-orange-700">{searchQuery}</p>
-              <p className="text-xs text-orange-600 mt-1">
-                Coordinates: {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
-              </p>
-            </div>
-          </div>
+            Use Current Location
+          </button>
         </div>
       )}
     </div>
@@ -317,5 +230,3 @@ const LocationSearch = ({ onLocationSelect, initialLocation = null }) => {
 };
 
 export default LocationSearch;
-
-

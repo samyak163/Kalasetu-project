@@ -83,11 +83,92 @@ const AdminArtisans = () => {
     }
   };
 
+  // Calculate stats from artisans
+  const stats = {
+    total: artisans.length,
+    verified: artisans.filter(a => a.isVerified).length,
+    active: artisans.filter(a => a.isActive).length,
+    suspended: artisans.filter(a => !a.isActive).length
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800">Artisan Management</h1>
-        <p className="text-gray-600 mt-1">Manage and moderate artisan accounts</p>
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Artisan Management</h1>
+          <p className="text-gray-600 mt-1 text-sm md:text-base">Manage and moderate artisan accounts</p>
+        </div>
+        <button
+          onClick={() => fetchArtisans()}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm md:text-base"
+        >
+          <RefreshCcw className="w-4 h-4" />
+          Refresh
+        </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-sm text-gray-600 truncate">Total Artisans</div>
+          <div className="text-2xl font-bold text-gray-900 mt-1">{pagination?.total || stats.total}</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-sm text-gray-600 truncate">Verified</div>
+          <div className="text-2xl font-bold text-green-600 mt-1">{stats.verified}</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-sm text-gray-600 truncate">Active</div>
+          <div className="text-2xl font-bold text-blue-600 mt-1">{stats.active}</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-sm text-gray-600 truncate">Suspended</div>
+          <div className="text-2xl font-bold text-red-600 mt-1">{stats.suspended}</div>
+        </div>
+      </div>
+
+      {/* Quick Filters */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-wrap gap-2">
+        <button
+          onClick={() => { setStatus('all'); setVerified('all'); setPage(1); }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            status === 'all' && verified === 'all'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          All
+        </button>
+        <button
+          onClick={() => { setStatus('active'); setVerified('verified'); setPage(1); }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            status === 'active' && verified === 'verified'
+              ? 'bg-green-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Verified & Active
+        </button>
+        <button
+          onClick={() => { setVerified('unverified'); setPage(1); }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            verified === 'unverified'
+              ? 'bg-yellow-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Unverified
+        </button>
+        <button
+          onClick={() => { setStatus('inactive'); setPage(1); }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            status === 'inactive'
+              ? 'bg-red-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Suspended
+        </button>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -169,36 +250,36 @@ const AdminArtisans = () => {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artisan</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Artisan</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Contact</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Category</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Joined</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {artisans.map((artisan) => (
                     <tr key={artisan._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <img src={artisan.profileImage || '/default-avatar.png'} alt={artisan.fullName} className="w-10 h-10 rounded-full object-cover" />
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{artisan.fullName}</div>
+                        <div className="flex items-center min-w-0">
+                          <img src={artisan.profileImage || '/default-avatar.png'} alt={artisan.fullName} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                          <div className="ml-4 min-w-0 flex-1">
+                            <div className="text-sm font-medium text-gray-900 truncate max-w-xs">{artisan.fullName}</div>
                             <div className="flex items-center gap-2 mt-1">
-                              {artisan.isVerified && (<span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Verified</span>)}
-                              <span className="text-xs text-gray-500">⭐ {artisan.rating?.toFixed(1) || 0}</span>
+                              {artisan.isVerified && (<span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 flex-shrink-0"><CheckCircle className="w-3 h-3 mr-1" />Verified</span>)}
+                              <span className="text-xs text-gray-500 flex-shrink-0">⭐ {artisan.rating?.toFixed(1) || 0}</span>
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
-                          <div className="flex items-center gap-2 mb-1"><Mail className="w-4 h-4 text-gray-400" />{artisan.email}</div>
-                          <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-gray-400" />{artisan.phoneNumber}</div>
+                        <div className="text-sm text-gray-900 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 truncate max-w-xs"><Mail className="w-4 h-4 text-gray-400 flex-shrink-0" /><span className="truncate">{artisan.email}</span></div>
+                          <div className="flex items-center gap-2 truncate max-w-xs"><Phone className="w-4 h-4 text-gray-400 flex-shrink-0" /><span className="truncate">{artisan.phoneNumber}</span></div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap"><span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">{artisan.category || 'N/A'}</span></td>
+                      <td className="px-6 py-4 whitespace-nowrap"><span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 truncate max-w-xs">{artisan.category || 'N/A'}</span></td>
                       <td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${artisan.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{artisan.isActive ? 'Active' : 'Suspended'}</span></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><div className="flex items-center gap-2"><Calendar className="w-4 h-4" />{new Date(artisan.createdAt).toLocaleDateString()}</div></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

@@ -49,6 +49,7 @@ import availabilityRoutes from './routes/availabilityRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import authHelpersRoutes from './routes/authHelpersRoutes.js';
 import otpRoutes from './routes/otpRoutes.js';
+import portfolioRoutes from './routes/portfolioRoutes.js';
 
 
 // --- Load Environment Variables ---
@@ -205,6 +206,8 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/artisan/availability', availabilityRoutes);
 // /api/admin -> Admin endpoints
 app.use('/api/admin', adminRoutes);
+// /api/artisan/portfolio -> Portfolio endpoints (artisan auth)
+app.use('/api/artisan/portfolio', portfolioRoutes);
 
 // --- Debug Logging (Updated) ---
 // This is now accurate for our new structure

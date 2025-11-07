@@ -39,12 +39,48 @@ const AdminUsers = () => {
     }
   };
 
+  // Calculate stats from users
+  const stats = {
+    total: users.length,
+    newThisMonth: users.filter(u => {
+      const created = new Date(u.createdAt);
+      const now = new Date();
+      return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+    }).length
+  };
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
-        <p className="text-gray-600 mt-1">Manage customer accounts</p>
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
+          <p className="text-gray-600 mt-1 text-sm md:text-base">Manage customer accounts</p>
+        </div>
+        <button
+          onClick={() => fetchUsers()}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm md:text-base"
+        >
+          <RefreshCcw className="w-4 h-4" />
+          Refresh
+        </button>
       </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-sm text-gray-600 truncate">Total Users</div>
+          <div className="text-2xl font-bold text-gray-900 mt-1">{pagination?.total || stats.total}</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-sm text-gray-600 truncate">New This Month</div>
+          <div className="text-2xl font-bold text-green-600 mt-1">{stats.newThisMonth}</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className="text-sm text-gray-600 truncate">Active Users</div>
+          <div className="text-2xl font-bold text-blue-600 mt-1">{pagination?.total || stats.total}</div>
+        </div>
+      </div>
+
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -105,24 +141,24 @@ const AdminUsers = () => {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">Joined</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/6">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {users.map((user) => (
                     <tr key={user._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <img src={user.profileImage || '/default-avatar.png'} alt={user.fullName} className="w-10 h-10 rounded-full object-cover" />
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                        <div className="flex items-center min-w-0">
+                          <img src={user.profileImage || '/default-avatar.png'} alt={user.fullName} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                          <div className="ml-4 min-w-0 flex-1">
+                            <div className="text-sm font-medium text-gray-900 truncate max-w-xs">{user.fullName}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4"><div className="flex items-center gap-2 text-sm text-gray-900"><Mail className="w-4 h-4 text-gray-400" />{user.email}</div></td>
+                      <td className="px-6 py-4"><div className="flex items-center gap-2 text-sm text-gray-900 min-w-0"><Mail className="w-4 h-4 text-gray-400 flex-shrink-0" /><span className="truncate max-w-xs">{user.email}</span></div></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><div className="flex items-center gap-2"><Calendar className="w-4 h-4" />{new Date(user.createdAt).toLocaleDateString()}</div></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
@@ -140,8 +176,8 @@ const AdminUsers = () => {
                   {(() => { const rng = getPaginationRange(page, pagination.total, DEFAULT_PAGE_SIZE); return <>Showing {rng.start} to {rng.end} of {pagination.total} results</>; })()}
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setPage(page - 1)} disabled={page === 1} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">Previous</button>
-                  <button onClick={() => setPage(page + 1)} disabled={page >= pagination.pages} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">Next</button>
+                  <button onClick={() => setPage(page - 1)} disabled={page === 1} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base">Previous</button>
+                  <button onClick={() => setPage(page + 1)} disabled={page >= pagination.pages} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base">Next</button>
                 </div>
               </div>
             )}

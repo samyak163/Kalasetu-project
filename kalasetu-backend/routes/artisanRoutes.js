@@ -7,6 +7,7 @@ import {
     getNearbyArtisans,
     updateArtisanProfile,
 } from '../controllers/artisanController.js';
+import { getPublicPortfolio } from '../controllers/portfolioController.js';
 import Artisan from '../models/artisanModel.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { cache, invalidateCache } from '../middleware/cacheMiddleware.js';
@@ -27,6 +28,10 @@ router.get('/nearby', cache('artisans:nearby', 60), getNearbyArtisans);
 // Update artisan profile (authenticated)
 // URL: PUT /api/artisans/profile
 router.put('/profile', protect, invalidateCache(['cache:artisans:list*', 'cache:artisans:public*', 'cache:artisans:nearby*']), updateArtisanProfile);
+
+// Public portfolio endpoint (must be before :publicId route)
+// URL: GET /api/artisans/:publicId/portfolio
+router.get('/:publicId/portfolio', cache('artisans:portfolio', 300), getPublicPortfolio);
 
 // --- THE PUBLIC VANITY URL ROUTE ---
 // This is the one we will use for our public profiles.

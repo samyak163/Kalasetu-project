@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../lib/axios';
-import { Users, Briefcase, Star, DollarSign, TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { Users, Briefcase, Star, DollarSign, TrendingUp, TrendingDown, Activity, RefreshCcw } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const AdminDashboard = () => {
@@ -74,33 +74,58 @@ const AdminDashboard = () => {
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back, Admin!</p>
+          <p className="text-gray-600 mt-1 text-sm md:text-base">Welcome back, Admin! Here's your platform overview.</p>
         </div>
-        <select value={period} onChange={(e) => setPeriod(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          <option value="7days">Last 7 Days</option>
-          <option value="30days">Last 30 Days</option>
-          <option value="90days">Last 90 Days</option>
-          <option value="1year">Last Year</option>
-        </select>
+        <div className="flex items-center gap-3">
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base bg-white"
+          >
+            <option value="7days">Last 7 Days</option>
+            <option value="30days">Last 30 Days</option>
+            <option value="90days">Last 90 Days</option>
+            <option value="1year">Last Year</option>
+          </select>
+          <button
+            onClick={fetchStats}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm md:text-base"
+          >
+            <RefreshCcw className="w-4 h-4" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={index} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div
+              key={index}
+              className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 hover:border-blue-300 cursor-pointer"
+              onClick={() => {
+                if (stat.title.includes('Artisans')) window.location.href = '/admin/artisans';
+                if (stat.title.includes('Users')) window.location.href = '/admin/users';
+                if (stat.title.includes('Reviews')) window.location.href = '/admin/reviews';
+                if (stat.title.includes('Revenue')) window.location.href = '/admin/payments';
+              }}
+            >
               <div className="flex items-center justify-between mb-4">
-                <div className={`${stat.color} p-3 rounded-lg`}><Icon className="w-6 h-6 text-white" /></div>
-                {stat.trend === 'up' && (<TrendingUp className="w-5 h-5 text-green-500" />)}
-                {stat.trend === 'down' && (<TrendingDown className="w-5 h-5 text-red-500" />)}
+                <div className={`${stat.color} p-3 rounded-lg shadow-sm`}>
+                  <Icon className="w-6 h-6 text-white" />
+                </div>
+                {stat.trend === 'up' && <TrendingUp className="w-5 h-5 text-green-500" />}
+                {stat.trend === 'down' && <TrendingDown className="w-5 h-5 text-red-500" />}
+                {stat.trend === 'neutral' && <Activity className="w-5 h-5 text-gray-400" />}
               </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-1">{stat.value}</h3>
-              <p className="text-sm text-gray-600">{stat.title}</p>
-              <p className="text-xs text-gray-500 mt-2">{stat.change}</p>
+              <h3 className="text-2xl font-bold text-gray-800 mb-1 truncate">{stat.value}</h3>
+              <p className="text-sm font-medium text-gray-600 truncate">{stat.title}</p>
+              <p className="text-xs text-gray-500 mt-2 truncate">{stat.change}</p>
             </div>
           );
         })}
@@ -142,9 +167,9 @@ const AdminDashboard = () => {
               <div key={artisan._id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"><Briefcase className="w-5 h-5 text-blue-600" /></div>
-                  <div>
-                    <p className="font-medium text-gray-800">{artisan.fullName}</p>
-                    <p className="text-sm text-gray-500">{artisan.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-gray-800 truncate max-w-xs text-sm md:text-base">{artisan.fullName}</p>
+                    <p className="text-sm text-gray-500 truncate max-w-xs">{artisan.email}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -162,9 +187,9 @@ const AdminDashboard = () => {
               <div key={user._id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center"><Users className="w-5 h-5 text-green-600" /></div>
-                  <div>
-                    <p className="font-medium text-gray-800">{user.fullName}</p>
-                    <p className="text-sm text-gray-500">{user.email}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-gray-800 truncate max-w-xs text-sm md:text-base">{user.fullName}</p>
+                    <p className="text-sm text-gray-500 truncate max-w-xs">{user.email}</p>
                   </div>
                 </div>
                 <p className="text-xs text-gray-500">{new Date(user.createdAt).toLocaleDateString()}</p>
