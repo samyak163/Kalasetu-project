@@ -60,6 +60,12 @@ const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', s
         if (onLocationSelect) {
           onLocationSelect(location);
         }
+
+        // Open Google Maps preview for user context
+        if (typeof window !== 'undefined') {
+          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`;
+          window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+        }
       }
     }
   };
@@ -162,7 +168,7 @@ const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', s
               onChange={handleInputChange}
               onFocus={() => inputValue.length > 0 && setShowDropdown(true)}
               placeholder="Enter city or location..."
-              className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base"
+              className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base text-gray-900 placeholder-gray-400"
             />
           </Autocomplete>
         ) : (
@@ -171,7 +177,7 @@ const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', s
             value={inputValue}
             onChange={handleInputChange}
             placeholder="Enter city or location..."
-            className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base"
+            className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base text-gray-900 placeholder-gray-400"
           />
         )}
         

@@ -71,12 +71,35 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
+  const updateProfile = async (updates) => {
+    try {
+      const response = await api.put('/api/admin/auth/profile', updates);
+      if (response.data?.success && response.data?.admin) {
+        setAdmin(response.data.admin);
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Admin update profile error:', error);
+      throw error;
+    }
+  };
+
+  const changePassword = async (payload) => {
+    try {
+      const response = await api.put('/api/admin/auth/change-password', payload);
+      return response.data;
+    } catch (error) {
+      console.error('Admin change password error:', error);
+      throw error;
+    }
+  };
+
   const hasPermission = (resource, action) => {
     if (!admin || !admin.permissions) return false;
     return admin.permissions[resource]?.[action] === true;
   };
 
-  const value = { admin, isAuthenticated, loading, login, logout, hasPermission, checkAuth };
+  const value = { admin, isAuthenticated, loading, login, logout, hasPermission, checkAuth, updateProfile, changePassword };
 
   return (
     <AdminAuthContext.Provider value={value}>

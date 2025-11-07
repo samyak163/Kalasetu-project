@@ -12,16 +12,29 @@ import Notification from '../models/notificationModel.js';
  * POST /api/notifications/send-to-user
  */
 export const sendToUser = asyncHandler(async (req, res) => {
-  const { userId, title, message, url, data } = req.body;
+  const { userId, ownerId, ownerType = 'user', title, message, url, data } = req.body;
+  const targetId = ownerId || userId;
 
-  if (!userId || !title || !message) {
+  if (!targetId || !message) {
     return res.status(400).json({
       success: false,
-      message: 'userId, title, and message are required',
+      message: 'ownerId/userId and message are required',
     });
   }
 
-  const result = await sendNotificationToUser(userId, {
+  if (!['user', 'artisan'].includes(ownerType)) {
+    return res.status(400).json({ success: false, message: 'ownerType must be user or artisan' });
+  }
+
+  await Notification.create({
+    ownerId: targetId,
+    ownerType,
+    title: title || '',
+    text: message,
+    url: url || '',
+  });
+
+  const result = await sendNotificationToUser(targetId, {
     title,
     message,
     url,
@@ -40,23 +53,38 @@ export const sendToUser = asyncHandler(async (req, res) => {
  * POST /api/notifications/send-to-users
  */
 export const sendToUsers = asyncHandler(async (req, res) => {
-  const { userIds, title, message, url, data } = req.body;
+  const { userIds, ownerIds, ownerType = 'user', title, message, url, data } = req.body;
+  const ids = ownerIds || userIds;
 
-  if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
     return res.status(400).json({
       success: false,
-      message: 'userIds array is required',
+      message: 'ownerIds/userIds array is required',
     });
   }
 
-  if (!title || !message) {
+  if (!message) {
     return res.status(400).json({
       success: false,
-      message: 'title and message are required',
+      message: 'message is required',
     });
   }
 
-  const result = await sendNotificationToUsers(userIds, {
+  if (!['user', 'artisan'].includes(ownerType)) {
+    return res.status(400).json({ success: false, message: 'ownerType must be user or artisan' });
+  }
+
+  const docs = ids.map((id) => ({
+    ownerId: id,
+    ownerType,
+    title: title || '',
+    text: message,
+    url: url || '',
+  }));
+
+  await Notification.insertMany(docs, { ordered: false }).catch(() => {});
+
+  const result = await sendNotificationToUsers(ids, {
     title,
     message,
     url,
@@ -137,22 +165,37 @@ export const cancelNotification = asyncHandler(async (req, res) => {
  * GET /api/notifications
  */
 export const listForUser = asyncHandler(async (req, res) => {
-  const userId = req.user?._id || req.user?.id;
-  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+  const ownerId = req.account?._id || req.user?._id || req.accountId;
+  const ownerType = req.accountType;
+
+  if (!ownerId || !ownerType) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
   const { limit = 50, offset = 0 } = req.query;
-  const list = await Notification.find({ userId })
+  const list = await Notification.find({
+    ownerId,
+    $or: [
+      { ownerType },
+      { ownerType: { $exists: false } },
+    ],
+  })
     .sort({ createdAt: -1 })
-    .skip(parseInt(offset))
-    .limit(Math.min(100, parseInt(limit)))
+    .skip(parseInt(offset, 10))
+    .limit(Math.min(100, parseInt(limit, 10)))
     .lean();
-  res.json({ success: true, data: list.map(n => ({
-    id: n._id,
-    title: n.title,
-    text: n.text,
-    url: n.url,
-    read: n.read,
-    createdAt: n.createdAt,
-  })) });
+
+  res.json({
+    success: true,
+    data: list.map((n) => ({
+      id: n._id,
+      title: n.title,
+      text: n.text,
+      url: n.url,
+      read: n.read,
+      createdAt: n.createdAt,
+    })),
+  });
 });
 
 /**
@@ -160,10 +203,22 @@ export const listForUser = asyncHandler(async (req, res) => {
  * PATCH /api/notifications/:id/read
  */
 export const markRead = asyncHandler(async (req, res) => {
-  const userId = req.user?._id || req.user?.id;
-  if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
+  const ownerId = req.account?._id || req.user?._id || req.accountId;
+  const ownerType = req.accountType;
+  if (!ownerId || !ownerType) return res.status(401).json({ success: false, message: 'Unauthorized' });
   const { id } = req.params;
-  const updated = await Notification.findOneAndUpdate({ _id: id, userId }, { $set: { read: true } }, { new: true }).lean();
+  const updated = await Notification.findOneAndUpdate(
+    {
+      _id: id,
+      ownerId,
+      $or: [
+        { ownerType },
+        { ownerType: { $exists: false } },
+      ],
+    },
+    { $set: { read: true } },
+    { new: true }
+  ).lean();
   if (!updated) return res.status(404).json({ success: false, message: 'Notification not found' });
   res.json({ success: true, data: { id: updated._id, read: updated.read } });
 });

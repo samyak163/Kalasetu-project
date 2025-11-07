@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import Artisan from '../models/artisanModel.js';
 import connectDB from '../config/db.js';
+import { indexArtisan } from '../utils/algolia.js';
 
 dotenv.config();
 
@@ -28,8 +29,6 @@ const demoPassword = 'DemoArtisan123';
 
 async function seedDemoArtisans() {
   await connectDB();
-  const hash = await bcrypt.hash(demoPassword, 10);
-
   let created = 0;
   for (const category of categories) {
     for (let i = 1; i <= 3; i++) {
@@ -37,32 +36,43 @@ async function seedDemoArtisans() {
       const email = `${category.toLowerCase().replace(/\s+/g, '')}${i}@demo.kalasetu.com`;
       const exists = await Artisan.findOne({ email });
       if (exists) continue;
-        await Artisan.create({
+        const artisan = await Artisan.create({
           fullName: `${category} Demo Artisan ${i}`,
           email: `${category.toLowerCase().replace(/\s+/g, '')}${i}@demo.kalasetu.com`,
-          password: 'Demo@1234',
+          password: demoPassword,
           craft: category,
           location: {
             type: 'Point',
-            coordinates: [73.8567, 18.5204], // Pune
-            address: 'Pune, Maharashtra, India',
-            city: 'Pune',
+            coordinates: loc.coordinates,
+            address: loc.address,
+            city: loc.city,
             state: 'Maharashtra',
             country: 'India',
             postalCode: '411001',
           },
           bio: 'Sample demo artisan for category.',
           profileImageUrl: 'https://placehold.co/100x100/A55233/FFFFFF?text=Artisan',
+          portfolioImageUrls: [
+            'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?w=800&q=80',
+            'https://images.unsplash.com/photo-1503602642458-232111445657?w=800&q=80'
+          ],
+          languagesSpoken: ['English', 'Hindi', 'Marathi'],
           yearsOfExperience: '5-10 years',
           teamSize: 'solo',
-          languagesSpoken: ['English', 'Hindi', 'Marathi'],
           emailVerified: true,
+          isVerified: true,
           // Ensure all accounts are verified and not suspended
           isActive: true,
-          isSuspended: false,
-          allowed: true,
-          // Add more fields as needed
+          averageRating: 4.8,
+          totalReviews: 25,
+          totalBookings: 120,
+          totalEarnings: 150000,
       });
+      try {
+        await indexArtisan(artisan);
+      } catch (error) {
+        console.warn(`Algolia indexing skipped for ${artisan.fullName}:`, error.message);
+      }
       created++;
     }
   }

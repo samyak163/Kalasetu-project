@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import axios from 'axios';
+import { ToastContext } from '../context/ToastContext.jsx';
+import { useNotifications } from '../context/NotificationContext.jsx';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({ 
@@ -16,6 +18,8 @@ const RegisterPage = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth(); // Get login function from context
+    const { showToast } = useContext(ToastContext);
+    const { refresh: refreshNotifications } = useNotifications();
 
     const handleChange = (e) => {
         const { id, value } = e.target;
@@ -56,6 +60,11 @@ const RegisterPage = () => {
             if (response.data.success) {
                 // Update auth context
                 login(response.data.artisan, 'artisan');
+                try {
+                    await refreshNotifications();
+                } catch (_) {}
+
+                showToast('A verification link has been sent to your Gmail. Please verify to continue.', 'info', 6000);
                 
                 // Track with PostHog if available
                 if (window.posthog) {
@@ -128,7 +137,7 @@ const RegisterPage = () => {
                                 value={formData.fullName} 
                                 onChange={handleChange} 
                                 required 
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                 placeholder="Enter your full name"
                             />
                         </div>
@@ -171,7 +180,7 @@ const RegisterPage = () => {
                                     value={formData.email} 
                                     onChange={handleChange} 
                                     required 
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                     placeholder="Enter your email address"
                                 />
                             </div>
@@ -186,7 +195,7 @@ const RegisterPage = () => {
                                     value={formData.phoneNumber} 
                                     onChange={handleChange} 
                                     required 
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                     placeholder="Enter your phone number"
                                 />
                             </div>
@@ -204,7 +213,7 @@ const RegisterPage = () => {
                                     value={formData.password} 
                                     onChange={handleChange} 
                                     required 
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 pr-12"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 pr-12 text-gray-900 placeholder-gray-400"
                                     placeholder="Create a strong password"
                                 />
                                 <button

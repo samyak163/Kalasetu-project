@@ -7,6 +7,7 @@ import admin from '../config/firebaseAdmin.js';
 import { indexArtisan } from '../utils/algolia.js';
 import { sendWelcomeEmail, sendPasswordResetEmail } from '../utils/email.js';
 import { trackEvent } from '../utils/posthog.js';
+import { createNotifications } from '../utils/notificationService.js';
 import * as Sentry from '@sentry/node';
 // RECAPTCHA_CONFIG import removed - reCAPTCHA disabled for demo (will add back with custom domain)
 
@@ -130,6 +131,28 @@ export const register = async (req, res, next) => {
                 hasPhone: !!artisan.phoneNumber
             }
         });
+
+        try {
+            await createNotifications(artisan._id, 'artisan', [
+                {
+                    title: 'Welcome to KalaSetu 🎉',
+                    text: `Hi ${artisan.fullName.split(' ')[0]}, welcome aboard! Customize your profile to stand out.`,
+                    url: '/artisan/dashboard/account',
+                },
+                {
+                    title: 'Verify your email',
+                    text: 'We have sent you a verification link. Please verify your email to stay active on KalaSetu.',
+                    url: '/artisan/dashboard/account?tab=verification',
+                },
+                {
+                    title: 'Complete your profile',
+                    text: 'Add your services, portfolio and pricing details so clients can book you faster.',
+                    url: '/artisan/dashboard/account',
+                },
+            ]);
+        } catch (notificationError) {
+            console.error('Failed to queue artisan onboarding notifications:', notificationError);
+        }
 
         res.status(201).json({
             success: true,

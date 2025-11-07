@@ -1,5 +1,5 @@
 import express from 'express';
-import { login, getMe, logout, changePassword } from '../controllers/adminAuthController.js';
+import { login, getMe, logout, changePassword, updateProfile } from '../controllers/adminAuthController.js';
 import {
   getDashboardStats,
   getAllArtisans,
@@ -29,6 +29,7 @@ router.post('/auth/login', login);
 router.get('/auth/me', protectAdmin, getMe);
 router.post('/auth/logout', protectAdmin, logout);
 router.put('/auth/change-password', protectAdmin, changePassword);
+router.put('/auth/profile', protectAdmin, updateProfile);
 
 router.get('/dashboard/stats', protectAdmin, checkPermission('analytics', 'view'), getDashboardStats);
 

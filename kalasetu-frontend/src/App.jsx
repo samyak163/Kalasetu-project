@@ -55,6 +55,7 @@ import AdminReviews from './pages/admin/AdminReviews.jsx';
 import AdminPayments from './pages/admin/AdminPayments.jsx';
 import AdminBookings from './pages/admin/AdminBookings.jsx';
 import AdminSettings from './pages/admin/AdminSettings.jsx';
+import AdminProfile from './pages/admin/AdminProfile.jsx';
 
 function App() {
   return (
@@ -191,6 +192,7 @@ function App() {
               <Route path="payments" element={<AdminPayments />} />
               <Route path="bookings" element={<AdminBookings />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="profile" element={<AdminProfile />} />
             </Routes>
           </AdminLayout>
         </AdminAuthProvider>

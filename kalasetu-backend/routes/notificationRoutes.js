@@ -8,15 +8,15 @@ import {
   listForUser,
   markRead,
 } from '../controllers/notificationController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, protectAny } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 // Protected routes (require authentication)
-router.get('/', protect, listForUser);
-router.patch('/:id/read', protect, markRead);
-router.post('/send-to-user', protect, sendToUser);
-router.post('/send-to-users', protect, sendToUsers);
+router.get('/', protectAny, listForUser);
+router.patch('/:id/read', protectAny, markRead);
+router.post('/send-to-user', protectAny, sendToUser);
+router.post('/send-to-users', protectAny, sendToUsers);
 router.post('/broadcast', protect, broadcast);
 router.get('/history', protect, getHistory);
 router.delete('/:notificationId', protect, cancelNotification);

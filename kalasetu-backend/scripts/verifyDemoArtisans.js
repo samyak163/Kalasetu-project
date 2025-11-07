@@ -77,7 +77,15 @@ async function verifyDemoArtisans() {
         $set: {
           emailVerified: true,
           emailVerificationToken: null,
-          emailVerificationExpires: null
+          emailVerificationExpires: null,
+          isActive: true,
+          isVerified: true,
+          'location.address': 'Pune, Maharashtra, India',
+          'location.city': 'Pune',
+          'location.state': 'Maharashtra',
+          'location.country': 'India',
+          'location.postalCode': '411001',
+          'location.coordinates': [73.8567, 18.5204],
         }
       }
     );

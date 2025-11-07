@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import Artisan from '../models/artisanModel.js';
+import User from '../models/userModel.js';
 
 export const protect = async (req, res, next) => {
     try {
@@ -61,5 +62,42 @@ export const checkPermission = (resource, action) => {
         }
         next();
     };
+};
+
+export const protectAny = async (req, res, next) => {
+    try {
+        const token = req.cookies?.[process.env.COOKIE_NAME || 'ks_auth'];
+        if (!token) {
+            res.status(401);
+            throw new Error('Not authenticated');
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const [userAccount, artisanAccount] = await Promise.all([
+            User.findById(decoded.id).select('-password'),
+            Artisan.findById(decoded.id).select('-password')
+        ]);
+
+        if (userAccount) {
+            req.user = userAccount;
+            req.account = userAccount;
+            req.accountType = 'user';
+            return next();
+        }
+
+        if (artisanAccount) {
+            req.user = artisanAccount;
+            req.account = artisanAccount;
+            req.accountType = 'artisan';
+            return next();
+        }
+
+        res.status(401);
+        throw new Error('Not authenticated');
+    } catch (err) {
+        res.status(res.statusCode === 200 ? 401 : res.statusCode);
+        next(err);
+    }
 };
 

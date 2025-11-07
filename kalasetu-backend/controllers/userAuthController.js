@@ -7,17 +7,28 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer'; // Simulate sending for now
 import { sendPasswordResetEmail } from '../utils/email.js';
 import Review from '../models/reviewModel.js';
+import { createNotifications } from '../utils/notificationService.js';
+import { seedDemoDataForUser } from '../utils/demoSeed.js';
 
 // --- Validation Schemas (using Zod) ---
 const registerSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
-  email: z.string().email('Invalid email address').transform((v) => v.toLowerCase().trim()),
-  phoneNumber: z.string().min(7, 'Phone number is required'),
+  email: z.preprocess(
+    (val) => (val === '' || val === null ? undefined : val),
+    z.string().email('Invalid email address').transform((v) => v.toLowerCase().trim()).optional()
+  ),
+  phoneNumber: z.preprocess(
+    (val) => (val === '' || val === null ? undefined : val),
+    z.string().min(7, 'Phone number is required').max(20, 'Phone number is too long').optional()
+  ),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+}).refine((data) => data.email || data.phoneNumber, {
+  message: 'Either email or phone number must be provided',
+  path: ['email'],
 });
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address').transform((v) => v.toLowerCase().trim()),
+  loginIdentifier: z.string().min(3, 'Email or phone number is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
@@ -36,14 +47,14 @@ const resetPasswordSchema = z.object({
 // @route   POST /api/users/register
 // @access  Public
 export const registerUser = asyncHandler(async (req, res, next) => {
-  const { fullName, email, phoneNumber, password } = req.body;
+  const { fullName, email, phoneNumber, password } = registerSchema.parse(req.body);
 
   // reCAPTCHA removed for demo - will be added back when going public with custom domain
 
   // Check for existing email/phone in parallel (optimize query)
   const [userExists, phoneExists] = await Promise.all([
-    User.findOne({ email }).select('_id').lean(),
-    User.findOne({ phoneNumber }).select('_id').lean(),
+    email ? User.findOne({ email }).select('_id').lean() : null,
+    phoneNumber ? User.findOne({ phoneNumber }).select('_id').lean() : null,
   ]);
 
   if (userExists) {
@@ -57,12 +68,15 @@ export const registerUser = asyncHandler(async (req, res, next) => {
   }
 
   // Password hashing is handled by the pre-save hook in userModel.js
-  const user = await User.create({
+  const userData = {
     fullName,
-    email,
-    phoneNumber,
     password,
-  });
+  };
+
+  if (email) userData.email = email;
+  if (phoneNumber) userData.phoneNumber = phoneNumber;
+
+  const user = await User.create(userData);
 
   if (user) {
     const token = signJwt(user._id);
@@ -102,11 +116,35 @@ export const registerUser = asyncHandler(async (req, res, next) => {
       });
     }
 
-    res.status(201).json({
+    const responsePayload = {
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
       phoneNumber: user.phoneNumber,
+    };
+
+    try {
+      await createNotifications(user._id, 'user', [
+        {
+          title: 'Welcome to KalaSetu 🎉',
+          text: `Hi ${user.fullName.split(' ')[0]}, welcome to the KalaSetu community! Start exploring artisans right away.`,
+          url: '/',
+        },
+        {
+          title: 'Verify your email',
+          text: 'We just sent a verification link to your email. Please verify your account to unlock all features.',
+          url: '/verify-email',
+        },
+      ]);
+    } catch (notificationError) {
+      console.error('Failed to queue user onboarding notifications:', notificationError);
+    }
+
+    res.status(201).json(responsePayload);
+
+    // Seed demo experience asynchronously (non-blocking)
+    seedDemoDataForUser(user).catch((err) => {
+      console.error('Failed to seed demo data for user:', err);
     });
   } else {
     res.status(400);
@@ -119,11 +157,16 @@ export const registerUser = asyncHandler(async (req, res, next) => {
 // @route   POST /api/users/login
 // @access  Public
 export const loginUser = asyncHandler(async (req, res, next) => {
-  const { email, password } = loginSchema.parse(req.body);
-  const user = await User.findOne({ email }).select('+password +lockUntil +loginAttempts');
+  const { loginIdentifier, password } = loginSchema.parse(req.body);
+  const isEmail = loginIdentifier.includes('@');
+  const query = isEmail
+    ? { email: loginIdentifier.toLowerCase().trim() }
+    : { phoneNumber: loginIdentifier.trim() };
+
+  const user = await User.findOne(query).select('+password +lockUntil +loginAttempts');
   if (!user) {
     res.status(401);
-    throw new Error('Invalid email or password');
+    throw new Error('Invalid credentials');
   }
   if (user.isLocked && user.isLocked()) {
     const unlockAt = new Date(user.lockUntil).toLocaleTimeString();
@@ -135,7 +178,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
     await user.incLoginAttempts();
     const remaining = 5 - user.loginAttempts;
     res.status(401);
-    throw new Error(`Invalid email or password. ${remaining > 0 ? `${remaining} login attempt(s) left before lockout.` : 'Account locked.'}`);
+    throw new Error(`Invalid credentials. ${remaining > 0 ? `${remaining} login attempt(s) left before lockout.` : 'Account locked.'}`);
   }
   await user.resetLoginAttempts();
   const token = signJwt(user._id);
@@ -144,6 +187,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
     _id: user._id,
     fullName: user.fullName,
     email: user.email,
+    phoneNumber: user.phoneNumber,
   });
 });
 

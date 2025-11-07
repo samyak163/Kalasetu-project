@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import axios from 'axios';
 import { SEARCH_CONFIG, API_CONFIG } from '../config/env.config.js';
 import SEO from '../components/SEO.jsx';
 import { optimizeImage } from '../utils/cloudinary.js';
+import { mockFeaturedArtisans } from '../data/mockData.js';
 
 // Initialize Algolia search client
 const searchClient = SEARCH_CONFIG.enabled && SEARCH_CONFIG.algolia.appId && SEARCH_CONFIG.algolia.searchApiKey
@@ -32,6 +33,39 @@ const SearchResults = () => {
     maxDistance: 100, // km
     verifiedOnly: false
   });
+  const [usedFallbackData, setUsedFallbackData] = useState(false);
+
+  const demoArtisans = useMemo(() => (
+    mockFeaturedArtisans.map((demo, index) => ({
+      objectID: `demo-${index}`,
+      publicId: demo.publicId || `demo-${index}`,
+      fullName: demo.name,
+      businessName: demo.craft,
+      profileImage: demo.profilePic || demo.image,
+      portfolioImages: [demo.image, demo.image, demo.image],
+      category: demo.craft,
+      craft: demo.craft,
+      address: { city: demo.location, state: 'Sample State', country: 'India' },
+      rating: { average: demo.rating, count: Math.floor(demo.rating * 18) },
+      tagline: 'Sample artisan profile for demonstration purposes',
+      services: ['Custom Orders', 'Express Delivery', 'Virtual Consultation', 'Workshop'],
+      skills: ['Demo Skill A', 'Demo Skill B', 'Demo Skill C', 'Demo Skill D'],
+      verifications: { email: { verified: true } },
+      badges: ['Featured'],
+      isDemo: true,
+    }))
+  ), []);
+
+  const applySearchResults = (items) => {
+    if (Array.isArray(items) && items.length > 0) {
+      const normalized = items.map((item) => ({ ...item, isDemo: item.isDemo ?? false }));
+      setArtisans(normalized);
+      setUsedFallbackData(false);
+    } else {
+      setArtisans(demoArtisans);
+      setUsedFallbackData(true);
+    }
+  };
 
   // Get user location from URL params or localStorage or geolocation
   useEffect(() => {
@@ -133,7 +167,7 @@ const SearchResults = () => {
           }
 
           const results = await index.search(query || category || '', searchOptions);
-          setArtisans(results.hits || []);
+          applySearchResults(Array.isArray(results?.hits) ? results.hits : []);
         } else {
           // Fallback to API search
           const params = new URLSearchParams();
@@ -150,14 +184,14 @@ const SearchResults = () => {
           const response = await axios.get(`${API_CONFIG.BASE_URL}/api/search?${params.toString()}`);
           
           if (response.data?.success) {
-            setArtisans(response.data.artisans || []);
+            applySearchResults(Array.isArray(response.data?.artisans) ? response.data.artisans : []);
           } else {
-            setArtisans([]);
+            applySearchResults([]);
           }
         }
       } catch (error) {
         console.error('Search error:', error);
-        setArtisans([]);
+        applySearchResults([]);
       } finally {
         setLoading(false);
       }
@@ -218,6 +252,11 @@ const SearchResults = () => {
             Found {artisans.length} artisan{artisans.length !== 1 ? 's' : ''}
             {userLocation && ' near you'}
           </p>
+          {usedFallbackData && (
+            <div className="mt-3 p-3 bg-indigo-50 border border-indigo-200 text-sm text-indigo-700 rounded-lg">
+              Showing demo artisans so you can preview the experience. Seed real data or adjust filters to view live results.
+            </div>
+          )}
         </div>
 
         <div className="flex gap-6">
@@ -364,24 +403,6 @@ const SearchResults = () => {
                   </div>
                 ))}
               </div>
-            ) : artisans.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-                <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No artisans found
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Try adjusting your filters or search term
-                </p>
-                <button
-                  onClick={() => navigate('/')}
-                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
-                >
-                  Back to Home
-                </button>
-              </div>
             ) : (
               <div className="space-y-6">
                 {artisans.map((artisan) => {
@@ -396,7 +417,13 @@ const SearchResults = () => {
                     <div
                       key={artisan.objectID || artisanId}
                       className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
-                      onClick={() => navigate(`/artisan/${artisanId}`)}
+                      onClick={() => {
+                        if (artisan.isDemo) {
+                          navigate(`/search?category=${encodeURIComponent(artisan.category || artisan.craft || 'Artisan')}`);
+                        } else {
+                          navigate(`/artisan/${artisanId}`);
+                        }
+                      }}
                     >
                       <div className="flex flex-col md:flex-row gap-6 p-6">
                         {/* Large Portfolio Image */}
@@ -415,6 +442,13 @@ const SearchResults = () => {
                               <div className="absolute top-2 right-2">
                                 <span className="px-2 py-1 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded-full">
                                   ⭐ {artisan.badges[0]}
+                                </span>
+                              </div>
+                            )}
+                            {artisan.isDemo && (
+                              <div className="absolute bottom-2 right-2">
+                                <span className="px-2 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-full">
+                                  Demo
                                 </span>
                               </div>
                             )}
@@ -462,7 +496,7 @@ const SearchResults = () => {
                               <p className="text-gray-600 mt-1">
                                 {artisan.category || artisan.craft || 'Artisan'}
                               </p>
-                              {artisan.tagline && (
+                          {artisan.tagline && (
                                 <p className="text-sm text-gray-500 mt-1 italic">
                                   {artisan.tagline}
                                 </p>
@@ -545,25 +579,33 @@ const SearchResults = () => {
 
                           {/* Contact Info */}
                           <div className="flex items-center gap-4 pt-4 border-t border-gray-200 flex-wrap">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/artisan/${artisanId}`);
-                              }}
-                              className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm md:text-base"
-                            >
-                              View Profile
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Navigate to messages or contact
-                                navigate(`/artisan/${artisanId}?tab=contact`);
-                              }}
-                              className="px-6 py-2 border border-indigo-600 text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition-colors text-sm md:text-base"
-                            >
-                              Contact
-                            </button>
+                            {!artisan.isDemo && (
+                              <>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/artisan/${artisanId}`);
+                                  }}
+                                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm md:text-base"
+                                >
+                                  View Profile
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/artisan/${artisanId}?tab=contact`);
+                                  }}
+                                  className="px-6 py-2 border border-indigo-600 text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition-colors text-sm md:text-base"
+                                >
+                                  Contact
+                                </button>
+                              </>
+                            )}
+                            {artisan.isDemo && (
+                              <span className="text-sm text-indigo-600 font-medium">
+                                Demo profiles are for showcase only
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

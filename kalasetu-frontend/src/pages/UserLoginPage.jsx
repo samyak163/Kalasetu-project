@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 
 const UserLoginPage = () => {
-    const [email, setEmail] = useState('');
+    const [loginIdentifier, setLoginIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -18,7 +18,7 @@ const UserLoginPage = () => {
         setError(null);
         try {
             // This function will call POST /api/users/login
-            await userLogin({ email, password });
+            await userLogin({ loginIdentifier, password });
             navigate('/'); // Go to homepage on successful login
         } catch (err) {
             setError(err.response?.data?.message || err.message || 'An unexpected error occurred.');
@@ -45,17 +45,17 @@ const UserLoginPage = () => {
                 <div className="bg-white py-8 px-6 shadow-xl rounded-2xl border border-gray-100">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                                Email Address
+                            <label htmlFor="loginIdentifier" className="block text-sm font-semibold text-gray-700 mb-2">
+                                Email or Phone Number
                             </label>
                             <input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                id="loginIdentifier"
+                                type="text"
+                                value={loginIdentifier}
+                                onChange={(e) => setLoginIdentifier(e.target.value)}
                                 required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200"
-                                placeholder="Enter your email address"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                placeholder="Enter your email or phone number"
                             />
                         </div>
                         
@@ -70,7 +70,7 @@ const UserLoginPage = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 pr-12"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 pr-12 text-gray-900 placeholder-gray-400"
                                     placeholder="Enter your password"
                                 />
                                 <button

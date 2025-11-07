@@ -91,9 +91,10 @@ export const AuthContextProvider = ({ children }) => {
   const artisanRegister = async (inputs) => {
     try {
       const res = await api.post("/api/auth/register", inputs);
-      setAuth({ user: res.data, userType: 'artisan' });
-      setSentryUser(res.data);
-      return res.data;
+      const artisanData = res.data?.artisan || res.data;
+      setAuth({ user: artisanData, userType: 'artisan' });
+      setSentryUser(artisanData);
+      return artisanData;
     } catch (error) {
       setAuth(initialAuthState); // Clear auth on failed register
       clearSentryUser();

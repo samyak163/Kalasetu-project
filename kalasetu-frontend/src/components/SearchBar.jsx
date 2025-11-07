@@ -4,6 +4,7 @@ import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import axios from 'axios';
 import { SEARCH_CONFIG, API_CONFIG } from '../config/env.config.js';
 import { optimizeImage } from '../utils/cloudinary.js';
+import { mockFeaturedArtisans } from '../data/mockData.js';
 
 // Initialize Algolia search client
 const searchClient = SEARCH_CONFIG.enabled && SEARCH_CONFIG.algolia.appId && SEARCH_CONFIG.algolia.searchApiKey
@@ -40,7 +41,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
     }
 
     const timer = setTimeout(async () => {
-      setLoading(true);
+          setLoading(true);
       try {
         if (searchClient) {
           // Use Algolia direct search
@@ -71,8 +72,12 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
             }).catch(() => ({ facetHits: [] }))
           ]);
 
-          setHits(artisanResults.hits || []);
-          setCategories(categoryResults.facetHits?.map(f => f.value) || []);
+          const sanitizedHits = Array.isArray(artisanResults?.hits) ? artisanResults.hits : [];
+          const sanitizedCategories = Array.isArray(categoryResults?.facetHits)
+            ? categoryResults.facetHits.map((f) => f.value)
+            : [];
+          setHits(sanitizedHits);
+          setCategories(sanitizedCategories);
           setShowDropdown(true);
         } else {
           // Fallback to API search
@@ -81,19 +86,22 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
           });
           
           if (response.data?.success) {
-            setHits(response.data.artisans || []);
-            setCategories(response.data.categories || []);
-            setShowDropdown(true);
+            const apiHits = Array.isArray(response.data?.artisans) ? response.data.artisans : [];
+            const apiCategories = Array.isArray(response.data?.categories) ? response.data.categories : [];
+            setHits(apiHits);
+            setCategories(apiCategories);
           } else {
             setHits([]);
             setCategories([]);
           }
+          setShowDropdown(true);
         }
       } catch (error) {
         console.error('Search error:', error);
         // Fallback to empty results
         setHits([]);
         setCategories([]);
+        setShowDropdown(true);
       } finally {
         setLoading(false);
       }
@@ -133,13 +141,23 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
   };
 
   const handleArtisanClick = (artisan) => {
+    if (artisan?.isDemo) {
+      const category = artisan.craft || artisan.category || 'Artisan';
+      navigate(`/search?category=${encodeURIComponent(category)}`);
+      setShowDropdown(false);
+      setQuery('');
+      return;
+    }
+
     // If exact name match, go directly to profile
     const isExactMatch = 
       artisan.fullName?.toLowerCase() === query.toLowerCase() ||
       artisan.businessName?.toLowerCase() === query.toLowerCase();
     
-    if (isExactMatch) {
-      navigate(`/${artisan.publicId || artisan.objectID}`);
+    const targetId = artisan.publicId || artisan.objectID;
+
+    if (isExactMatch && targetId) {
+      navigate(`/artisan/${targetId}`);
     } else {
       navigate(`/search?q=${encodeURIComponent(query)}`);
     }
@@ -177,7 +195,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => query.length >= 2 && setShowDropdown(true)}
             placeholder="Search artisans, services, categories..."
-            className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base"
+            className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base text-gray-900 placeholder-gray-400"
           />
           <button
             type="submit"
@@ -208,15 +226,27 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
           ) : (
             <>
               {/* Artisan Results */}
-              {hits.length > 0 && (
+              {(hits.length > 0 || (query.length >= 2 && categories.length === 0 && hits.length === 0)) && (
                 <div className="border-b border-gray-200">
                   <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Artisans & Services
                   </div>
-                  {hits.map((hit) => {
+                  {((hits.length > 0 ? hits : mockFeaturedArtisans.slice(0, 4).map((demo, index) => ({
+                    objectID: `demo-${index}`,
+                    fullName: demo.name,
+                    businessName: demo.craft,
+                    profileImage: demo.profilePic || demo.image,
+                    category: demo.craft,
+                    craft: demo.craft,
+                    address: { city: demo.location },
+                    rating: { average: demo.rating, count: Math.floor(demo.rating * 15) },
+                    publicId: demo.publicId || null,
+                    services: [],
+                    tagline: 'Sample artisan for demo',
+                    isDemo: true,
+                  })))).map((hit) => {
                     const artisanName = hit.fullName || hit.businessName || 'Unknown';
                     const artisanImage = hit.profileImage || '/default-avatar.png';
-                    const artisanId = hit.publicId || hit.objectID;
                     return (
                       <button
                         key={hit.objectID}
@@ -233,10 +263,10 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
                         />
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-gray-900 truncate group-hover:text-indigo-600">
-                            {highlightText(artisanName, query)}
+                            {hit.isDemo ? artisanName : highlightText(artisanName, query)}
                           </div>
                           <div className="text-sm text-gray-600 truncate">
-                            {hit.category || hit.craft} • {hit.address?.city || 'India'}
+                            {(hit.category || hit.craft || 'Artisan')} • {hit.address?.city || 'Sample City'}
                           </div>
                           {hit.tagline && (
                             <div className="text-xs text-gray-500 truncate mt-1">
@@ -248,6 +278,11 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
                               {hit.services.slice(0, 2).join(', ')}
                             </div>
                           )}
+                          {hit.isDemo && (
+                            <div className="text-xs text-indigo-500 mt-1">
+                              Demo profile
+                            </div>
+                          )}
                         </div>
                         {hit.rating?.average > 0 && (
                           <div className="flex items-center gap-1 flex-shrink-0">
@@ -255,7 +290,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
                               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
                             <span className="text-sm font-medium text-gray-700">
-                              {hit.rating.average.toFixed(1)}
+                              {hit.rating.average.toFixed?.(1) || Number(hit.rating.average).toFixed(1)}
                             </span>
                           </div>
                         )}
@@ -286,7 +321,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
               )}
 
               {/* No Results */}
-              {hits.length === 0 && categories.length === 0 && (
+              {hits.length === 0 && categories.length === 0 && query.length >= 2 && (
                 <div className="p-6 text-center">
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

@@ -95,4 +95,46 @@ export const changePassword = async (req, res) => {
   }
 };
 
+export const updateProfile = async (req, res) => {
+  try {
+    const { fullName, profileImage } = req.body;
+    const updates = {};
+
+    if (typeof fullName === 'string' && fullName.trim()) {
+      updates.fullName = fullName.trim();
+    }
+
+    if (profileImage !== undefined) {
+      updates.profileImage = profileImage;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, message: 'No updates provided' });
+    }
+
+    const admin = await Admin.findByIdAndUpdate(req.user._id, updates, { new: true });
+
+    if (!admin) {
+      return res.status(404).json({ success: false, message: 'Admin not found' });
+    }
+
+    res.status(200).json({
+      success: true,
+      admin: {
+        id: admin._id,
+        fullName: admin.fullName,
+        email: admin.email,
+        role: admin.role,
+        permissions: admin.permissions,
+        profileImage: admin.profileImage,
+        lastLogin: admin.lastLogin,
+      },
+      message: 'Profile updated successfully',
+    });
+  } catch (error) {
+    console.error('Update admin profile error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update profile' });
+  }
+};
+
 

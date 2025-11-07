@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
-export default function ImageUpload({ onUploadSuccess, currentImage }) {
+export default function ImageUpload({ onUploadSuccess, currentImage, folder = 'artisan/profiles' }) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(currentImage || '');
+
+  useEffect(() => {
+    setPreview(currentImage || '');
+  }, [currentImage]);
 
   const uploadImage = async (file) => {
     setUploading(true);
     try {
       // 1) Get signed params from backend
-      const sigRes = await fetch('/api/uploads/signature?folder=artisan/profiles', {
+      const sigRes = await fetch(`/api/uploads/signature?folder=${encodeURIComponent(folder)}`, {
         credentials: 'include',
       });
       const { timestamp, signature, api_key, cloud_name, folder } = await sigRes.json();
@@ -72,4 +76,5 @@ export default function ImageUpload({ onUploadSuccess, currentImage }) {
 ImageUpload.propTypes = {
   onUploadSuccess: PropTypes.func,
   currentImage: PropTypes.string,
+  folder: PropTypes.string,
 };

@@ -18,8 +18,9 @@ const NotificationPanel = ({ isOpen, onClose, notifications = [], unreadCount = 
               <div key={n.id} className="flex items-start gap-3 p-3 border rounded">
                 <div className="w-8 h-8 rounded-full bg-gray-200" />
                 <div className="flex-1">
-                  <div className="text-sm text-gray-900">{n.text}</div>
-                  <div className="text-xs text-gray-500 mt-1">{n.timeAgo}</div>
+                  {n.title && <div className="text-sm font-semibold text-gray-900">{n.title}</div>}
+                  <div className="text-sm text-gray-700 mt-0.5">{n.text}</div>
+                  <div className="text-xs text-gray-500 mt-1">{n.timeAgo || ''}</div>
                 </div>
                 {!n.read && <span className="w-2 h-2 bg-blue-500 rounded-full mt-2" />}
               </div>

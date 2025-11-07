@@ -8,13 +8,25 @@ const userSchema = new mongoose.Schema({
     },
     email: { 
         type: String, 
-        required: [true, 'Please provide your email'], 
+        required: false,
         unique: true,
+        sparse: true,
         lowercase: true,
         trim: true,
         match: [
             /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
             'Please fill a valid email address'
+        ]
+    },
+    phoneNumber: {
+        type: String,
+        required: false,
+        unique: true,
+        sparse: true,
+        trim: true,
+        match: [
+            /^\+?[0-9\-\s]{6,20}$/,
+            'Please provide a valid phone number'
         ]
     },
     password: { 
@@ -40,6 +52,15 @@ const userSchema = new mongoose.Schema({
 
 // Helpful indexes (email already has unique: true in schema definition)
 userSchema.index({ createdAt: -1 });
+userSchema.index({ phoneNumber: 1 }, { unique: true, sparse: true });
+
+userSchema.pre('validate', function (next) {
+    if (!this.email && !this.phoneNumber) {
+        this.invalidate('email', 'Either email or phone number is required');
+        this.invalidate('phoneNumber', 'Either email or phone number is required');
+    }
+    next();
+});
 
 // --- Mongoose Middleware (Robust "pre-save" hook) ---
 // This function runs automatically BEFORE a new user is saved.

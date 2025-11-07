@@ -43,6 +43,8 @@ const artisanSchema = new mongoose.Schema({
     profileImagePublicId: { type: String, default: '' },
     coverImageUrl: { type: String, default: 'https://placehold.co/800x300/A55233/FFFFFF?text=KalaSetu' },
     portfolioImageUrls: { type: [String], default: [] },
+    isActive: { type: Boolean, default: true },
+    isVerified: { type: Boolean, default: false },
     yearsOfExperience: { type: String, default: '' }, // e.g., '5-10 years'
     teamSize: { type: String, default: '' }, // e.g., 'solo', '2-5'
     languagesSpoken: { type: [String], default: [] },

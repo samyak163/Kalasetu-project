@@ -1,13 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { getCurrentLocation } from '../../lib/googleMaps';
 import ArtisanMap from './ArtisanMap';
 import api from '../../lib/axios';
+import { mockFeaturedArtisans } from '../../data/mockData.js';
 
 export default function NearbyArtisans() {
   const [artisans, setArtisans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [radius, setRadius] = useState(50); // km
+
+  const demoArtisans = useMemo(() => (
+    mockFeaturedArtisans.map((demo, index) => ({
+      _id: `demo-${index}`,
+      publicId: demo.publicId || `demo-${index}`,
+      fullName: demo.name,
+      craft: demo.craft,
+      profileImage: demo.profilePic || demo.image,
+      location: {
+        type: 'Point',
+        coordinates: [72.8777 + index * 0.05, 19.0760 + index * 0.03], // Sample coords near Mumbai
+        city: demo.location,
+        state: 'Sample State',
+        country: 'India',
+      },
+      distance: (index + 1) * 5000,
+      isDemo: true,
+    }))
+  ), []);
 
   useEffect(() => {
     loadNearbyArtisans();
@@ -30,11 +50,16 @@ export default function NearbyArtisans() {
           radiusKm: radius, // km
         },
       });
-
-      setArtisans(response.data.data || []);
+      const apiArtisans = Array.isArray(response.data?.artisans) ? response.data.artisans : [];
+      if (apiArtisans.length > 0) {
+        setArtisans(apiArtisans.map((item) => ({ ...item, isDemo: false })));
+      } else {
+        setArtisans(demoArtisans);
+      }
     } catch (err) {
       console.error('Failed to load nearby artisans:', err);
       setError(err.message || 'Failed to load nearby artisans');
+      setArtisans(demoArtisans);
     } finally {
       setLoading(false);
     }
@@ -43,6 +68,8 @@ export default function NearbyArtisans() {
   const handleRadiusChange = (e) => {
     setRadius(parseInt(e.target.value, 10));
   };
+
+  const showingDemo = Array.isArray(artisans) && artisans.some((artisan) => artisan?.isDemo);
 
   if (loading) {
     return (
@@ -55,22 +82,24 @@ export default function NearbyArtisans() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700">{error}</p>
-        <button
-          onClick={loadNearbyArtisans}
-          className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          Try Again
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div>
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <span>{error}. Showing demo artisans for now.</span>
+          <button
+            onClick={loadNearbyArtisans}
+            className="inline-flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+      {showingDemo && (
+        <div className="mb-4 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg p-4">
+          We are loading demo artisans so you can preview the experience. Seed real artisan data to view live results.
+        </div>
+      )}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">
           Nearby Artisans ({artisans.length})

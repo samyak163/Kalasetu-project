@@ -17,6 +17,8 @@ export default function ArtisanMap({ artisans, onMarkerClick }) {
   const [map, setMap] = useState(null);
   const [selectedArtisan, setSelectedArtisan] = useState(null);
 
+  const safeArtisans = Array.isArray(artisans) ? artisans : [];
+
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: getGoogleMapsApiKey(),
     libraries: ['places'],
@@ -26,9 +28,9 @@ export default function ArtisanMap({ artisans, onMarkerClick }) {
     setMap(mapInstance);
 
     // Fit bounds to show all markers
-    if (artisans && artisans.length > 0 && window.google?.maps) {
+    if (safeArtisans.length > 0 && window.google?.maps) {
       const bounds = new window.google.maps.LatLngBounds();
-      artisans.forEach((artisan) => {
+      safeArtisans.forEach((artisan) => {
         if (artisan?.location?.coordinates?.length === 2) {
           bounds.extend({
             lat: artisan.location.coordinates[1],
@@ -81,7 +83,7 @@ export default function ArtisanMap({ artisans, onMarkerClick }) {
         fullscreenControl: true,
       }}
     >
-      {artisans?.map((artisan) => {
+      {safeArtisans.map((artisan) => {
         if (!artisan?.location?.coordinates || artisan.location.coordinates.length !== 2) return null;
 
         const position = {
@@ -91,7 +93,7 @@ export default function ArtisanMap({ artisans, onMarkerClick }) {
 
         return (
           <Marker
-            key={artisan._id || artisan.id || artisan.publicId}
+            key={artisan._id || artisan.id || artisan.publicId || artisan.objectID}
             position={position}
             onClick={() => handleMarkerClick(artisan)}
             icon={artisan.profileImage ? {
