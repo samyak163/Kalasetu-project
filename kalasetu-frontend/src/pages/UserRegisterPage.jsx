@@ -1,7 +1,6 @@
 ﻿import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-// FIX: Changed to an absolute path from the project root '/src/'
-import { AuthContext } from '/src/context/AuthContext.jsx';
+import { AuthContext } from '../context/AuthContext.jsx';
 
 const UserRegisterPage = () => {
     const [formData, setFormData] = useState({ 

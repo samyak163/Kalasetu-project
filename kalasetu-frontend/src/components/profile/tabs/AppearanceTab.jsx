@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
-import { ThemeContext } from '/src/context/ThemeContext.jsx';
-import { ToastContext } from '/src/context/ToastContext.jsx';
+import { ThemeContext } from '../../../context/ThemeContext.jsx';
+import { ToastContext } from '../../../context/ToastContext.jsx';
 
 const AppearanceTab = ({ user }) => {
   const { theme, fontSize, updateTheme, updateFontSize } = useContext(ThemeContext);

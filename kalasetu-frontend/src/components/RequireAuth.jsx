@@ -1,7 +1,6 @@
 ﻿import { useContext } from "react";
 import { useLocation, Navigate } from "react-router-dom";
-// Use absolute path
-import { AuthContext } from "/src/context/AuthContext.jsx";
+import { AuthContext } from "../context/AuthContext.jsx";
 
 // --- UPGRADED RequireAuth ---
 // It now accepts a 'role' prop ("artisan" or "user")
