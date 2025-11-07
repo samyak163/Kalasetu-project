@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import algoliasearch from 'algoliasearch/lite';
+import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import axios from 'axios';
 import { SEARCH_CONFIG, API_CONFIG } from '../config/env.config.js';
 import { optimizeImage } from '../utils/cloudinary.js';

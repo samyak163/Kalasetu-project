@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import algoliasearch from 'algoliasearch/lite';
+import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import axios from 'axios';
 import { SEARCH_CONFIG, API_CONFIG } from '../config/env.config.js';
 import SEO from '../components/SEO.jsx';

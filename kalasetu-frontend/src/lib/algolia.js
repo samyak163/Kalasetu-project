@@ -1,4 +1,4 @@
-import algoliasearch from 'algoliasearch/lite';
+import { liteClient as algoliasearch } from 'algoliasearch/lite';
 import { SEARCH_CONFIG } from '../config/env.config.js';
 
 /**
