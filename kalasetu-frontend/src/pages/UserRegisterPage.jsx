@@ -7,7 +7,9 @@ const UserRegisterPage = () => {
     const [formData, setFormData] = useState({ 
         fullName: '', 
         email: '', 
+        phoneNumber: '',
         password: '',
+        useEmail: true // Toggle between email and phone
     });
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -19,14 +21,24 @@ const UserRegisterPage = () => {
         setFormData({ ...formData, [id]: value });
     };
 
+    const toggleAuthMethod = () => {
+        setFormData({ ...formData, useEmail: !formData.useEmail });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
         
         try {
-            // This function will call POST /api/users/register
-            await userRegister(formData);
+            // Prepare registration data based on selected method
+            const registrationData = {
+                fullName: formData.fullName,
+                password: formData.password,
+                email: formData.useEmail ? formData.email : '',
+                phoneNumber: formData.useEmail ? '' : formData.phoneNumber
+            };
+            await userRegister(registrationData);
             navigate('/'); // Go to homepage on successful registration
         } catch (err) {
             console.error('Registration error:', err);
@@ -75,21 +87,65 @@ const UserRegisterPage = () => {
                             />
                         </div>
 
-                        {/* Email */}
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                                Email Address
-                            </label>
-                            <input 
-                                type="email" 
-                                id="email" 
-                                value={formData.email} 
-                                onChange={handleChange} 
-                                required 
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200"
-                                placeholder="Enter your email address"
-                            />
+
+                        {/* Authentication Method Toggle */}
+                        <div className="flex items-center justify-center space-x-4">
+                            <button
+                                type="button"
+                                onClick={toggleAuthMethod}
+                                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                                    formData.useEmail 
+                                        ? 'bg-[#A55233] text-white' 
+                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                            >
+                                Email
+                            </button>
+                            <button
+                                type="button"
+                                onClick={toggleAuthMethod}
+                                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                                    formData.useEmail 
+                                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        : 'bg-[#A55233] text-white'
+                                }`}
+                            >
+                                Phone
+                            </button>
                         </div>
+
+                        {/* Email or Phone Input */}
+                        {formData.useEmail ? (
+                            <div>
+                                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Email Address
+                                </label>
+                                <input 
+                                    type="email" 
+                                    id="email" 
+                                    value={formData.email} 
+                                    onChange={handleChange} 
+                                    required 
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200"
+                                    placeholder="Enter your email address"
+                                />
+                            </div>
+                        ) : (
+                            <div>
+                                <label htmlFor="phoneNumber" className="block text-sm font-semibold text-gray-700 mb-2">
+                                    Phone Number
+                                </label>
+                                <input 
+                                    type="tel" 
+                                    id="phoneNumber" 
+                                    value={formData.phoneNumber} 
+                                    onChange={handleChange} 
+                                    required 
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200"
+                                    placeholder="Enter your phone number"
+                                />
+                            </div>
+                        )}
 
                         {/* Password */}
                         <div>
