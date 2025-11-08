@@ -168,7 +168,7 @@ const ReviewsTab = () => {
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
                           placeholder="Write your reply..."
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] bg-white dark:bg-white text-gray-900 dark:text-gray-900"
                           rows="3"
                         />
                         <div className="flex gap-2">

@@ -140,7 +140,7 @@ const HelpSupportTab = () => {
               type="text"
               value={supportForm.subject}
               onChange={e => setSupportForm(prev => ({ ...prev, subject: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
               required
             />
           </div>
@@ -152,7 +152,7 @@ const HelpSupportTab = () => {
               value={supportForm.message}
               onChange={e => setSupportForm(prev => ({ ...prev, message: e.target.value }))}
               rows={4}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-700 dark:text-white resize-none"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900 resize-none"
               required
               minLength={20}
             />
@@ -164,7 +164,7 @@ const HelpSupportTab = () => {
             <select
               value={supportForm.priority}
               onChange={e => setSupportForm(prev => ({ ...prev, priority: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -193,7 +193,7 @@ const HelpSupportTab = () => {
             <select
               value={issueReport.type}
               onChange={e => setIssueReport(prev => ({ ...prev, type: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
             >
               <option value="bug">Bug/Error</option>
               <option value="payment">Payment Problem</option>
@@ -211,7 +211,7 @@ const HelpSupportTab = () => {
               value={issueReport.description}
               onChange={e => setIssueReport(prev => ({ ...prev, description: e.target.value }))}
               rows={4}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-700 dark:text-white resize-none"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900 resize-none"
               required
               minLength={50}
               placeholder="Describe the issue in detail..."

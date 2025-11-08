@@ -85,13 +85,13 @@ const BookmarksTab = ({ user }) => {
             placeholder="Search by name or specialty..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
           />
         </div>
         <select
           value={sortBy}
           onChange={e => setSortBy(e.target.value)}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
         >
           <option value="recent">Recently Added</option>
           <option value="rating">Rating (High to Low)</option>
@@ -100,7 +100,7 @@ const BookmarksTab = ({ user }) => {
         <select
           value={filterBy}
           onChange={e => setFilterBy(e.target.value)}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
         >
           <option value="all">All Specialties</option>
           {crafts.map(craft => (

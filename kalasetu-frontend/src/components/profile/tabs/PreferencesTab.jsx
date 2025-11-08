@@ -176,7 +176,7 @@ const PreferencesTab = ({ user, onSave }) => {
           <select
             value={preferences.language}
             onChange={e => handleChange('language', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
           >
             <option value="en">English</option>
             <option value="hi">Hindi</option>
@@ -189,7 +189,7 @@ const PreferencesTab = ({ user, onSave }) => {
           <select
             value={preferences.currency}
             onChange={e => handleChange('currency', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
           >
             <option value="INR">INR (₹)</option>
             <option value="USD">USD ($)</option>
@@ -211,7 +211,7 @@ const PreferencesTab = ({ user, onSave }) => {
             <select
               value={preferences.privacy.profileVisibility}
               onChange={e => handlePrivacyChange('profileVisibility', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-700 dark:text-white"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
             >
               <option value="public">Public</option>
               <option value="artisans">Artisans Only</option>

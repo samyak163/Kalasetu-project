@@ -435,7 +435,7 @@ const AddProjectModal = ({ onClose, onSubmit }) => {
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="e.g., Custom Pottery Collection 2025"
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900"
             />
           </div>
           <div>
@@ -447,7 +447,7 @@ const AddProjectModal = ({ onClose, onSubmit }) => {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Describe this project..."
               rows={3}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] focus:border-transparent resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] focus:border-transparent resize-none bg-white dark:bg-white text-gray-900 dark:text-gray-900"
             />
           </div>
           <div>
@@ -458,7 +458,7 @@ const AddProjectModal = ({ onClose, onSubmit }) => {
               required
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] focus:border-transparent bg-white dark:bg-white text-gray-900 dark:text-gray-900"
             >
               <option value="">Select category</option>
               <option value="Pottery">Pottery</option>

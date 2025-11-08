@@ -78,7 +78,7 @@ const USERsTab = () => {
           placeholder="Search USERs by name, phone, or email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-3 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+          className="w-full px-4 py-3 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] bg-white dark:bg-white text-gray-900 dark:text-gray-900"
         />
         <span className="absolute left-3 top-3.5 text-gray-400">🔍</span>
       </div>
