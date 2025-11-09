@@ -346,4 +346,4 @@ For development, many services offer test/sandbox modes:
 
 ---
 
-**Last Updated:** November 4, 2025
+**Last Updated:** November 9, 2025

@@ -88,6 +88,31 @@ App will open at http://localhost:5173
 
 ---
 
+## Admin Access (Super Admin)
+
+You can create or reset the platform super admin via scripts in the backend.
+
+- Default Super Admin Email: showcase.admin@kalasetu.com
+- Default Password (on create): SuperAdmin@123
+
+Create/Recreate Super Admin:
+```bash
+cd kalasetu-backend
+node scripts/createSuperAdmin.js
+```
+
+Reset Super Admin Password:
+```bash
+cd kalasetu-backend
+node scripts/resetAdminPassword.js
+```
+
+Admin Login URL (local): http://localhost:5173/admin/login
+
+Note: Change the password immediately after first login.
+
+---
+
 ## Environment Configuration
 
 ### Required Backend Variables
@@ -307,3 +332,7 @@ lsof -ti:5000 | xargs kill -9
 ---
 
 **Last Updated:** November 4, 2025
+ 
+---
+
+Updated: November 9, 2025

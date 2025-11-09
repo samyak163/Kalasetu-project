@@ -337,3 +337,25 @@ db.users.aggregate([
 ---
 
 **Status**: ✅ Ready to use - Demo users with bookmarks configured!
+
+---
+
+## 🔐 Demo Admin (Super Admin)
+
+- Email: showcase.admin@kalasetu.com
+- Default Password (on create): SuperAdmin@123
+
+Manage admin via scripts:
+```bash
+cd kalasetu-backend
+node scripts/createSuperAdmin.js       # Create or recreate super admin
+node scripts/resetAdminPassword.js     # Reset super admin password
+```
+
+Admin Login (local): http://localhost:5173/admin/login
+
+Note: Change the password immediately after first login.
+
+---
+
+Last Updated: November 9, 2025

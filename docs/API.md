@@ -4,6 +4,8 @@ REST API documentation for KalaSetu backend.
 
 **Base URL:** `http://localhost:5000/api` (development)
 
+**Super Admin:** `showcase.admin@kalasetu.com` (create/reset via backend scripts)
+
 ---
 
 ## Authentication
@@ -428,4 +430,4 @@ X-Razorpay-Signature: signature
 
 ---
 
-**Last Updated:** November 4, 2025
+**Last Updated:** November 9, 2025
