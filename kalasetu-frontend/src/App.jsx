@@ -2,60 +2,60 @@
 import { Routes, Route } from 'react-router-dom';
 
 // Core Layout & Pages
-import Layout from './components/Layout.jsx';
-import HomePage from './pages/HomePage.jsx';
+import Layout from './components/Layout';
+import HomePage from './pages/HomePage';
 
 // Artisan Pages (lazy)
-const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
-const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
-const ArtisanProfilePage = lazy(() => import('./pages/ArtisanProfilePage.jsx'));
-const ArtisanDashboardPage = lazy(() => import('./pages/ArtisanDashboardPage.jsx'));
-const ArtisanAccountPage = lazy(() => import('./pages/ArtisanAccountPage.jsx'));
-const ArtisanProfileEditor = lazy(() => import('./pages/ArtisanProfileEditor.jsx'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ArtisanProfilePage = lazy(() => import('./pages/ArtisanProfilePage'));
+const ArtisanDashboardPage = lazy(() => import('./pages/ArtisanDashboardPage'));
+const ArtisanAccountPage = lazy(() => import('./pages/ArtisanAccountPage'));
+const ArtisanProfileEditor = lazy(() => import('./pages/ArtisanProfileEditor'));
 
 // --- NEW USER PAGES --- (lazy)
-const UserLoginPage = lazy(() => import('./pages/UserLoginPage.jsx'));
-const UserRegisterPage = lazy(() => import('./pages/UserRegisterPage.jsx'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'));
-const PhoneOTPPage = lazy(() => import('./pages/PhoneOTPPage.jsx'));
-const VerifyEmail = lazy(() => import('./pages/VerifyEmail.jsx'));
-const UserProfilePage = lazy(() => import('./pages/UserProfilePage.jsx'));
-const UserDashboard = lazy(() => import('./pages/dashboard/user/UserDashboard.jsx'));
-const UserPreferences = lazy(() => import('./pages/dashboard/user/Preferences.jsx'));
-const UserSupport = lazy(() => import('./pages/dashboard/user/Support.jsx'));
+const UserLoginPage = lazy(() => import('./pages/UserLoginPage'));
+const UserRegisterPage = lazy(() => import('./pages/UserRegisterPage'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const PhoneOTPPage = lazy(() => import('./pages/PhoneOTPPage'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
+const UserDashboard = lazy(() => import('./pages/dashboard/user/UserDashboard'));
+const UserPreferences = lazy(() => import('./pages/dashboard/user/Preferences'));
+const UserSupport = lazy(() => import('./pages/dashboard/user/Support'));
 
 // Unified selectors (lazy)
-const AuthSelector = lazy(() => import('./pages/AuthSelector.jsx'));
-const RegisterSelector = lazy(() => import('./pages/RegisterSelector.jsx'));
+const AuthSelector = lazy(() => import('./pages/AuthSelector'));
+const RegisterSelector = lazy(() => import('./pages/RegisterSelector'));
 
 // --- POLICY PAGES ---
-import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
-import TermsConditions from './pages/TermsConditions.jsx';
-import ShippingPolicy from './pages/ShippingPolicy.jsx';
-import CancellationRefund from './pages/CancellationRefund.jsx';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsConditions from './pages/TermsConditions';
+import ShippingPolicy from './pages/ShippingPolicy';
+import CancellationRefund from './pages/CancellationRefund';
 
 // --- MESSAGING PAGE --- (lazy)
-const MessagesPage = lazy(() => import('./pages/MessagesPage.jsx'));
-const SearchResults = lazy(() => import('./pages/SearchResults.jsx'));
+const MessagesPage = lazy(() => import('./pages/MessagesPage'));
+const SearchResults = lazy(() => import('./pages/SearchResults'));
 
 // --- VIDEO CALL PAGE --- (lazy)
-const VideoCallPage = lazy(() => import('./pages/VideoCallPage.jsx'));
-const Bookings = lazy(() => import('./pages/dashboard/artisan/Bookings.jsx'));
-const CallsHistory = lazy(() => import('./pages/dashboard/artisan/CallsHistory.jsx'));
+const VideoCallPage = lazy(() => import('./pages/VideoCallPage'));
+const Bookings = lazy(() => import('./pages/dashboard/artisan/Bookings'));
+const CallsHistory = lazy(() => import('./pages/dashboard/artisan/CallsHistory'));
 
 // Auth Components
-import RequireAuth from './components/RequireAuth.jsx';
-import { AdminAuthProvider } from './context/AdminAuthContext.jsx';
-import AdminLayout from './components/admin/AdminLayout.jsx';
-import AdminLogin from './pages/admin/AdminLogin.jsx';
-import AdminDashboard from './pages/admin/AdminDashboard.jsx';
-import AdminArtisans from './pages/admin/AdminArtisans.jsx';
-import AdminUsers from './pages/admin/AdminUsers.jsx';
-import AdminReviews from './pages/admin/AdminReviews.jsx';
-import AdminPayments from './pages/admin/AdminPayments.jsx';
-import AdminBookings from './pages/admin/AdminBookings.jsx';
-import AdminSettings from './pages/admin/AdminSettings.jsx';
-import AdminProfile from './pages/admin/AdminProfile.jsx';
+import RequireAuth from './components/RequireAuth';
+import { AdminAuthProvider } from './context/AdminAuthContext';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminArtisans from './pages/admin/AdminArtisans';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminReviews from './pages/admin/AdminReviews';
+import AdminPayments from './pages/admin/AdminPayments';
+import AdminBookings from './pages/admin/AdminBookings';
+import AdminSettings from './pages/admin/AdminSettings';
+import AdminProfile from './pages/admin/AdminProfile';
 
 function App() {
   return (

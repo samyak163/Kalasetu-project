@@ -40,6 +40,21 @@ export default defineConfig(({ command, mode }) => {
     define: {
       __API_URL__: JSON.stringify(env.VITE_API_URL)
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-stream': ['stream-chat', 'stream-chat-react'],
+            'vendor-daily': ['@daily-co/daily-js'],
+          }
+        }
+      },
+      chunkSizeWarningLimit: 1000,
+    },
+    resolve: {
+      extensions: ['.js', '.jsx', '.ts', '.tsx']
+    },
     server: {
       // This ensures proper CORS when running locally
       proxy: {
