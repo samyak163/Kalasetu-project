@@ -2,8 +2,8 @@
 
 #These are specific to your project structure
 
-/kalasetu-frontend/node_modules
-/kalasetu-backend/node_modules
+node_modules/
+**/node_modules/
 
 #Build folders
 
