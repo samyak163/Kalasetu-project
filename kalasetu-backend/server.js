@@ -39,6 +39,7 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
 import callRoutes from './routes/callRoutes.js';
+import callHistoryRoutes from './routes/callHistoryRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
@@ -193,6 +194,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/video', videoRoutes);
 // Calls and booking
 app.use('/api/calls', callRoutes);
+app.use('/api/calls/history', callHistoryRoutes);
 app.use('/api/bookings', bookingRoutes);
 // /api/jobs -> QStash job webhooks
 app.use('/api/jobs', jobRoutes);
