@@ -1,6 +1,6 @@
-﻿import React, { useState, useContext } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext';
 
 const UserLoginPage = () => {
     const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -9,7 +9,7 @@ const UserLoginPage = () => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    const { userLogin } = useContext(AuthContext); // Using the new function
+    const { userLogin } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {

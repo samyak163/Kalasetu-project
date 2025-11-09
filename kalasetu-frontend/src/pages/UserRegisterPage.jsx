@@ -1,6 +1,6 @@
-﻿import React, { useState, useContext } from 'react';
+﻿import { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext';
 import { ToastContext } from '../context/ToastContext.jsx';
 import { useNotifications } from '../context/NotificationContext.jsx';
 
@@ -16,7 +16,7 @@ const UserRegisterPage = () => {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
-    const { userRegister } = useContext(AuthContext);
+    const { userRegister } = useAuth();
     const { showToast } = useContext(ToastContext);
     const { refresh: refreshNotifications } = useNotifications();
 

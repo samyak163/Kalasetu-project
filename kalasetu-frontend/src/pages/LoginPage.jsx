@@ -1,6 +1,6 @@
-import React, { useState, useContext } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext';
 
 const LoginPage = () => {
     const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -10,7 +10,7 @@ const LoginPage = () => {
     const [showPassword, setShowPassword] = useState(false);
 
     // Use artisanLogin for artisan portal authentication
-    const { artisanLogin } = useContext(AuthContext);
+    const { artisanLogin } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
