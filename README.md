@@ -163,7 +163,7 @@ Use these ready-made accounts to explore the app:
 
 - Artisan (Showcase): `showcase.artisan@demo.kalasetu.com` / `Demo@1234`
 - User (Showcase): `showcase.user@kalasetu.com` / `Demo@1234`
-- Admin: `btmanime7@gmail.com` / `SuperAdmin@123`
+- Admin: `showcase.admin@kalasetu.com` / `SuperAdmin@123`
 
 Note: Additional demo artisans and users exist in the database for richer search results. If needed, re-seed or verify via backend scripts under `kalasetu-backend/scripts/`.
 - **Database:** MongoDB (Atlas)
