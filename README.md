@@ -113,15 +113,12 @@ KalaSetu is a full-stack web application connecting traditional artisans with US
 
 ## 📚 Documentation
 
-Comprehensive guides are available in the `docs/` directory:
+Core guides are available in the `docs/` directory:
 
-- **[Setup Guide](docs/SETUP.md)** - Complete installation and configuration
-- **[Integrations Guide](docs/INTEGRATIONS.md)** - External services setup (Firebase, Cloudinary, etc.)
-- **[API Documentation](docs/API.md)** - REST API endpoints reference
-- **[CI/CD Guide](docs/CI-CD.md)** - Deployment and automation setup
-- **Data Cleanup Script** – See "Demo Data Reset" section below for keeping only demo artisans.
-- **[Demo Users Guide](docs/DEMO_USERS.md)** - Setup demo users with bookmarks for testing
-- **[Demo Setup Guide](DEMO_SETUP_GUIDE.md)** - Complete demo setup in one place
+- **[Setup Guide](docs/SETUP.md)** – Installation and configuration
+- **[Integrations Guide](docs/INTEGRATIONS.md)** – Cloudinary, Firebase, etc.
+- **[API Documentation](docs/API.md)** – REST API reference
+- **[CI/CD Guide](docs/CI-CD.md)** – Deployment and automation
 
 ---
 
@@ -159,6 +156,16 @@ kalasetu-project/
 ```
 
 ---
+
+## 🔐 Demo Accounts (for quick testing)
+
+Use these ready-made accounts to explore the app:
+
+- Artisan (Showcase): `showcase.artisan@demo.kalasetu.com` / `Demo@1234`
+- User (Showcase): `showcase.user@kalasetu.com` / `Demo@1234`
+- Admin: `btmanime7@gmail.com` / `SuperAdmin@123`
+
+Note: Additional demo artisans and users exist in the database for richer search results. If needed, re-seed or verify via backend scripts under `kalasetu-backend/scripts/`.
 - **Database:** MongoDB (Atlas)
 - **ODM:** Mongoose
 - **Authentication:** JWT + bcrypt
