@@ -70,6 +70,49 @@ const CATEGORIES = [
 
 const EXTRA_SERVICES = ['Event Setup', 'Photography', 'Home Organizer', 'Gardening', 'Pet Care'];
 
+const CATEGORY_IMAGES = {
+  Handicrafts: {
+    profile: 'https://images.unsplash.com/photo-1503389152951-9f343605f61e?q=80&w=600&auto=format&fit=crop',
+    cover: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1600&auto=format&fit=crop',
+    gallery: [
+      'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1514996937319-344454492b37?q=80&w=800&auto=format&fit=crop',
+    ],
+  },
+  'Home Services': {
+    profile: 'https://images.unsplash.com/photo-1512412046876-f3851adb218e?q=80&w=600&auto=format&fit=crop',
+    cover: 'https://images.unsplash.com/photo-1487014679447-9f8336841d58?q=80&w=1600&auto=format&fit=crop',
+    gallery: [
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800&auto=format&fit=crop',
+    ],
+  },
+  'Food & Catering': {
+    profile: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=600&auto=format&fit=crop',
+    cover: 'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?q=80&w=1600&auto=format&fit=crop',
+    gallery: [
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1523475472560-d2df97ec485c?q=80&w=800&auto=format&fit=crop',
+    ],
+  },
+  'Clothing & Tailoring': {
+    profile: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=600&auto=format&fit=crop',
+    cover: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?q=80&w=1600&auto=format&fit=crop',
+    gallery: [
+      'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=800&auto=format&fit=crop',
+    ],
+  },
+  'Wellness & Beauty': {
+    profile: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop',
+    cover: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=1600&auto=format&fit=crop',
+    gallery: [
+      'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=800&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=800&auto=format&fit=crop',
+    ],
+  },
+};
+
 async function connectDB() {
   const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
   if (!uri) throw new Error('MONGO_URI/MONGODB_URI missing');
@@ -111,31 +154,35 @@ async function seedCategories() {
 
 function generateArtisanProfile(serviceName, categoryName, idx) {
   const fullName = `${serviceName} Specialist ${idx + 1}`;
+  const imageSet = CATEGORY_IMAGES[categoryName] || CATEGORY_IMAGES.Handicrafts;
   return {
     fullName,
-    email: `${serviceName.toLowerCase().replace(/\s+/g, '-')}.${idx + 1}@sample.kalasetu.com`,
+    email: `${serviceName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${idx + 1}@sample.kalasetu.com`,
     phoneNumber: `+9199${(10000000 + idx).toString().slice(0, 8)}`,
     password: 'Password123',
     craft: categoryName,
     businessName: `${serviceName} Services`,
     tagline: `Expert ${serviceName}`,
-    bio: `Experienced ${serviceName} offering professional services.`,
+    bio: `Experienced ${serviceName} offering professional services to customers across Pune. Quality and customer satisfaction guaranteed.`,
     yearsOfExperience: '5+ years',
     teamSize: 'Solo',
     languagesSpoken: ['English', 'Hindi'],
-    emailVerified: true, // ensure verified
-    isVerified: true,    // ensure verified flag
+    emailVerified: true,
+    isVerified: true,
     isActive: true,
+    profileImageUrl: imageSet.profile,
+    coverImageUrl: imageSet.cover,
+    portfolioImageUrls: imageSet.gallery,
+    businessPhone: `+9198${(10000000 + idx).toString().slice(0, 8)}`,
     location: {
       type: 'Point',
-      coordinates: [73.8297, 18.5165], // Pune default
+      coordinates: [73.82 + (idx % 5) * 0.01, 18.51 + (idx % 5) * 0.01],
       address: 'Pune, Maharashtra',
       city: 'Pune',
       state: 'Maharashtra',
       country: 'India',
       postalCode: '411038',
     },
-    profileImageUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&size=400&background=random&rounded=true`,
   };
 }
 
@@ -159,7 +206,7 @@ async function seedArtisansAndServices(categories) {
         description: profile.bio,
         price: 0,
         durationMinutes: 60,
-        images: [profile.profileImageUrl],
+        images: CATEGORY_IMAGES[cat.name]?.gallery || [],
         isActive: true,
       });
       createdServices++;
