@@ -12,7 +12,8 @@
     "start": "node server.js",
     "cleanup:dry": "node scripts/cleanupProfiles.js --dry-run",
     "cleanup": "node scripts/cleanupProfiles.js",
-    "wipe:all": "node scripts/wipeAllAccounts.js"
+    "wipe:all": "node scripts/wipeAllAccounts.js",
+    "seed:core": "node scripts/seedCoreData.js"
   },
   "keywords": [],
   "author": "",

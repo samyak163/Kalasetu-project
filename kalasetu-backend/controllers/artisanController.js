@@ -155,7 +155,7 @@ const getNearbyArtisans = async (req, res) => {
                 setTimeout(() => reject(new Error('Query timeout')), queryTimeout)
             );
 
-            const results = await Promise.race([queryPromise, timeoutPromise]);
+            const results = (await Promise.race([queryPromise, timeoutPromise])).slice(0, 5);
 
             // Track with PostHog
             trackEvent(

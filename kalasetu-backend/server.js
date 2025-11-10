@@ -41,6 +41,8 @@ import videoRoutes from './routes/videoRoutes.js';
 import callRoutes from './routes/callRoutes.js';
 import callHistoryRoutes from './routes/callHistoryRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
+import serviceRoutes from './routes/serviceRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
@@ -199,6 +201,8 @@ app.use('/api/video', videoRoutes);
 app.use('/api/calls', callRoutes);
 app.use('/api/calls/history', callHistoryRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/services', serviceRoutes);
 // /api/jobs -> QStash job webhooks
 app.use('/api/jobs', jobRoutes);
 // /api/payments -> Razorpay payment endpoints

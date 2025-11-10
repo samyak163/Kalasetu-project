@@ -1,621 +1,377 @@
-import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { liteClient as algoliasearch } from 'algoliasearch/lite';
-import axios from 'axios';
-import { SEARCH_CONFIG, API_CONFIG } from '../config/env.config.js';
+import { useState, useEffect, useMemo, useContext } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import api from '../lib/axios.js';
 import SEO from '../components/SEO.jsx';
 import { optimizeImage } from '../utils/cloudinary.js';
-import { mockFeaturedArtisans } from '../data/mockData.js';
+import { useAuth } from '../context/AuthContext.jsx';
+import { ToastContext } from '../context/ToastContext.jsx';
 
-// Initialize Algolia search client
-const searchClient = SEARCH_CONFIG.enabled && SEARCH_CONFIG.algolia.appId && SEARCH_CONFIG.algolia.searchApiKey
-  ? algoliasearch(SEARCH_CONFIG.algolia.appId, SEARCH_CONFIG.algolia.searchApiKey)
-  : null;
+const DEFAULT_STATE = {
+  mode: 'artisan',
+  category: null,
+  services: [],
+  artisans: [],
+};
 
 const SearchResults = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  
+  const [searchParams] = useSearchParams();
+  const { userType } = useAuth();
+  const { showToast } = useContext(ToastContext);
+
   const query = searchParams.get('q') || '';
-  const category = searchParams.get('category') || '';
-  const location = searchParams.get('location') || ''; // Legacy support
-  const lat = searchParams.get('lat');
-  const lng = searchParams.get('lng');
-  const city = searchParams.get('city') || location; // Prefer city, fallback to location
+  const categoryParam = searchParams.get('category') || '';
+  const serviceParam = searchParams.get('service') || '';
 
-  const [artisans, setArtisans] = useState([]);
+  const [results, setResults] = useState(DEFAULT_STATE);
   const [loading, setLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState(null);
-  const [sortBy, setSortBy] = useState('relevance');
-  const [filters, setFilters] = useState({
-    category: category || '',
-    minRating: 0,
-    maxDistance: 100, // km
-    verifiedOnly: false
-  });
-  const [usedFallbackData, setUsedFallbackData] = useState(false);
+  const [error, setError] = useState(null);
+  const [bookingTarget, setBookingTarget] = useState(null);
 
-  const demoArtisans = useMemo(() => (
-    mockFeaturedArtisans.map((demo, index) => ({
-      objectID: `demo-${index}`,
-      publicId: demo.publicId || `demo-${index}`,
-      fullName: demo.name,
-      businessName: demo.craft,
-      profileImage: demo.profilePic || demo.image,
-      portfolioImages: [demo.image, demo.image, demo.image],
-      category: demo.craft,
-      craft: demo.craft,
-      address: { city: demo.location, state: 'Sample State', country: 'India' },
-      rating: { average: demo.rating, count: Math.floor(demo.rating * 18) },
-      tagline: 'Sample artisan profile for demonstration purposes',
-      services: ['Custom Orders', 'Express Delivery', 'Virtual Consultation', 'Workshop'],
-      skills: ['Demo Skill A', 'Demo Skill B', 'Demo Skill C', 'Demo Skill D'],
-      verifications: { email: { verified: true } },
-      badges: ['Featured'],
-      isDemo: true,
-    }))
-  ), []);
-
-  const applySearchResults = (items) => {
-    if (Array.isArray(items) && items.length > 0) {
-      const normalized = items.map((item) => ({ ...item, isDemo: item.isDemo ?? false }));
-      setArtisans(normalized);
-      setUsedFallbackData(false);
-    } else {
-      setArtisans(demoArtisans);
-      setUsedFallbackData(true);
-    }
-  };
-
-  // Get user location from URL params or localStorage or geolocation
   useEffect(() => {
-    // First, try URL params
-    if (lat && lng) {
-      setUserLocation({
-        lat: parseFloat(lat),
-        lng: parseFloat(lng),
-        city: city || ''
-      });
-    } else {
-      // Try localStorage
-      const savedLocation = localStorage.getItem('userLocation');
-      if (savedLocation) {
-        try {
-          const location = JSON.parse(savedLocation);
-          setUserLocation(location);
-        } catch (error) {
-          console.error('Error loading saved location:', error);
-        }
-      } else if ('geolocation' in navigator) {
-        // Fallback to geolocation
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setUserLocation({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
-          },
-          () => {
-            // Location access denied - silently fail
-          }
-        );
-      }
-    }
-  }, [lat, lng, city]);
-
-  // Search artisans
-  useEffect(() => {
-    const searchArtisans = async () => {
+    const controller = new AbortController();
+    const fetchResults = async () => {
       setLoading(true);
+      setError(null);
       try {
-        if (searchClient) {
-          // Use Algolia direct search
-          const index = searchClient.initIndex(SEARCH_CONFIG.algolia.indexName || 'artisans');
-          
-          const searchOptions = {
-            hitsPerPage: 20,
-            attributesToRetrieve: [
-              'objectID',
-              'fullName',
-              'businessName',
-              'profileImage',
-              'portfolioImages',
-              'category',
-              'craft',
-              'address',
-              'rating',
-              'publicId',
-              'services',
-              'skills',
-              'tagline',
-              'bio',
-              'verifications',
-              'badges',
-              '_geoloc'
-            ],
-            attributesToHighlight: ['fullName', 'businessName', 'category', 'craft', 'services', 'tagline', 'bio']
-          };
+        const params = new URLSearchParams();
+        if (query) params.set('q', query);
+        if (categoryParam) params.set('category', categoryParam);
+        if (serviceParam) params.set('service', serviceParam);
 
-          // Build filters
-          const filterArray = [];
-          if (filters.category) {
-            filterArray.push(`category:"${filters.category}"`);
-          }
-          if (filters.minRating > 0) {
-            filterArray.push(`rating.average >= ${filters.minRating}`);
-          }
-          if (filters.verifiedOnly) {
-            filterArray.push('verifications.email.verified:true');
-          }
-
-          if (filterArray.length > 0) {
-            searchOptions.filters = filterArray.join(' AND ');
-          }
-
-          // Geo search if user location available
-          if (userLocation) {
-            searchOptions.aroundLatLng = `${userLocation.lat}, ${userLocation.lng}`;
-            searchOptions.aroundRadius = filters.maxDistance * 1000; // Convert to meters
-          }
-
-          // Sorting
-          if (sortBy === 'rating') {
-            searchOptions.customRanking = ['desc(rating.average)'];
-          } else if (sortBy === 'distance' && userLocation) {
-            // Distance sorting is automatic with aroundLatLng
-            searchOptions.aroundLatLngViaIP = false;
-          }
-
-          const results = await index.search(query || category || '', searchOptions);
-          applySearchResults(Array.isArray(results?.hits) ? results.hits : []);
+        const response = await api.get(`/api/search?${params.toString()}`, { signal: controller.signal });
+        if (controller.signal.aborted) return;
+        if (response.data?.success) {
+          setResults({
+            mode: response.data.mode || 'artisan',
+            category: response.data.category || null,
+            services: response.data.services || [],
+            artisans: response.data.artisans || [],
+          });
         } else {
-          // Fallback to API search
-          const params = new URLSearchParams();
-          if (query) params.set('q', query);
-          if (category) params.set('category', category);
-          if (city) params.set('city', city);
-          if (userLocation) {
-            params.set('lat', userLocation.lat);
-            params.set('lng', userLocation.lng);
-          }
-          if (filters.category) params.set('category', filters.category);
-          if (filters.minRating > 0) params.set('minRating', filters.minRating);
-
-          const response = await axios.get(`${API_CONFIG.BASE_URL}/api/search?${params.toString()}`);
-          
-          if (response.data?.success) {
-            applySearchResults(Array.isArray(response.data?.artisans) ? response.data.artisans : []);
-          } else {
-            applySearchResults([]);
-          }
+          setResults(DEFAULT_STATE);
         }
-      } catch (error) {
-        console.error('Search error:', error);
-        applySearchResults([]);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Search error:', err);
+        setError(err);
+        setResults(DEFAULT_STATE);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
 
-    searchArtisans();
-  }, [query, category, location, filters, sortBy, userLocation]);
+    fetchResults();
+    return () => controller.abort();
+  }, [query, categoryParam, serviceParam]);
 
-  // Calculate distance using Haversine formula
-  const calculateDistance = (artisanLat, artisanLng) => {
-    if (!userLocation) return null;
-    
-    const R = 6371; // Earth radius in km
-    const dLat = (artisanLat - userLocation.lat) * Math.PI / 180;
-    const dLon = (artisanLng - userLocation.lng) * Math.PI / 180;
-    
-    const a = 
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(userLocation.lat * Math.PI / 180) * Math.cos(artisanLat * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c;
-    
-    return distance.toFixed(1);
-  };
+  const heading = useMemo(() => {
+    if (results.mode === 'category' && results.category) {
+      return `${results.category.name} Services`;
+    }
+    if (results.mode === 'service' && results.services[0]?.name) {
+      return `${results.services[0].name} Providers`;
+    }
+    if (categoryParam) {
+      return `${categoryParam} Artisans`;
+    }
+    if (query) {
+      return `Results for "${query}"`;
+    }
+    return 'Artisans';
+  }, [results, categoryParam, query]);
 
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-    const params = new URLSearchParams(searchParams);
-    if (newFilters.category) params.set('category', newFilters.category);
-    else params.delete('category');
-    if (newFilters.minRating > 0) params.set('minRating', newFilters.minRating);
-    else params.delete('minRating');
-    if (newFilters.verifiedOnly) params.set('verified', 'true');
-    else params.delete('verified');
-    setSearchParams(params);
-  };
-
-  const handleSortChange = (newSort) => {
-    setSortBy(newSort);
-  };
+  const totalCount = useMemo(() => {
+    if (results.mode === 'artisan') return results.artisans.length;
+    if (results.mode === 'service') return results.services.length;
+    if (results.mode === 'category') {
+      return results.services.reduce((acc, service) => acc + (service.offerings?.length || 0), 0);
+    }
+    return 0;
+  }, [results]);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <SEO
-        title={`${category ? `${category} Artisans` : query ? `Search Results for "${query}"` : 'Search Artisans'} | KalaSetu`}
-        description={`Find skilled artisans${category ? ` in ${category}` : ''}${city ? ` near ${city}` : ''}`}
+        title={`${heading} | KalaSetu`}
+        description={`Find artisans and services for ${heading}`}
       />
 
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {category ? `${category} Artisans` : query ? `Search Results for "${query}"` : 'All Artisans'}
-          </h1>
+        <header className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{heading}</h1>
           <p className="text-gray-600">
-            Found {artisans.length} artisan{artisans.length !== 1 ? 's' : ''}
-            {userLocation && ' near you'}
+            {loading ? 'Fetching live data...' : `Showing ${totalCount} result${totalCount === 1 ? '' : 's'}`}
           </p>
-          {usedFallbackData && (
-            <div className="mt-3 p-3 bg-indigo-50 border border-indigo-200 text-sm text-indigo-700 rounded-lg">
-              Showing demo artisans so you can preview the experience. Seed real data or adjust filters to view live results.
+          {error && (
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              Something went wrong while fetching results. Please try again.
             </div>
           )}
-        </div>
+        </header>
 
-        <div className="flex gap-6">
-          {/* Filters Sidebar */}
-          <aside className="hidden md:block w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4">
-              <h3 className="font-semibold text-gray-900 mb-4 text-lg">Filters</h3>
+        {loading ? (
+          <LoadingState mode={results.mode} />
+        ) : (
+          <ResultsView
+            results={results}
+            onBook={(payload) => setBookingTarget(payload)}
+          />
+        )}
+      </div>
 
-              {/* Category Filter */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
-                </label>
-                <select
-                  value={filters.category}
-                  onChange={(e) => handleFilterChange({ ...filters, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base"
-                >
-                  <option value="">All Categories</option>
-                  <option value="Pottery">Pottery</option>
-                  <option value="Weaving">Weaving</option>
-                  <option value="Jewelry">Jewelry</option>
-                  <option value="Woodwork">Woodwork</option>
-                  <option value="Painting">Painting</option>
-                  <option value="Sculpture">Sculpture</option>
-                  <option value="Textiles & Weaving">Textiles & Weaving</option>
-                  <option value="Pottery & Ceramics">Pottery & Ceramics</option>
-                </select>
-              </div>
+      {bookingTarget && (
+        <BookServiceModal
+          target={bookingTarget}
+          onClose={() => setBookingTarget(null)}
+          userType={userType}
+          showToast={showToast}
+        />
+      )}
+    </div>
+  );
+};
 
-              {/* Rating Filter */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Minimum Rating
-                </label>
-                <div className="space-y-2">
-                  {[4, 3, 2, 1, 0].map((rating) => (
-                    <label key={rating} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="rating"
-                        checked={filters.minRating === rating}
-                        onChange={() => handleFilterChange({ ...filters, minRating: rating })}
-                        className="text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <div className="flex items-center gap-1">
-                        {rating > 0 ? (
-                          <>
-                            <span className="text-sm font-medium">{rating}+</span>
-                            <svg className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          </>
-                        ) : (
-                          <span className="text-sm">All Ratings</span>
-                        )}
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Distance Filter */}
-              {userLocation && (
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Distance: {filters.maxDistance} km
-                  </label>
-                  <input
-                    type="range"
-                    min="5"
-                    max="100"
-                    step="5"
-                    value={filters.maxDistance}
-                    onChange={(e) => handleFilterChange({ ...filters, maxDistance: parseInt(e.target.value) })}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>5 km</span>
-                    <span>100 km</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Verified Only */}
-              <div className="mb-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={filters.verifiedOnly}
-                    onChange={(e) => handleFilterChange({ ...filters, verifiedOnly: e.target.checked })}
-                    className="rounded text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    Verified Only
-                  </span>
-                </label>
-              </div>
-
-              {/* Clear Filters */}
-              <button
-                onClick={() => {
-                  const clearedFilters = { category: '', minRating: 0, maxDistance: 100, verifiedOnly: false };
-                  handleFilterChange(clearedFilters);
-                }}
-                className="w-full px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors font-medium"
-              >
-                Clear All Filters
-              </button>
+const LoadingState = ({ mode }) => {
+  const placeholderCount = mode === 'artisan' ? 6 : 3;
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      {Array.from({ length: placeholderCount }).map((_, index) => (
+        <div key={`loading-${index}`} className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
+          <div className="flex gap-6">
+            <div className="w-24 h-24 bg-gray-200 rounded-lg"></div>
+            <div className="flex-1 space-y-3">
+              <div className="h-5 bg-gray-200 rounded w-1/3"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
             </div>
-          </aside>
-
-          {/* Results */}
-          <main className="flex-1">
-            {/* Sort Bar */}
-            <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex items-center justify-between">
-              <span className="text-sm text-gray-600">
-                Showing {artisans.length} results
-              </span>
-              <select
-                value={sortBy}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm md:text-base"
-              >
-                <option value="relevance">Most Relevant</option>
-                {userLocation && <option value="distance">Nearest First</option>}
-                <option value="rating">Highest Rated</option>
-              </select>
-            </div>
-
-            {/* Artisan Cards */}
-            {loading ? (
-              <div className="space-y-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
-                    <div className="flex gap-6">
-                      <div className="w-48 h-48 bg-gray-200 rounded-lg"></div>
-                      <div className="flex-1 space-y-3">
-                        <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {artisans.map((artisan) => {
-                  const distance = artisan._geoloc && userLocation 
-                    ? calculateDistance(artisan._geoloc.lat, artisan._geoloc.lng)
-                    : null;
-                  const artisanId = artisan.publicId || artisan.objectID;
-                  const artisanName = artisan.fullName || artisan.businessName || 'Unknown Artisan';
-                  const artisanImage = artisan.profileImage || artisan.portfolioImages?.[0] || '/default-avatar.png';
-
-                  return (
-                    <div
-                      key={artisan.objectID || artisanId}
-                      className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden cursor-pointer"
-                      onClick={() => {
-                        if (artisan.isDemo) {
-                          navigate(`/search?category=${encodeURIComponent(artisan.category || artisan.craft || 'Artisan')}`);
-                        } else {
-                          navigate(`/artisan/${artisanId}`);
-                        }
-                      }}
-                    >
-                      <div className="flex flex-col md:flex-row gap-6 p-6">
-                        {/* Large Portfolio Image */}
-                        <div className="w-full md:w-64 flex-shrink-0">
-                          <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
-                            <img
-                              src={optimizeImage(artisanImage, { width: 400, height: 400 })}
-                              alt={artisanName}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              onError={(e) => {
-                                e.target.src = '/default-avatar.png';
-                              }}
-                            />
-                            {artisan.badges && artisan.badges.length > 0 && (
-                              <div className="absolute top-2 right-2">
-                                <span className="px-2 py-1 bg-yellow-400 text-yellow-900 text-xs font-semibold rounded-full">
-                                  ⭐ {artisan.badges[0]}
-                                </span>
-                              </div>
-                            )}
-                            {artisan.isDemo && (
-                              <div className="absolute bottom-2 right-2">
-                                <span className="px-2 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-full">
-                                  Demo
-                                </span>
-                              </div>
-                            )}
-                            {artisan.verifications?.email?.verified && (
-                              <div className="absolute top-2 left-2">
-                                <span className="px-2 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
-                                  ✓ Verified
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Additional Portfolio Images */}
-                          {artisan.portfolioImages && artisan.portfolioImages.length > 1 && (
-                            <div className="grid grid-cols-3 gap-2 mt-2">
-                              {artisan.portfolioImages.slice(1, 4).map((img, idx) => (
-                                <img
-                                  key={idx}
-                                  src={optimizeImage(img, { width: 100, height: 100 })}
-                                  alt={`Portfolio ${idx + 1}`}
-                                  className="w-full h-20 object-cover rounded"
-                                  loading="lazy"
-                                  onError={(e) => {
-                                    e.target.style.display = 'none';
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Artisan Info */}
-                        <div className="flex-1 min-w-0">
-                          {/* Header */}
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1 min-w-0">
-                              <h2 className="text-2xl font-bold text-gray-900 truncate">
-                                {artisanName}
-                              </h2>
-                              {artisan.businessName && artisan.businessName !== artisanName && (
-                                <p className="text-sm text-gray-600 mt-1">
-                                  {artisan.businessName}
-                                </p>
-                              )}
-                              <p className="text-gray-600 mt-1">
-                                {artisan.category || artisan.craft || 'Artisan'}
-                              </p>
-                          {artisan.tagline && (
-                                <p className="text-sm text-gray-500 mt-1 italic">
-                                  {artisan.tagline}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Rating */}
-                            {artisan.rating?.average > 0 && (
-                              <div className="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full flex-shrink-0">
-                                <svg className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                                <span className="font-semibold text-gray-900">
-                                  {artisan.rating.average.toFixed(1)}
-                                </span>
-                                <span className="text-sm text-gray-600">
-                                  ({artisan.rating.count || 0})
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Location & Distance */}
-                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-3 flex-wrap">
-                            <div className="flex items-center gap-1">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              <span>{artisan.address?.city || artisan.address?.state || 'India'}</span>
-                            </div>
-                            {distance && (
-                              <div className="flex items-center gap-1 text-indigo-600 font-medium">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                </svg>
-                                <span>{distance} km away</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Bio */}
-                          {artisan.bio && (
-                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                              {artisan.bio}
-                            </p>
-                          )}
-
-                          {/* Services */}
-                          {artisan.services && artisan.services.length > 0 && (
-                            <div className="mb-3">
-                              <h4 className="text-sm font-semibold text-gray-700 mb-2">Services:</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {artisan.services.slice(0, 4).map((service, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                                  >
-                                    {service}
-                                  </span>
-                                ))}
-                                {artisan.services.length > 4 && (
-                                  <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
-                                    +{artisan.services.length - 4} more
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Skills/Specialties */}
-                          {artisan.skills && artisan.skills.length > 0 && (
-                            <div className="mb-4">
-                              <p className="text-sm text-gray-600">
-                                <span className="font-medium">Specializes in:</span> {artisan.skills.slice(0, 3).join(', ')}
-                                {artisan.skills.length > 3 && ` +${artisan.skills.length - 3} more`}
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Contact Info */}
-                          <div className="flex items-center gap-4 pt-4 border-t border-gray-200 flex-wrap">
-                            {!artisan.isDemo && (
-                              <>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/artisan/${artisanId}`);
-                                  }}
-                                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm md:text-base"
-                                >
-                                  View Profile
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/artisan/${artisanId}?tab=contact`);
-                                  }}
-                                  className="px-6 py-2 border border-indigo-600 text-indigo-600 rounded-lg font-medium hover:bg-indigo-50 transition-colors text-sm md:text-base"
-                                >
-                                  Contact
-                                </button>
-                              </>
-                            )}
-                            {artisan.isDemo && (
-                              <span className="text-sm text-indigo-600 font-medium">
-                                Demo profiles are for showcase only
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </main>
+          </div>
         </div>
+      ))}
+    </div>
+  );
+};
+
+const ResultsView = ({ results, onBook }) => {
+  if (results.mode === 'category') {
+    if (results.services.length === 0) {
+      return <EmptyState message="No services found for this category yet." />;
+    }
+    return (
+      <div className="space-y-8">
+        {results.services.map((service) => (
+          <section key={service.name}>
+            <header className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-900">{service.name}</h2>
+                <p className="text-sm text-gray-500">
+                  {service.offerings?.length || 0} artisan{service.offerings?.length === 1 ? '' : 's'} available
+                </p>
+              </div>
+            </header>
+            <div className="grid gap-6 md:grid-cols-2">
+              {service.offerings?.map((offering) => (
+                <ServiceCard key={offering.serviceId} service={offering} onBook={onBook} />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    );
+  }
+
+  if (results.mode === 'service') {
+    if (results.services.length === 0) {
+      return <EmptyState message="No artisans currently offer this service." />;
+    }
+    return (
+      <div className="grid gap-6 md:grid-cols-2">
+        {results.services.map((service) => (
+          <ServiceCard key={service.serviceId} service={service} onBook={onBook} />
+        ))}
+      </div>
+    );
+  }
+
+  if (results.artisans.length === 0) {
+    return <EmptyState message="No artisans matched your search yet." />;
+  }
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      {results.artisans.map((artisan) => (
+        <ArtisanCard key={artisan.publicId || artisan._id} artisan={artisan} />
+      ))}
+    </div>
+  );
+};
+
+const ServiceCard = ({ service, onBook }) => {
+  const artisan = service.artisan || {};
+  const serviceName = service.name || service.serviceName;
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col gap-4">
+      <div className="flex items-start gap-4">
+        <img
+          src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 72, height: 72 })}
+          alt={artisan.fullName}
+          className="w-18 h-18 rounded-xl object-cover"
+          onError={(e) => { e.target.src = '/default-avatar.png'; }}
+        />
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-900">{serviceName}</h3>
+          <p className="text-sm text-gray-500">
+            by <span className="font-medium text-gray-800">{artisan.fullName}</span>
+          </p>
+          <p className="mt-2 text-sm text-gray-600 line-clamp-3">{service.description || artisan.bio || 'Trusted local artisan offering professional services.'}</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-sm text-gray-600">
+          <div>
+            <span className="font-medium text-gray-800">Price:</span> ₹{service.price || 0}
+          </div>
+          <div>
+            <span className="font-medium text-gray-800">Duration:</span> {service.durationMinutes || 60} minutes
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => onBook({ service, artisan })}
+          className="px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors"
+        >
+          Book
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const ArtisanCard = ({ artisan }) => (
+  <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+    <div className="flex flex-col md:flex-row">
+      <div className="md:w-48 bg-gray-100">
+        <img
+          src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 288, height: 288 })}
+          alt={artisan.fullName}
+          className="w-full h-full object-cover"
+          onError={(e) => { e.target.src = '/default-avatar.png'; }}
+        />
+      </div>
+      <div className="flex-1 p-6 flex flex-col gap-3">
+        <div>
+          <h3 className="text-xl font-semibold text-gray-900">{artisan.fullName}</h3>
+          <p className="text-sm text-gray-500">{artisan.craft || artisan.businessName}</p>
+        </div>
+        <p className="text-sm text-gray-600 line-clamp-3">
+          {artisan.bio || 'Experienced artisan delivering quality craftsmanship.'}
+        </p>
+        <div className="flex flex-wrap gap-2 text-sm text-gray-500">
+          {artisan.city && <span>📍 {artisan.city}</span>}
+          {artisan.averageRating && <span>⭐ {Number(artisan.averageRating).toFixed(1)}</span>}
+          {artisan.verified && <span className="text-green-600">✔ Verified</span>}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const EmptyState = ({ message }) => (
+  <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
+    {message}
+  </div>
+);
+
+const BookServiceModal = ({ target, onClose, userType, showToast }) => {
+  const [startTime, setStartTime] = useState('');
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const service = target?.service;
+  const artisan = target?.artisan;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!startTime) {
+      showToast?.('Please pick a time for your booking.', 'error');
+      return;
+    }
+    if (userType !== 'user') {
+      showToast?.('Please log in as a customer to book a service.', 'error');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const start = new Date(startTime);
+      const end = new Date(start.getTime() + (service.durationMinutes || 60) * 60000);
+      await api.post('/api/bookings', {
+        artisan: artisan._id || artisan.id,
+        serviceId: service.serviceId || service._id,
+        start,
+        end,
+        notes,
+        price: service.price || 0,
+      });
+      showToast?.('Booking request sent to the artisan!', 'success');
+      onClose();
+    } catch (err) {
+      console.error('Booking error:', err);
+      const message = err.response?.data?.message || 'Failed to create booking. Please try again.';
+      showToast?.(message, 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+        <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Book {service?.name}</h3>
+            <p className="text-sm text-gray-500">With {artisan?.fullName}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+        </header>
+        <form onSubmit={handleSubmit} className="px-6 py-6 space-y-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700">Preferred start time</label>
+            <input
+              type="datetime-local"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#A55233] focus:border-[#A55233]"
+              required
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700">Notes for the artisan (optional)</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#A55233] focus:border-[#A55233]"
+              placeholder="Share any specifics, venue details, or questions."
+            />
+          </div>
+          <footer className="flex items-center justify-end gap-3 pt-2 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg"
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors disabled:opacity-60"
+              disabled={submitting}
+            >
+              {submitting ? 'Sending...' : 'Confirm Booking'}
+            </button>
+          </footer>
+        </form>
       </div>
     </div>
   );

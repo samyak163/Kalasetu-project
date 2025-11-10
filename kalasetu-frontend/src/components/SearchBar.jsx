@@ -1,23 +1,21 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { liteClient as algoliasearch } from 'algoliasearch/lite';
-import axios from 'axios';
-import { SEARCH_CONFIG, API_CONFIG } from '../config/env.config.js';
+import api from '../lib/axios.js';
 import { optimizeImage } from '../utils/cloudinary.js';
-import { mockFeaturedArtisans } from '../data/mockData.js';
 
-// Initialize Algolia search client
-const searchClient = SEARCH_CONFIG.enabled && SEARCH_CONFIG.algolia.appId && SEARCH_CONFIG.algolia.searchApiKey
-  ? algoliasearch(SEARCH_CONFIG.algolia.appId, SEARCH_CONFIG.algolia.searchApiKey)
-  : null;
+const EMPTY_SUGGESTIONS = {
+  categories: [],
+  services: [],
+  artisans: [],
+};
 
 const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '', onSearch, userLocation }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState(initialQuery || '');
-  const [hits, setHits] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [suggestions, setSuggestions] = useState(EMPTY_SUGGESTIONS);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const searchRef = useRef(null);
 
   // Close dropdown on outside click
@@ -31,83 +29,44 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced Algolia search with API fallback
+  // Debounced suggestions fetch
   useEffect(() => {
-    if (query.length < 2) {
-      setHits([]);
-      setCategories([]);
+    if (query.trim().length < 2) {
+      setSuggestions(EMPTY_SUGGESTIONS);
       setShowDropdown(false);
+      setLoading(false);
+      setError(null);
       return;
     }
 
+    const controller = new AbortController();
     const timer = setTimeout(async () => {
-          setLoading(true);
+      setLoading(true);
+      setError(null);
       try {
-        if (searchClient) {
-          // Use Algolia direct search
-          const index = searchClient.initIndex(SEARCH_CONFIG.algolia.indexName || 'artisans');
-          
-          // Multi-query search: artisans + categories
-          const [artisanResults, categoryResults] = await Promise.all([
-            index.search(query, {
-              hitsPerPage: 5,
-              attributesToRetrieve: [
-                'objectID',
-                'fullName',
-                'businessName',
-                'profileImage',
-                'category',
-                'craft',
-                'address',
-                'rating',
-                'publicId',
-                'services',
-                'skills',
-                'tagline'
-              ],
-              attributesToHighlight: ['fullName', 'businessName', 'category', 'craft', 'services', 'tagline']
-            }),
-            index.searchForFacetValues('category', query, {
-              maxFacetHits: 5
-            }).catch(() => ({ facetHits: [] }))
-          ]);
-
-          const sanitizedHits = Array.isArray(artisanResults?.hits) ? artisanResults.hits : [];
-          const sanitizedCategories = Array.isArray(categoryResults?.facetHits)
-            ? categoryResults.facetHits.map((f) => f.value)
-            : [];
-          setHits(sanitizedHits);
-          setCategories(sanitizedCategories);
-          setShowDropdown(true);
-        } else {
-          // Fallback to API search
-          const response = await axios.get(`${API_CONFIG.BASE_URL}/api/search`, {
-            params: { q: query, limit: 5 }
-          });
-          
-          if (response.data?.success) {
-            const apiHits = Array.isArray(response.data?.artisans) ? response.data.artisans : [];
-            const apiCategories = Array.isArray(response.data?.categories) ? response.data.categories : [];
-            setHits(apiHits);
-            setCategories(apiCategories);
-          } else {
-            setHits([]);
-            setCategories([]);
-          }
-          setShowDropdown(true);
-        }
-      } catch (error) {
-        console.error('Search error:', error);
-        // Fallback to empty results
-        setHits([]);
-        setCategories([]);
+        const response = await api.get('/api/search/suggestions', {
+          params: { q: query.trim() },
+          signal: controller.signal,
+        });
+        setSuggestions(response.data?.suggestions || EMPTY_SUGGESTIONS);
+        setShowDropdown(true);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error('Suggestion fetch error:', err);
+        setError(err);
+        setSuggestions(EMPTY_SUGGESTIONS);
         setShowDropdown(true);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-    }, 300);
+    }, 250);
 
-    return () => clearTimeout(timer);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
   }, [query]);
 
   // Sync with initialQuery prop
@@ -119,70 +78,55 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (query.trim()) {
-      if (onSearch) {
-        onSearch(query);
-      } else {
-        const params = new URLSearchParams({ q: query });
-        
-        // Add location if available
-        if (userLocation) {
-          params.append('lat', userLocation.lat);
-          params.append('lng', userLocation.lng);
-          if (userLocation.city) {
-            params.append('city', userLocation.city);
-          }
+    const trimmed = query.trim();
+    if (!trimmed) return;
+
+    if (onSearch) {
+      onSearch(trimmed);
+    } else {
+      const params = new URLSearchParams({ q: trimmed });
+      if (userLocation) {
+        params.append('lat', userLocation.lat);
+        params.append('lng', userLocation.lng);
+        if (userLocation.city) {
+          params.append('city', userLocation.city);
         }
-        
-        navigate(`/search?${params.toString()}`);
       }
-      setShowDropdown(false);
+      navigate(`/search?${params.toString()}`);
     }
+    setShowDropdown(false);
+  };
+
+  const handleCategoryClick = (categoryName) => {
+    navigate(`/search?category=${encodeURIComponent(categoryName)}`);
+    setShowDropdown(false);
+    setQuery('');
+  };
+
+  const handleServiceClick = (serviceName) => {
+    navigate(`/search?service=${encodeURIComponent(serviceName)}`);
+    setShowDropdown(false);
+    setQuery('');
   };
 
   const handleArtisanClick = (artisan) => {
-    if (artisan?.isDemo) {
-      const category = artisan.craft || artisan.category || 'Artisan';
-      navigate(`/search?category=${encodeURIComponent(category)}`);
-      setShowDropdown(false);
-      setQuery('');
-      return;
-    }
-
-    // If exact name match, go directly to profile
-    const isExactMatch = 
-      artisan.fullName?.toLowerCase() === query.toLowerCase() ||
-      artisan.businessName?.toLowerCase() === query.toLowerCase();
-    
-    const targetId = artisan.publicId || artisan.objectID;
-
-    if (isExactMatch && targetId) {
+    const targetId = artisan.publicId || artisan._id;
+    if (targetId) {
       navigate(`/artisan/${targetId}`);
     } else {
-      navigate(`/search?q=${encodeURIComponent(query)}`);
+      navigate(`/search?q=${encodeURIComponent(artisan.fullName)}`);
     }
-    
     setShowDropdown(false);
     setQuery('');
   };
 
-  const handleCategoryClick = (category) => {
-    navigate(`/search?category=${encodeURIComponent(category)}`);
-    setShowDropdown(false);
-    setQuery('');
-  };
-
-  const highlightText = (text, highlight) => {
-    if (!highlight || !text) return text;
-    const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
-    return parts.map((part, i) =>
-      part.toLowerCase() === highlight.toLowerCase() ? (
-        <mark key={i} className="bg-yellow-200">{part}</mark>
-      ) : (
-        part
-      )
+  const hasAnySuggestions = useMemo(() => {
+    return (
+      suggestions.categories.length > 0 ||
+      suggestions.services.length > 0 ||
+      suggestions.artisans.length > 0
     );
-  };
+  }, [suggestions]);
 
   return (
     <div className={`relative ${className}`} ref={searchRef}>
@@ -193,7 +137,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => query.length >= 2 && setShowDropdown(true)}
+            onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
             placeholder="Search artisans, services, categories..."
             className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base text-gray-900 placeholder-gray-400"
           />
@@ -223,125 +167,108 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-indigo-600"></div>
               <p className="mt-2 text-sm text-gray-500">Searching...</p>
             </div>
+          ) : error ? (
+            <div className="p-6 text-sm text-red-600">Unable to fetch suggestions right now. Try again momentarily.</div>
           ) : (
             <>
-              {/* Artisan Results */}
-              {(hits.length > 0 || (query.length >= 2 && categories.length === 0 && hits.length === 0)) && (
-                <div className="border-b border-gray-200">
-                  <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Artisans & Services
-                  </div>
-                  {((hits.length > 0 ? hits : mockFeaturedArtisans.slice(0, 4).map((demo, index) => ({
-                    objectID: `demo-${index}`,
-                    fullName: demo.name,
-                    businessName: demo.craft,
-                    profileImage: demo.profilePic || demo.image,
-                    category: demo.craft,
-                    craft: demo.craft,
-                    address: { city: demo.location },
-                    rating: { average: demo.rating, count: Math.floor(demo.rating * 15) },
-                    publicId: demo.publicId || null,
-                    services: [],
-                    tagline: 'Sample artisan for demo',
-                    isDemo: true,
-                  })))).map((hit) => {
-                    const artisanName = hit.fullName || hit.businessName || 'Unknown';
-                    const artisanImage = hit.profileImage || '/default-avatar.png';
-                    return (
-                      <button
-                        key={hit.objectID}
-                        onClick={() => handleArtisanClick(hit)}
-                        className="w-full flex items-center gap-4 px-4 py-3 hover:bg-indigo-50 transition-colors text-left group"
-                      >
-                        <img
-                          src={optimizeImage(artisanImage, { width: 48, height: 48 })}
-                          alt={artisanName}
-                          className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                          onError={(e) => {
-                            e.target.src = '/default-avatar.png';
-                          }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-gray-900 truncate group-hover:text-indigo-600">
-                            {hit.isDemo ? artisanName : highlightText(artisanName, query)}
-                          </div>
-                          <div className="text-sm text-gray-600 truncate">
-                            {(hit.category || hit.craft || 'Artisan')} • {hit.address?.city || 'Sample City'}
-                          </div>
-                          {hit.tagline && (
-                            <div className="text-xs text-gray-500 truncate mt-1">
-                              {hit.tagline}
-                            </div>
-                          )}
-                          {(hit.services && hit.services.length > 0) && (
-                            <div className="text-xs text-gray-500 truncate mt-1">
-                              {hit.services.slice(0, 2).join(', ')}
-                            </div>
-                          )}
-                          {hit.isDemo && (
-                            <div className="text-xs text-indigo-500 mt-1">
-                              Demo profile
-                            </div>
-                          )}
-                        </div>
-                        {hit.rating?.average > 0 && (
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <svg className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            <span className="text-sm font-medium text-gray-700">
-                              {hit.rating.average.toFixed?.(1) || Number(hit.rating.average).toFixed(1)}
-                            </span>
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
               {/* Category Suggestions */}
-              {categories.length > 0 && (
+              {suggestions.categories.length > 0 && (
                 <div className="border-b border-gray-200">
                   <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Categories
                   </div>
                   <div className="p-2 flex flex-wrap gap-2">
-                    {categories.map((category) => (
+                    {suggestions.categories.map((category) => (
                       <button
-                        key={category}
-                        onClick={() => handleCategoryClick(category)}
+                        key={category.slug || category.name}
+                        onClick={() => handleCategoryClick(category.name)}
                         className="px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium hover:bg-indigo-200 transition-colors"
                       >
-                        {category}
+                        {category.name}
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
+              {/* Service Suggestions */}
+              {suggestions.services.length > 0 && (
+                <div className="border-b border-gray-200">
+                  <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Services
+                  </div>
+                  <ul className="divide-y divide-gray-100">
+                    {suggestions.services.map((service) => (
+                      <li key={`${service.categoryName || 'service'}-${service.name}`}>
+                        <button
+                          onClick={() => handleServiceClick(service.name)}
+                          className="w-full px-4 py-3 text-left hover:bg-indigo-50 transition-colors"
+                        >
+                          <div className="font-medium text-gray-900">{service.name}</div>
+                          {service.categoryName && (
+                            <div className="text-xs text-gray-500">{service.categoryName}</div>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Artisan Suggestions */}
+              {suggestions.artisans.length > 0 && (
+                <div className="border-b border-gray-200">
+                  <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Artisans
+                  </div>
+                  <ul className="divide-y divide-gray-100">
+                    {suggestions.artisans.map((artisan) => (
+                      <li key={artisan.publicId || artisan._id}>
+                        <button
+                          onClick={() => handleArtisanClick(artisan)}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 transition-colors text-left"
+                        >
+                          <img
+                            src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 48, height: 48 })}
+                            alt={artisan.fullName}
+                            className="w-12 h-12 rounded-full object-cover"
+                            onError={(e) => {
+                              e.target.src = '/default-avatar.png';
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-900 truncate">{artisan.fullName}</div>
+                            <div className="text-xs text-gray-500 truncate">
+                              {artisan.craft || artisan.businessName || 'Artisan'}
+                            </div>
+                          </div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* No Results */}
-              {hits.length === 0 && categories.length === 0 && query.length >= 2 && (
+              {!hasAnySuggestions && (
                 <div className="p-6 text-center">
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <p className="mt-2 text-sm text-gray-500">
-                    No results found for "<span className="font-medium">{query}</span>"
+                    No suggestions for "<span className="font-medium">{query}</span>" yet.
                   </p>
                   <p className="mt-1 text-xs text-gray-400">
-                    Try different keywords or browse categories
+                    Try another keyword or press Enter to search everything.
                   </p>
                 </div>
               )}
 
               {/* View All Results */}
-              {(hits.length > 0 || categories.length > 0) && (
+              {hasAnySuggestions && (
                 <button
                   onClick={() => {
-                    const params = new URLSearchParams({ q: query });
-                    
-                    // Add location if available
+                    const params = new URLSearchParams({ q: query.trim() });
                     if (userLocation) {
                       params.append('lat', userLocation.lat);
                       params.append('lng', userLocation.lng);
@@ -349,7 +276,6 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
                         params.append('city', userLocation.city);
                       }
                     }
-                    
                     navigate(`/search?${params.toString()}`);
                     setShowDropdown(false);
                   }}
