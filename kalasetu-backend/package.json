@@ -13,7 +13,8 @@
     "cleanup:dry": "node scripts/cleanupProfiles.js --dry-run",
     "cleanup": "node scripts/cleanupProfiles.js",
     "wipe:all": "node scripts/wipeAllAccounts.js",
-    "seed:core": "node scripts/seedCoreData.js"
+    "seed:core": "node scripts/seedCoreData.js",
+    "check:artisans": "node scripts/checkArtisans.js"
   },
   "keywords": [],
   "author": "",
