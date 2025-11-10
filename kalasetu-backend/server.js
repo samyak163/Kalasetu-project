@@ -62,6 +62,9 @@ connectDB();
 
 const app = express();
 
+// Behind Render/Proxies: trust first proxy to get correct client IPs
+app.set('trust proxy', 1);
+
 // --- Initialize Sentry (before any routes) ---
 initSentry(app);
 

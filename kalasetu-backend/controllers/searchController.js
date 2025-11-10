@@ -51,15 +51,15 @@ export const searchArtisans = asyncHandler(async (req, res) => {
     const result = await index.search(qParam || legacyQuery || '', searchParams);
 
     // Track search with PostHog
-    trackEvent({
-      distinctId: req.user?.id || req.user?._id || 'anonymous',
-      event: 'artisan_search',
-      properties: {
+    trackEvent(
+      (req.user?.id || req.user?._id || 'anonymous').toString(),
+      'artisan_search',
+      {
         query: qParam || legacyQuery || '',
         results_count: result.nbHits,
         has_location: !!aroundLatLng
       }
-    });
+    );
 
     res.json({
       success: true,

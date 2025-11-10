@@ -158,17 +158,17 @@ const getNearbyArtisans = async (req, res) => {
             const results = await Promise.race([queryPromise, timeoutPromise]);
 
             // Track with PostHog
-            trackEvent({
-                distinctId: req.user?.id || req.user?._id || 'anonymous',
-                event: 'nearby_artisans_searched',
-                properties: {
+            trackEvent(
+                (req.user?.id || req.user?._id || 'anonymous').toString(),
+                'nearby_artisans_searched',
+                {
                     latitude,
                     longitude,
                     radius: radiusInKm,
                     results_count: results.length,
                     has_skills_filter: !!skills
                 }
-            });
+            );
 
             return res.status(200).json({
                 success: true,

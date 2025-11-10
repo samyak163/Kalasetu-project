@@ -123,14 +123,14 @@ export const register = async (req, res, next) => {
     delete artisanPublic.resetPasswordExpire;
 
         // Track with PostHog if available
-        trackEvent({
-            distinctId: artisan._id.toString(),
-            event: 'artisan_registered',
-            properties: {
+        trackEvent(
+            artisan._id.toString(),
+            'artisan_registered',
+            {
                 email: artisan.email,
                 hasPhone: !!artisan.phoneNumber
             }
-        });
+        );
 
         try {
             await createNotifications(artisan._id, 'artisan', [
