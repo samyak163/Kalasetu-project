@@ -160,7 +160,8 @@ export const CHAT_CONFIG = {
 
 // Analytics Configuration (Mixpanel/PostHog/Amplitude)
 export const ANALYTICS_CONFIG = {
-  enabled: true,
+  // Enable only when explicitly opted in
+  enabled: process.env.POSTHOG_ENABLED === 'true',
   provider: 'posthog',
   posthog: {
     apiKey: process.env.POSTHOG_API_KEY,

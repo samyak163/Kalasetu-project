@@ -52,7 +52,6 @@ const userSchema = new mongoose.Schema({
 
 // Helpful indexes (email already has unique: true in schema definition)
 userSchema.index({ createdAt: -1 });
-userSchema.index({ phoneNumber: 1 }, { unique: true, sparse: true });
 
 userSchema.pre('validate', function (next) {
     if (!this.email && !this.phoneNumber) {
