@@ -8,7 +8,6 @@ import nodemailer from 'nodemailer'; // Simulate sending for now
 import { sendPasswordResetEmail } from '../utils/email.js';
 import Review from '../models/reviewModel.js';
 import { createNotifications } from '../utils/notificationService.js';
-import { seedDemoDataForUser } from '../utils/demoSeed.js';
 
 // --- Validation Schemas (using Zod) ---
 const registerSchema = z.object({
@@ -142,10 +141,6 @@ export const registerUser = asyncHandler(async (req, res, next) => {
 
     res.status(201).json(responsePayload);
 
-    // Seed demo experience asynchronously (non-blocking)
-    seedDemoDataForUser(user).catch((err) => {
-      console.error('Failed to seed demo data for user:', err);
-    });
   } else {
     res.status(400);
     throw new Error('Invalid user data');
