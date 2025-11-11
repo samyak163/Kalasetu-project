@@ -142,7 +142,7 @@ export default function ArtisanMap({ artisans, onMarkerClick }) {
               </p>
             )}
             <a
-              href={`/artisans/${selectedArtisan.publicId}`}
+              href={`/${selectedArtisan.publicId}`}
               className="inline-block px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
             >
               View Profile

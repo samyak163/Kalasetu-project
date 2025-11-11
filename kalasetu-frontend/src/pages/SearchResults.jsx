@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useContext } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../lib/axios.js';
 import SEO from '../components/SEO.jsx';
 import { optimizeImage } from '../utils/cloudinary.js';
@@ -201,7 +201,11 @@ const ResultsView = ({ results, onBook }) => {
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {results.artisans.map((artisan) => (
-        <ArtisanCard key={artisan.publicId || artisan._id} artisan={artisan} />
+        <ArtisanCard 
+          key={artisan.publicId || artisan._id} 
+          artisan={artisan}
+          onBook={(payload) => onBook(payload)}
+        />
       ))}
     </div>
   );
@@ -248,34 +252,91 @@ const ServiceCard = ({ service, onBook }) => {
   );
 };
 
-const ArtisanCard = ({ artisan }) => (
-  <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-    <div className="flex flex-col md:flex-row">
-      <div className="md:w-48 bg-gray-100">
-        <img
-          src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 288, height: 288 })}
-          alt={artisan.fullName}
-          className="w-full h-full object-cover"
-          onError={(e) => { e.target.src = '/default-avatar.png'; }}
-        />
-      </div>
-      <div className="flex-1 p-6 flex flex-col gap-3">
-        <div>
-          <h3 className="text-xl font-semibold text-gray-900">{artisan.fullName}</h3>
-          <p className="text-sm text-gray-500">{artisan.craft || artisan.businessName}</p>
+const ArtisanCard = ({ artisan, onBook, onChat }) => {
+  const { userType } = useAuth();
+  const { showToast } = useContext(ToastContext);
+  const navigate = useNavigate();
+
+  const handleViewProfile = () => {
+    if (artisan.publicId) {
+      navigate(`/${artisan.publicId}`);
+    } else {
+      showToast('Profile not available', 'error');
+    }
+  };
+
+  const handleChat = async () => {
+    if (userType !== 'user') {
+      showToast('Please log in as a customer to chat with artisans', 'error');
+      return;
+    }
+    if (onChat) {
+      onChat(artisan);
+    } else {
+      // Navigate to messages page with artisan ID
+      navigate(`/messages?artisan=${artisan._id || artisan.publicId}`);
+    }
+  };
+
+  const handleBook = () => {
+    if (userType !== 'user') {
+      showToast('Please log in as a customer to book services', 'error');
+      return;
+    }
+    if (onBook) {
+      onBook({ artisan });
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow">
+      <div className="flex flex-col md:flex-row">
+        <div className="md:w-48 bg-gray-100 flex-shrink-0">
+          <img
+            src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 288, height: 288 })}
+            alt={artisan.fullName}
+            className="w-full h-full object-cover"
+            onError={(e) => { e.target.src = '/default-avatar.png'; }}
+          />
         </div>
-        <p className="text-sm text-gray-600 line-clamp-3">
-          {artisan.bio || 'Experienced artisan delivering quality craftsmanship.'}
-        </p>
-        <div className="flex flex-wrap gap-2 text-sm text-gray-500">
-          {artisan.city && <span>📍 {artisan.city}</span>}
-          {artisan.averageRating && <span>⭐ {Number(artisan.averageRating).toFixed(1)}</span>}
-          {artisan.verified && <span className="text-green-600">✔ Verified</span>}
+        <div className="flex-1 p-6 flex flex-col gap-4">
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-1">{artisan.fullName}</h3>
+            <p className="text-sm text-gray-500 mb-2">{artisan.craft || artisan.businessName}</p>
+            <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+              {artisan.bio || 'Experienced artisan delivering quality craftsmanship.'}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm text-gray-500 mb-3">
+            {artisan.location?.city && <span className="flex items-center gap-1">📍 {artisan.location.city}</span>}
+            {artisan.averageRating && <span className="flex items-center gap-1">⭐ {Number(artisan.averageRating).toFixed(1)}</span>}
+            {artisan.isVerified && <span className="text-green-600 flex items-center gap-1">✔ Verified</span>}
+          </div>
+          <div className="flex flex-wrap gap-2 mt-auto">
+            <button
+              onClick={handleViewProfile}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+            >
+              View Profile
+            </button>
+            <button
+              onClick={handleChat}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              Chat
+            </button>
+            <button
+              onClick={handleBook}
+              className="px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors text-sm font-medium"
+            >
+              Book
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const EmptyState = ({ message }) => (
   <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">

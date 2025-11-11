@@ -61,4 +61,17 @@ export const deleteService = asyncHandler(async (req, res) => {
   res.json({ success: true, data: { id } });
 });
 
+export const getServicesByArtisanPublicId = asyncHandler(async (req, res) => {
+  const { publicId } = req.params;
+  const Artisan = (await import('../models/artisanModel.js')).default;
+  const artisan = await Artisan.findOne({ publicId }).select('_id');
+  if (!artisan) {
+    return res.status(404).json({ success: false, message: 'Artisan not found' });
+  }
+  const services = await ArtisanService.find({ artisan: artisan._id, isActive: true })
+    .sort({ createdAt: -1 })
+    .lean();
+  res.json({ success: true, data: services });
+});
+
 

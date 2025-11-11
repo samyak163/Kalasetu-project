@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getCurrentLocation } from '../../lib/googleMaps';
 import ArtisanMap from './ArtisanMap';
 import api from '../../lib/axios.js';
 
 export default function NearbyArtisans() {
+  const navigate = useNavigate();
   const [artisans, setArtisans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,17 +19,26 @@ export default function NearbyArtisans() {
     setError(null);
 
     try {
-      const location = await getCurrentLocation();
+      // Try to get user's location, fallback to Kothrud, Pune if unavailable
+      let location;
+      try {
+        location = await getCurrentLocation();
+      } catch (locError) {
+        console.warn('Could not get user location, using Kothrud, Pune as default');
+        location = { lat: 18.5083, lng: 73.8070 }; // Kothrud, Pune
+      }
+      
       const response = await api.get('/api/artisans/nearby', {
         params: {
           lat: location.lat,
           lng: location.lng,
           radiusKm: 50,
-          limit: 5,
+          limit: 20, // Increased limit to show more artisans
         },
       });
       const apiArtisans = Array.isArray(response.data?.artisans) ? response.data.artisans : [];
-      setArtisans(apiArtisans.slice(0, 5));
+      // Show up to 10 artisans on homepage
+      setArtisans(apiArtisans.slice(0, 10));
       if (apiArtisans.length === 0) {
         setError('No artisans found nearby at the moment.');
       }
@@ -115,12 +126,16 @@ export default function NearbyArtisans() {
                     {artisan.location.city || 'Nearby'}
                   </p>
                 )}
-                <a
-                  href={artisan.publicId ? `/artisan/${artisan.publicId}` : '#'}
-                  className="mt-3 inline-block text-sm text-blue-600 hover:text-blue-700 font-medium"
+                <button
+                  onClick={() => {
+                    if (artisan.publicId) {
+                      navigate(`/${artisan.publicId}`);
+                    }
+                  }}
+                  className="mt-3 inline-block text-sm text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
                 >
                   View Profile →
-                </a>
+                </button>
               </div>
             </div>
           </div>

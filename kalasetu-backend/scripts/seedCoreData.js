@@ -155,6 +155,14 @@ async function seedCategories() {
 function generateArtisanProfile(serviceName, categoryName, idx) {
   const fullName = `${serviceName} Specialist ${idx + 1}`;
   const imageSet = CATEGORY_IMAGES[categoryName] || CATEGORY_IMAGES.Handicrafts;
+  
+  // Kothrud, Pune coordinates: approximately 18.5083° N, 73.8070° E
+  // Spread artisans around Kothrud area with small variations
+  const baseLat = 18.5083;
+  const baseLng = 73.8070;
+  const latVariation = (idx % 5) * 0.01 - 0.02; // -0.02 to 0.02
+  const lngVariation = (Math.floor(idx / 5) % 5) * 0.01 - 0.02; // -0.02 to 0.02
+  
   return {
     fullName,
     email: `${serviceName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${idx + 1}@sample.kalasetu.com`,
@@ -163,10 +171,10 @@ function generateArtisanProfile(serviceName, categoryName, idx) {
     craft: categoryName,
     businessName: `${serviceName} Services`,
     tagline: `Expert ${serviceName}`,
-    bio: `Experienced ${serviceName} offering professional services to customers across Pune. Quality and customer satisfaction guaranteed.`,
+    bio: `Experienced ${serviceName} offering professional services to customers across Pune, especially in Kothrud and nearby areas. Quality and customer satisfaction guaranteed.`,
     yearsOfExperience: '5+ years',
     teamSize: 'Solo',
-    languagesSpoken: ['English', 'Hindi'],
+    languagesSpoken: ['English', 'Hindi', 'Marathi'],
     emailVerified: true,
     isVerified: true,
     isActive: true,
@@ -176,8 +184,8 @@ function generateArtisanProfile(serviceName, categoryName, idx) {
     businessPhone: `+9198${(10000000 + idx).toString().slice(0, 8)}`,
     location: {
       type: 'Point',
-      coordinates: [73.82 + (idx % 5) * 0.01, 18.51 + (idx % 5) * 0.01],
-      address: 'Pune, Maharashtra',
+      coordinates: [baseLng + lngVariation, baseLat + latVariation],
+      address: 'Kothrud, Pune, Maharashtra',
       city: 'Pune',
       state: 'Maharashtra',
       country: 'India',
