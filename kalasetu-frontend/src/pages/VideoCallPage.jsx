@@ -52,10 +52,17 @@ const VideoCallPage = () => {
 
   const loadArtisans = async () => {
     try {
-      const { data } = await axios.get('/api/artisans?limit=50&verified=true');
-      setArtisans(Array.isArray(data) ? data : data.artisans || []);
+      const { data } = await axios.get('/api/artisans', {
+        params: { limit: 100 }
+      });
+      // Handle both array response and object with artisans property
+      const artisansList = Array.isArray(data) ? data : (data.artisans || []);
+      // Filter for active artisans only
+      const activeArtisans = artisansList.filter(a => a.isActive !== false);
+      setArtisans(activeArtisans);
     } catch (err) {
       console.error('Failed to load artisans:', err);
+      setArtisans([]);
     }
   };
 

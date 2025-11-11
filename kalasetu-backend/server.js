@@ -113,10 +113,10 @@ app.use(express.json());
 // Cookie parsing (for HTTP-only JWTs)
 app.use(cookieParser());
 
-// Rate limiting
+// Rate limiting - Increased limits
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 300,
+    max: 1000, // Increased from 300 to 1000
     standardHeaders: true,
     legacyHeaders: false,
 });

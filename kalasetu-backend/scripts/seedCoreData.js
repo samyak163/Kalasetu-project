@@ -72,43 +72,48 @@ const EXTRA_SERVICES = ['Event Setup', 'Photography', 'Home Organizer', 'Gardeni
 
 const CATEGORY_IMAGES = {
   Handicrafts: {
-    profile: 'https://images.unsplash.com/photo-1503389152951-9f343605f61e?q=80&w=600&auto=format&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1600&auto=format&fit=crop',
+    profile: 'https://placehold.co/400x400/A55233/FFFFFF?text=Handicrafts',
+    cover: 'https://placehold.co/1200x400/A55233/FFFFFF?text=Handicrafts+Cover',
     gallery: [
-      'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1514996937319-344454492b37?q=80&w=800&auto=format&fit=crop',
+      'https://placehold.co/800x600/A55233/FFFFFF?text=Handicraft+1',
+      'https://placehold.co/800x600/A55233/FFFFFF?text=Handicraft+2',
+      'https://placehold.co/800x600/A55233/FFFFFF?text=Handicraft+3',
     ],
   },
   'Home Services': {
-    profile: 'https://images.unsplash.com/photo-1512412046876-f3851adb218e?q=80&w=600&auto=format&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1487014679447-9f8336841d58?q=80&w=1600&auto=format&fit=crop',
+    profile: 'https://placehold.co/400x400/2563EB/FFFFFF?text=Home+Services',
+    cover: 'https://placehold.co/1200x400/2563EB/FFFFFF?text=Home+Services+Cover',
     gallery: [
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=800&auto=format&fit=crop',
+      'https://placehold.co/800x600/2563EB/FFFFFF?text=Home+Service+1',
+      'https://placehold.co/800x600/2563EB/FFFFFF?text=Home+Service+2',
+      'https://placehold.co/800x600/2563EB/FFFFFF?text=Home+Service+3',
     ],
   },
   'Food & Catering': {
-    profile: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=600&auto=format&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?q=80&w=1600&auto=format&fit=crop',
+    profile: 'https://placehold.co/400x400/DC2626/FFFFFF?text=Food+Catering',
+    cover: 'https://placehold.co/1200x400/DC2626/FFFFFF?text=Food+Catering+Cover',
     gallery: [
-      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1523475472560-d2df97ec485c?q=80&w=800&auto=format&fit=crop',
+      'https://placehold.co/800x600/DC2626/FFFFFF?text=Food+1',
+      'https://placehold.co/800x600/DC2626/FFFFFF?text=Food+2',
+      'https://placehold.co/800x600/DC2626/FFFFFF?text=Food+3',
     ],
   },
   'Clothing & Tailoring': {
-    profile: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=600&auto=format&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?q=80&w=1600&auto=format&fit=crop',
+    profile: 'https://placehold.co/400x400/7C3AED/FFFFFF?text=Clothing',
+    cover: 'https://placehold.co/1200x400/7C3AED/FFFFFF?text=Clothing+Cover',
     gallery: [
-      'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=800&auto=format&fit=crop',
+      'https://placehold.co/800x600/7C3AED/FFFFFF?text=Clothing+1',
+      'https://placehold.co/800x600/7C3AED/FFFFFF?text=Clothing+2',
+      'https://placehold.co/800x600/7C3AED/FFFFFF?text=Clothing+3',
     ],
   },
   'Wellness & Beauty': {
-    profile: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop',
-    cover: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=1600&auto=format&fit=crop',
+    profile: 'https://placehold.co/400x400/EC4899/FFFFFF?text=Wellness',
+    cover: 'https://placehold.co/1200x400/EC4899/FFFFFF?text=Wellness+Cover',
     gallery: [
-      'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=800&auto=format&fit=crop',
+      'https://placehold.co/800x600/EC4899/FFFFFF?text=Wellness+1',
+      'https://placehold.co/800x600/EC4899/FFFFFF?text=Wellness+2',
+      'https://placehold.co/800x600/EC4899/FFFFFF?text=Wellness+3',
     ],
   },
 };
@@ -156,12 +161,13 @@ function generateArtisanProfile(serviceName, categoryName, idx) {
   const fullName = `${serviceName} Specialist ${idx + 1}`;
   const imageSet = CATEGORY_IMAGES[categoryName] || CATEGORY_IMAGES.Handicrafts;
   
-  // Kothrud, Pune coordinates: approximately 18.5083° N, 73.8070° E
-  // Spread artisans around Kothrud area with small variations
-  const baseLat = 18.5083;
-  const baseLng = 73.8070;
-  const latVariation = (idx % 5) * 0.01 - 0.02; // -0.02 to 0.02
-  const lngVariation = (Math.floor(idx / 5) % 5) * 0.01 - 0.02; // -0.02 to 0.02
+  // MITWPU, Kothrud, Pune coordinates: 18.518408915633827, 73.81513915383768
+  // Spread artisans around MITWPU area with small variations (within 2km radius)
+  const baseLat = 18.518408915633827;
+  const baseLng = 73.81513915383768;
+  // Create variations within ~2km radius (0.018 degrees ≈ 2km)
+  const latVariation = ((idx % 5) * 0.003) - 0.006; // -0.006 to 0.006
+  const lngVariation = ((Math.floor(idx / 5) % 5) * 0.003) - 0.006; // -0.006 to 0.006
   
   return {
     fullName,
@@ -171,7 +177,7 @@ function generateArtisanProfile(serviceName, categoryName, idx) {
     craft: categoryName,
     businessName: `${serviceName} Services`,
     tagline: `Expert ${serviceName}`,
-    bio: `Experienced ${serviceName} offering professional services to customers across Pune, especially in Kothrud and nearby areas. Quality and customer satisfaction guaranteed.`,
+    bio: `Experienced ${serviceName} offering professional services to customers across Pune, especially near MITWPU in Kothrud and nearby areas. Quality and customer satisfaction guaranteed.`,
     yearsOfExperience: '5+ years',
     teamSize: 'Solo',
     languagesSpoken: ['English', 'Hindi', 'Marathi'],
@@ -185,7 +191,7 @@ function generateArtisanProfile(serviceName, categoryName, idx) {
     location: {
       type: 'Point',
       coordinates: [baseLng + lngVariation, baseLat + latVariation],
-      address: 'Kothrud, Pune, Maharashtra',
+      address: 'Near MITWPU, Kothrud, Pune, Maharashtra',
       city: 'Pune',
       state: 'Maharashtra',
       country: 'India',

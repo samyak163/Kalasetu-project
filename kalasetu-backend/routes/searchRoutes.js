@@ -6,7 +6,7 @@ const router = express.Router();
 
 const searchLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 120, // allow up to 120 search requests per minute per IP
+  max: 500, // Increased from 120 to 500 search requests per minute per IP
   standardHeaders: true,
   legacyHeaders: false,
 });

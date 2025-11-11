@@ -19,15 +19,15 @@ export default function NearbyArtisans() {
     setError(null);
 
     try {
-      // Always use Kothrud, Pune as default location to show sample artisans
-      const location = { lat: 18.5083, lng: 73.8070 }; // Kothrud, Pune
+      // Always use MITWPU, Kothrud, Pune as default location to show sample artisans
+      const location = { lat: 18.518408915633827, lng: 73.81513915383768 }; // MITWPU, Kothrud, Pune
       
       const response = await api.get('/api/artisans/nearby', {
         params: {
           lat: location.lat,
           lng: location.lng,
-          radiusKm: 50,
-          limit: 20,
+          radiusKm: 100, // Increased radius to 100km to show more artisans
+          limit: 50, // Increased limit
         },
       });
       
@@ -37,7 +37,7 @@ export default function NearbyArtisans() {
       if (apiArtisans.length === 0) {
         try {
           const allResponse = await api.get('/api/artisans', {
-            params: { limit: 10 }
+            params: { limit: 20 }
           });
           const allArtisans = Array.isArray(allResponse.data) ? allResponse.data : [];
           setArtisans(allArtisans.slice(0, 10));
@@ -54,7 +54,7 @@ export default function NearbyArtisans() {
       // Don't show error, just try to get all artisans
       try {
         const allResponse = await api.get('/api/artisans', {
-          params: { limit: 10 }
+          params: { limit: 20 }
         });
         const allArtisans = Array.isArray(allResponse.data) ? allResponse.data : [];
         setArtisans(allArtisans.slice(0, 10));

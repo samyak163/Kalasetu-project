@@ -510,7 +510,7 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!startTime) {
-      showToast?.('Please pick a time for your booking.', 'error');
+      showToast?.('Please pick a start time for your booking.', 'error');
       return;
     }
     if (userType !== 'user') {
@@ -520,12 +520,11 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
     setSubmitting(true);
     try {
       const start = new Date(startTime);
-      const end = new Date(start.getTime() + (service?.durationMinutes || 60) * 60000);
+      // End time will be calculated by backend based on service duration
       await api.post('/api/bookings', {
         artisan: artisan._id || artisan.id,
         serviceId: service?.serviceId || service?._id,
         start,
-        end,
         notes,
         price: service?.price || 0,
       });
@@ -552,7 +551,9 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
         </header>
         <form onSubmit={handleSubmit} className="px-6 py-6 space-y-4">
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">Preferred start time</label>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Preferred start time {service && `(Duration: ${service.durationMinutes || 60} minutes)`}
+            </label>
             <input
               type="datetime-local"
               value={startTime}
@@ -560,6 +561,11 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
               className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#A55233] focus:border-[#A55233]"
               required
             />
+            {service && (
+              <p className="text-xs text-gray-500 mt-1">
+                End time will be calculated automatically based on service duration
+              </p>
+            )}
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-1">Notes for the artisan (optional)</label>

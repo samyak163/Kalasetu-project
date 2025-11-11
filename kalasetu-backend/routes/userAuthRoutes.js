@@ -24,7 +24,7 @@ const router = express.Router();
 // Stricter rate limiter for sensitive auth endpoints
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 60,
+  max: 200, // Increased from 60 to 200
   standardHeaders: true,
   legacyHeaders: false,
 });

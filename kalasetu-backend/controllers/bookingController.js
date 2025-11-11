@@ -10,11 +10,13 @@ export const createBooking = asyncHandler(async (req, res) => {
   const userId = req.user?._id || req.user?.id;
   const { artisan, serviceId, start, end, notes, price } = req.body || {};
   if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
-  if (!artisan || !start || !end) return res.status(400).json({ success: false, message: 'artisan, start and end are required' });
+  if (!artisan || !start) return res.status(400).json({ success: false, message: 'artisan and start time are required' });
 
   let service = null;
   let serviceName = '';
   let categoryName = '';
+  let durationMinutes = 60; // Default duration
+  
   if (serviceId) {
     service = await ArtisanService.findById(serviceId).lean();
     if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
@@ -23,9 +25,24 @@ export const createBooking = asyncHandler(async (req, res) => {
     }
     serviceName = service.name || '';
     categoryName = service.categoryName || '';
+    durationMinutes = service.durationMinutes || 60;
   }
 
-  const booking = await Booking.create({ artisan, user: userId, service: service?._id, serviceName, categoryName, start, end, notes: notes || '', price: price || 0 });
+  // Calculate end time from start time + duration (if end not provided)
+  const startTime = new Date(start);
+  const endTime = end ? new Date(end) : new Date(startTime.getTime() + durationMinutes * 60000);
+
+  const booking = await Booking.create({ 
+    artisan, 
+    user: userId, 
+    service: service?._id, 
+    serviceName, 
+    categoryName, 
+    start: startTime, 
+    end: endTime, 
+    notes: notes || '', 
+    price: price || service?.price || 0 
+  });
   res.status(201).json({ success: true, data: booking });
 });
 

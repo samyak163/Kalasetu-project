@@ -9,10 +9,10 @@ import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 
-// Rate limit OTP requests (5 per 15 minutes per IP)
+// Rate limit OTP requests - Increased limit
 const otpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 20, // Increased from 5 to 20 per 15 minutes per IP
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many OTP requests. Please try again later.',

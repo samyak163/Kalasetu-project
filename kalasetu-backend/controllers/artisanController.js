@@ -113,9 +113,9 @@ const getNearbyArtisans = async (req, res) => {
         }
 
         // Use radius or radiusKm (radius is in km)
-        const radiusInKm = parseFloat(radius) || parseFloat(radiusKm) || 50;
+        const radiusInKm = parseFloat(radius) || parseFloat(radiusKm) || 100;
         const radiusInMeters = radiusInKm * 1000;
-        const maxResults = Math.min(100, Math.max(1, parseInt(limit) || 20));
+        const maxResults = Math.min(200, Math.max(1, parseInt(limit) || 50)); // Increased max from 100 to 200, default from 20 to 50
 
         // Set timeout for the query
         const queryTimeout = 10000; // 10 seconds
