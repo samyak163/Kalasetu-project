@@ -19,33 +19,49 @@ export default function NearbyArtisans() {
     setError(null);
 
     try {
-      // Try to get user's location, fallback to Kothrud, Pune if unavailable
-      let location;
-      try {
-        location = await getCurrentLocation();
-      } catch (locError) {
-        console.warn('Could not get user location, using Kothrud, Pune as default');
-        location = { lat: 18.5083, lng: 73.8070 }; // Kothrud, Pune
-      }
+      // Always use Kothrud, Pune as default location to show sample artisans
+      const location = { lat: 18.5083, lng: 73.8070 }; // Kothrud, Pune
       
       const response = await api.get('/api/artisans/nearby', {
         params: {
           lat: location.lat,
           lng: location.lng,
           radiusKm: 50,
-          limit: 20, // Increased limit to show more artisans
+          limit: 20,
         },
       });
+      
       const apiArtisans = Array.isArray(response.data?.artisans) ? response.data.artisans : [];
-      // Show up to 10 artisans on homepage
-      setArtisans(apiArtisans.slice(0, 10));
+      
+      // If no artisans found nearby, try to get all artisans as fallback
       if (apiArtisans.length === 0) {
-        setError('No artisans found nearby at the moment.');
+        try {
+          const allResponse = await api.get('/api/artisans', {
+            params: { limit: 10 }
+          });
+          const allArtisans = Array.isArray(allResponse.data) ? allResponse.data : [];
+          setArtisans(allArtisans.slice(0, 10));
+        } catch (fallbackErr) {
+          console.warn('Fallback fetch failed:', fallbackErr);
+          setArtisans([]);
+        }
+      } else {
+        // Show up to 10 artisans on homepage
+        setArtisans(apiArtisans.slice(0, 10));
       }
     } catch (err) {
       console.error('Failed to load nearby artisans:', err);
-      setError(err.response?.data?.message || 'Failed to load nearby artisans.');
-      setArtisans([]);
+      // Don't show error, just try to get all artisans
+      try {
+        const allResponse = await api.get('/api/artisans', {
+          params: { limit: 10 }
+        });
+        const allArtisans = Array.isArray(allResponse.data) ? allResponse.data : [];
+        setArtisans(allArtisans.slice(0, 10));
+      } catch (fallbackErr) {
+        console.error('All fallbacks failed:', fallbackErr);
+        setArtisans([]);
+      }
     } finally {
       setLoading(false);
     }

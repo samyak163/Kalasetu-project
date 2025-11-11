@@ -5,6 +5,9 @@ import SEO from '../components/SEO.jsx';
 import { optimizeImage } from '../utils/cloudinary.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ToastContext } from '../context/ToastContext.jsx';
+import AdvancedFilters from '../components/search/AdvancedFilters.jsx';
+import axios from 'axios';
+import { API_CONFIG } from '../config/env.config.js';
 
 const DEFAULT_STATE = {
   mode: 'artisan',
@@ -14,7 +17,8 @@ const DEFAULT_STATE = {
 };
 
 const SearchResults = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { userType } = useAuth();
   const { showToast } = useContext(ToastContext);
 
@@ -26,6 +30,30 @@ const SearchResults = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bookingTarget, setBookingTarget] = useState(null);
+  const [filters, setFilters] = useState({
+    q: query,
+    craft: '',
+    city: '',
+    state: '',
+    minRating: 0,
+    aroundRadius: '',
+  });
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(categoryParam || '');
+  const [minRatingFilter, setMinRatingFilter] = useState(0);
+
+  // Fetch categories for filter
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get(`${API_CONFIG.BASE_URL}/api/categories`);
+        setCategories(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -37,6 +65,10 @@ const SearchResults = () => {
         if (query) params.set('q', query);
         if (categoryParam) params.set('category', categoryParam);
         if (serviceParam) params.set('service', serviceParam);
+        if (filters.craft) params.set('craft', filters.craft);
+        if (filters.city) params.set('city', filters.city);
+        if (filters.state) params.set('state', filters.state);
+        if (filters.minRating > 0) params.set('minRating', filters.minRating);
 
         const response = await api.get(`/api/search?${params.toString()}`, { signal: controller.signal });
         if (controller.signal.aborted) return;
@@ -64,7 +96,7 @@ const SearchResults = () => {
 
     fetchResults();
     return () => controller.abort();
-  }, [query, categoryParam, serviceParam]);
+  }, [query, categoryParam, serviceParam, filters]);
 
   const heading = useMemo(() => {
     if (results.mode === 'category' && results.category) {
@@ -91,6 +123,46 @@ const SearchResults = () => {
     return 0;
   }, [results]);
 
+  const handleCategoryFilter = (categorySlug) => {
+    setSelectedCategory(categorySlug);
+    const newParams = new URLSearchParams(searchParams);
+    if (categorySlug) {
+      newParams.set('category', categorySlug);
+    } else {
+      newParams.delete('category');
+    }
+    setSearchParams(newParams);
+  };
+
+  const handleRatingFilter = (rating) => {
+    setMinRatingFilter(rating);
+    setFilters({ ...filters, minRating: rating });
+  };
+
+  const handleViewProfile = (artisan) => {
+    if (artisan.publicId) {
+      navigate(`/${artisan.publicId}`);
+    } else {
+      showToast('Profile not available', 'error');
+    }
+  };
+
+  const handleChat = (artisan) => {
+    if (userType !== 'user') {
+      showToast('Please log in as a customer to chat with artisans', 'error');
+      return;
+    }
+    navigate(`/messages?artisan=${artisan._id || artisan.publicId}`);
+  };
+
+  const handleBook = (artisan, service = null) => {
+    if (userType !== 'user') {
+      showToast('Please log in as a customer to book services', 'error');
+      return;
+    }
+    setBookingTarget({ artisan, service });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <SEO
@@ -111,14 +183,67 @@ const SearchResults = () => {
           )}
         </header>
 
-        {loading ? (
-          <LoadingState mode={results.mode} />
-        ) : (
-          <ResultsView
-            results={results}
-            onBook={(payload) => setBookingTarget(payload)}
-          />
-        )}
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Left Sidebar - Filters */}
+          <aside className="w-full md:w-64 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-sm p-4 space-y-4 sticky top-4">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Filters</h2>
+              
+              {/* Search by Category */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">Search by Category</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => handleCategoryFilter(e.target.value)}
+                  className="w-full border rounded px-3 py-2 text-sm"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id || cat.slug} value={cat.slug || cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Search by Rating */}
+              <div>
+                <label className="block text-sm font-semibold mb-2">Search by Rating</label>
+                <select
+                  value={minRatingFilter}
+                  onChange={(e) => handleRatingFilter(Number(e.target.value))}
+                  className="w-full border rounded px-3 py-2 text-sm"
+                >
+                  <option value={0}>All Ratings</option>
+                  <option value={4.5}>4.5+ Stars</option>
+                  <option value={4}>4+ Stars</option>
+                  <option value={3}>3+ Stars</option>
+                  <option value={2}>2+ Stars</option>
+                  <option value={1}>1+ Star</option>
+                </select>
+              </div>
+
+              {/* Advanced Filters */}
+              <div className="pt-4 border-t">
+                <AdvancedFilters value={filters} onChange={setFilters} />
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <main className="flex-1">
+            {loading ? (
+              <LoadingState mode={results.mode} />
+            ) : (
+              <ResultsView
+                results={results}
+                onBook={handleBook}
+                onChat={handleChat}
+                onViewProfile={handleViewProfile}
+              />
+            )}
+          </main>
+        </div>
       </div>
 
       {bookingTarget && (
@@ -136,7 +261,7 @@ const SearchResults = () => {
 const LoadingState = ({ mode }) => {
   const placeholderCount = mode === 'artisan' ? 6 : 3;
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="grid gap-6 md:grid-cols-1">
       {Array.from({ length: placeholderCount }).map((_, index) => (
         <div key={`loading-${index}`} className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
           <div className="flex gap-6">
@@ -153,7 +278,7 @@ const LoadingState = ({ mode }) => {
   );
 };
 
-const ResultsView = ({ results, onBook }) => {
+const ResultsView = ({ results, onBook, onChat, onViewProfile }) => {
   if (results.mode === 'category') {
     if (results.services.length === 0) {
       return <EmptyState message="No services found for this category yet." />;
@@ -170,7 +295,7 @@ const ResultsView = ({ results, onBook }) => {
                 </p>
               </div>
             </header>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-4">
               {service.offerings?.map((offering) => (
                 <ServiceCard key={offering.serviceId} service={offering} onBook={onBook} />
               ))}
@@ -186,7 +311,7 @@ const ResultsView = ({ results, onBook }) => {
       return <EmptyState message="No artisans currently offer this service." />;
     }
     return (
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="space-y-4">
         {results.services.map((service) => (
           <ServiceCard key={service.serviceId} service={service} onBook={onBook} />
         ))}
@@ -199,14 +324,131 @@ const ResultsView = ({ results, onBook }) => {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
+    <div className="space-y-4">
       {results.artisans.map((artisan) => (
-        <ArtisanCard 
-          key={artisan.publicId || artisan._id} 
+        <ArtisanCard
+          key={artisan.publicId || artisan._id}
           artisan={artisan}
-          onBook={(payload) => onBook(payload)}
+          onBook={onBook}
+          onChat={onChat}
+          onViewProfile={onViewProfile}
         />
       ))}
+    </div>
+  );
+};
+
+const ArtisanCard = ({ artisan, onBook, onChat, onViewProfile }) => {
+  const [services, setServices] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      if (!artisan.publicId) {
+        setLoadingServices(false);
+        return;
+      }
+      try {
+        const res = await axios.get(`${API_CONFIG.BASE_URL}/api/services/artisan/${artisan.publicId}`);
+        if (res.data.success) {
+          setServices(res.data.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to load services:', err);
+      } finally {
+        setLoadingServices(false);
+      }
+    };
+    fetchServices();
+  }, [artisan.publicId]);
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="flex flex-col md:flex-row">
+        {/* Left Side - Profile Picture (Small Square) */}
+        <div className="w-full md:w-32 h-32 md:h-auto bg-gray-100 flex-shrink-0">
+          <img
+            src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 128, height: 128 })}
+            alt={artisan.fullName}
+            className="w-full h-full object-cover"
+            onError={(e) => { e.target.src = '/default-avatar.png'; }}
+          />
+        </div>
+
+        {/* Right Side - Content */}
+        <div className="flex-1 p-6">
+          {/* Name - Full Text */}
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">{artisan.fullName}</h3>
+          
+          {/* About Me Description */}
+          <div className="mb-4">
+            <p className="text-sm font-medium text-gray-700 mb-1">About Me:</p>
+            <p className="text-sm text-gray-600 line-clamp-2">
+              {artisan.bio || 'Experienced artisan delivering quality craftsmanship.'}
+            </p>
+          </div>
+
+          {/* Services Section */}
+          <div className="mb-4">
+            <p className="text-sm font-medium text-gray-700 mb-2">Services:</p>
+            {loadingServices ? (
+              <p className="text-xs text-gray-500">Loading services...</p>
+            ) : services.length > 0 ? (
+              <div className="space-y-1">
+                {services.slice(0, 3).map((service) => (
+                  <div key={service._id} className="text-xs text-gray-600">
+                    • {service.name} - ₹{service.price || 'Contact for pricing'} ({service.durationMinutes || 60} min)
+                  </div>
+                ))}
+                {services.length > 3 && (
+                  <p className="text-xs text-gray-500">+ {services.length - 3} more services</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500">No services listed yet.</p>
+            )}
+          </div>
+
+          {/* Portfolio Images - Small Rectangles */}
+          {artisan.portfolioImageUrls && artisan.portfolioImageUrls.length > 0 && (
+            <div className="mb-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Portfolio:</p>
+              <div className="flex gap-2 flex-wrap">
+                {artisan.portfolioImageUrls.slice(0, 4).map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={optimizeImage(img, { width: 80, height: 80, crop: 'fill' })}
+                    alt={`Portfolio ${idx + 1}`}
+                    className="w-20 h-20 object-cover rounded border border-gray-200"
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => onViewProfile(artisan)}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+            >
+              View Profile
+            </button>
+            <button
+              onClick={() => onChat(artisan)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              Chat
+            </button>
+            <button
+              onClick={() => onBook(artisan)}
+              className="px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors text-sm font-medium"
+            >
+              Book
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -215,12 +457,12 @@ const ServiceCard = ({ service, onBook }) => {
   const artisan = service.artisan || {};
   const serviceName = service.name || service.serviceName;
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-6 flex flex-col gap-4">
+    <div className="bg-white rounded-lg border border-gray-200 p-4">
       <div className="flex items-start gap-4">
         <img
           src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 72, height: 72 })}
           alt={artisan.fullName}
-          className="w-18 h-18 rounded-xl object-cover"
+          className="w-18 h-18 rounded-lg object-cover"
           onError={(e) => { e.target.src = '/default-avatar.png'; }}
         />
         <div className="flex-1">
@@ -228,10 +470,10 @@ const ServiceCard = ({ service, onBook }) => {
           <p className="text-sm text-gray-500">
             by <span className="font-medium text-gray-800">{artisan.fullName}</span>
           </p>
-          <p className="mt-2 text-sm text-gray-600 line-clamp-3">{service.description || artisan.bio || 'Trusted local artisan offering professional services.'}</p>
+          <p className="mt-2 text-sm text-gray-600 line-clamp-2">{service.description || artisan.bio || 'Trusted local artisan offering professional services.'}</p>
         </div>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
         <div className="text-sm text-gray-600">
           <div>
             <span className="font-medium text-gray-800">Price:</span> ₹{service.price || 0}
@@ -252,94 +494,8 @@ const ServiceCard = ({ service, onBook }) => {
   );
 };
 
-const ArtisanCard = ({ artisan, onBook, onChat }) => {
-  const { userType } = useAuth();
-  const { showToast } = useContext(ToastContext);
-  const navigate = useNavigate();
-
-  const handleViewProfile = () => {
-    if (artisan.publicId) {
-      navigate(`/${artisan.publicId}`);
-    } else {
-      showToast('Profile not available', 'error');
-    }
-  };
-
-  const handleChat = async () => {
-    if (userType !== 'user') {
-      showToast('Please log in as a customer to chat with artisans', 'error');
-      return;
-    }
-    if (onChat) {
-      onChat(artisan);
-    } else {
-      // Navigate to messages page with artisan ID
-      navigate(`/messages?artisan=${artisan._id || artisan.publicId}`);
-    }
-  };
-
-  const handleBook = () => {
-    if (userType !== 'user') {
-      showToast('Please log in as a customer to book services', 'error');
-      return;
-    }
-    if (onBook) {
-      onBook({ artisan });
-    }
-  };
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="flex flex-col md:flex-row">
-        <div className="md:w-48 bg-gray-100 flex-shrink-0">
-          <img
-            src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 288, height: 288 })}
-            alt={artisan.fullName}
-            className="w-full h-full object-cover"
-            onError={(e) => { e.target.src = '/default-avatar.png'; }}
-          />
-        </div>
-        <div className="flex-1 p-6 flex flex-col gap-4">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-1">{artisan.fullName}</h3>
-            <p className="text-sm text-gray-500 mb-2">{artisan.craft || artisan.businessName}</p>
-            <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-              {artisan.bio || 'Experienced artisan delivering quality craftsmanship.'}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-sm text-gray-500 mb-3">
-            {artisan.location?.city && <span className="flex items-center gap-1">📍 {artisan.location.city}</span>}
-            {artisan.averageRating && <span className="flex items-center gap-1">⭐ {Number(artisan.averageRating).toFixed(1)}</span>}
-            {artisan.isVerified && <span className="text-green-600 flex items-center gap-1">✔ Verified</span>}
-          </div>
-          <div className="flex flex-wrap gap-2 mt-auto">
-            <button
-              onClick={handleViewProfile}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-            >
-              View Profile
-            </button>
-            <button
-              onClick={handleChat}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              Chat
-            </button>
-            <button
-              onClick={handleBook}
-              className="px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors text-sm font-medium"
-            >
-              Book
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const EmptyState = ({ message }) => (
-  <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
+  <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
     {message}
   </div>
 );
@@ -364,14 +520,14 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
     setSubmitting(true);
     try {
       const start = new Date(startTime);
-      const end = new Date(start.getTime() + (service.durationMinutes || 60) * 60000);
+      const end = new Date(start.getTime() + (service?.durationMinutes || 60) * 60000);
       await api.post('/api/bookings', {
         artisan: artisan._id || artisan.id,
-        serviceId: service.serviceId || service._id,
+        serviceId: service?.serviceId || service?._id,
         start,
         end,
         notes,
-        price: service.price || 0,
+        price: service?.price || 0,
       });
       showToast?.('Booking request sent to the artisan!', 'success');
       onClose();
@@ -386,36 +542,36 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+      <div className="w-full max-w-lg rounded-lg bg-white shadow-2xl">
         <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Book {service?.name}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Book {service?.name || 'Service'}</h3>
             <p className="text-sm text-gray-500">With {artisan?.fullName}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
         </header>
         <form onSubmit={handleSubmit} className="px-6 py-6 space-y-4">
           <div>
-            <label className="text-sm font-medium text-gray-700">Preferred start time</label>
+            <label className="text-sm font-medium text-gray-700 block mb-1">Preferred start time</label>
             <input
               type="datetime-local"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#A55233] focus:border-[#A55233]"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#A55233] focus:border-[#A55233]"
               required
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700">Notes for the artisan (optional)</label>
+            <label className="text-sm font-medium text-gray-700 block mb-1">Notes for the artisan (optional)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#A55233] focus:border-[#A55233]"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#A55233] focus:border-[#A55233]"
               placeholder="Share any specifics, venue details, or questions."
             />
           </div>
-          <footer className="flex items-center justify-end gap-3 pt-2 border-t border-gray-200">
+          <footer className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}

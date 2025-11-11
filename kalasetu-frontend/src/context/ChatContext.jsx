@@ -70,11 +70,17 @@ export const ChatProvider = ({ children }) => {
     error,
   };
 
-  // Don't render chat UI if not authenticated or still loading
-  if (!isAuthenticated || !client) {
+  // Always provide the context, but only wrap with Chat if client is available
+  if (!isAuthenticated) {
     return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
   }
 
+  // If still loading, provide context without Chat wrapper
+  if (isLoading || !client) {
+    return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
+  }
+
+  // If client is available, wrap with Chat
   return (
     <ChatContext.Provider value={value}>
       <Chat client={client}>{children}</Chat>

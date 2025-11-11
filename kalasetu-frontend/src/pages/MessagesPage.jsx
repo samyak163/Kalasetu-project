@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useChatContext, Channel, ChannelList, MessageList, MessageInput, Window, Thread } from 'stream-chat-react';
+import { useChat } from '../context/ChatContext';
+import { Channel, ChannelList, MessageList, MessageInput, Window, Thread } from 'stream-chat-react';
 import 'stream-chat-react/dist/css/v2/index.css';
 
 const MessagesPage = () => {
   const { user, isAuthenticated } = useAuth();
-  const { client } = useChatContext();
+  const { client, isLoading } = useChat();
   const navigate = useNavigate();
   
   const [activeChannel, setActiveChannel] = useState(null);
@@ -18,7 +19,17 @@ const MessagesPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  if (!client || !user) {
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        <div className="text-center">
+          <p className="text-lg text-gray-700 font-medium">Please log in to access messages.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading || !client) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
         <div className="text-center">

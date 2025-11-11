@@ -342,31 +342,39 @@ const ArtisanProfilePage = () => {
                     {activeTab === 'reviews' && (
                         <div className="bg-white rounded-lg shadow-xl p-6">
                             <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4">Reviews</h2>
-                            <ReviewList artisanId={artisan._id} />
+                            {artisan._id ? (
+                                <ReviewList artisanId={artisan._id} />
+                            ) : (
+                                <p className="text-gray-500">Artisan ID not available.</p>
+                            )}
                         </div>
                     )}
 
                     {activeTab === 'location' && (
                         <div className="bg-white rounded-lg shadow-xl p-6">
                             <h2 className="text-2xl font-bold text-[#1A1A1A] mb-4">Location</h2>
-                            {mapCenter ? (
+                            {artisan.location && (artisan.location.coordinates || artisan.location.city || artisan.location.address) ? (
                                 <div className="space-y-4">
                                     <div className="text-gray-700">
                                         <p className="font-semibold mb-2">Address:</p>
                                         <p>
                                             {artisan.location.address || 
-                                             `${artisan.location.city || ''}, ${artisan.location.state || ''}, ${artisan.location.country || ''}`.trim()}
+                                             `${artisan.location.city || ''}, ${artisan.location.state || ''}, ${artisan.location.country || ''}`.trim() || 'Location information available'}
                                         </p>
                                         {artisan.location.postalCode && (
                                             <p className="text-sm text-gray-500 mt-1">PIN: {artisan.location.postalCode}</p>
                                         )}
                                     </div>
-                                    <div className="h-96 rounded-lg overflow-hidden">
-                                        <ArtisanMap artisans={[artisan]} />
-                                    </div>
+                                    {artisan.location.coordinates && artisan.location.coordinates.length === 2 ? (
+                                        <div className="h-96 rounded-lg overflow-hidden">
+                                            <ArtisanMap artisans={[artisan]} />
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-gray-500">Map view not available for this location.</p>
+                                    )}
                                 </div>
                             ) : (
-                                <p className="text-gray-500 text-center py-8">Location not available.</p>
+                                <p className="text-gray-500 text-center py-8">Location information not available for this artisan.</p>
                             )}
                         </div>
                     )}
