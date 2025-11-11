@@ -56,7 +56,7 @@ const Header = () => {
     if (!auth.user) {
       return (
         <>
-          <Link to="/user/login" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">Sign In</Link>
+          <Link to="/user/login" className="text-sm font-semibold !text-black hover:text-[#A55233] transition-colors">Sign In</Link>
           <Link to="/register" className="ml-4 inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-[#A55233] hover:bg-[#8e462b] transition-colors">Sign Up</Link>
         </>
       );
@@ -74,19 +74,19 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Top">
+    <header className="!bg-white border-b border-gray-200 sticky top-0 z-50">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 !text-black" aria-label="Top">
         <div className="w-full py-4 flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center flex-1 min-w-0">
             {/* Logo */}
             <Link to="/" className="text-2xl font-bold text-[#A55233] flex-shrink-0">
-              Kala<span className="text-gray-800">Setu</span>
+              Kala<span className="!text-black">Setu</span>
             </Link>
             {/* Main Nav */}
             <div className="hidden ml-10 space-x-8 lg:block">
-              <Link to="/services" className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">Services</Link>
-              <button type="button" onClick={() => setShowHowItWorks(true)} className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">How It Works</button>
-              <button type="button" onClick={() => setShowArtisanInfo(true)} className="text-sm font-semibold text-gray-700 hover:text-[#A55233] transition-colors">For Artisans</button>
+              <Link to="/services" className="text-sm font-semibold !text-black hover:text-[#A55233] transition-colors">Services</Link>
+              <button type="button" onClick={() => setShowHowItWorks(true)} className="text-sm font-semibold !text-black hover:text-[#A55233] transition-colors">How It Works</button>
+              <button type="button" onClick={() => setShowArtisanInfo(true)} className="text-sm font-semibold !text-black hover:text-[#A55233] transition-colors">For Artisans</button>
             </div>
           </div>
 
@@ -97,13 +97,13 @@ const Header = () => {
               <div className="relative flex-shrink-0" ref={locationRef}>
                 <button
                   onClick={() => setShowHeaderLocationSearch(!showHeaderLocationSearch)}
-                  className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap text-sm"
+                  className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg !bg-white hover:!bg-gray-50 transition-colors whitespace-nowrap text-sm"
                 >
-                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 !text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  <span className="text-sm text-gray-700 truncate max-w-24">
+                  <span className="text-sm !text-black truncate max-w-24">
                     {headerLocation ? headerLocation.city || headerLocation.address : 'Location'}
                   </span>
                   <svg className={`w-4 h-4 text-gray-500 transition-transform ${showHeaderLocationSearch ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,9 +111,9 @@ const Header = () => {
                   </svg>
                 </button>
                 {showHeaderLocationSearch && (
-                  <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80">
+                  <div className="absolute top-full left-0 mt-2 z-50 !bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-gray-900 text-sm">Set Your Location</h3>
+                      <h3 className="font-semibold !text-black text-sm">Set Your Location</h3>
                       <button
                         onClick={() => setShowHeaderLocationSearch(false)}
                         className="text-gray-400 hover:text-gray-600"

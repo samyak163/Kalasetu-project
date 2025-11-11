@@ -139,7 +139,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => query.trim().length >= 2 && setShowDropdown(true)}
             placeholder="Search artisans, services, categories..."
-            className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base text-gray-900 placeholder-gray-400"
+            className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg !bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base !text-black placeholder-gray-400"
           />
           <button
             type="submit"
@@ -161,7 +161,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
 
       {/* Dropdown Results */}
       {showDropdown && (
-        <div className="absolute z-50 w-full mt-2 bg-white rounded-lg shadow-2xl border border-gray-200 max-h-96 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 !bg-white rounded-lg shadow-2xl border border-gray-200 max-h-96 overflow-y-auto">
           {loading ? (
             <div className="p-6 text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-indigo-600"></div>
@@ -174,7 +174,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
               {/* Category Suggestions */}
               {suggestions.categories.length > 0 && (
                 <div className="border-b border-gray-200">
-                  <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <div className="px-4 py-2 !bg-white text-xs font-semibold !text-black uppercase tracking-wide">
                     Categories
                   </div>
                   <div className="p-2 flex flex-wrap gap-2">
@@ -194,7 +194,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
               {/* Service Suggestions */}
               {suggestions.services.length > 0 && (
                 <div className="border-b border-gray-200">
-                  <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <div className="px-4 py-2 !bg-white text-xs font-semibold !text-black uppercase tracking-wide">
                     Services
                   </div>
                   <ul className="divide-y divide-gray-100">
@@ -202,9 +202,9 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
                       <li key={`${service.categoryName || 'service'}-${service.name}`}>
                         <button
                           onClick={() => handleServiceClick(service.name)}
-                          className="w-full px-4 py-3 text-left hover:bg-indigo-50 transition-colors"
+                          className="w-full px-4 py-3 text-left !bg-white hover:bg-indigo-50 transition-colors"
                         >
-                          <div className="font-medium text-gray-900">{service.name}</div>
+                          <div className="font-medium !text-black">{service.name}</div>
                           {service.categoryName && (
                             <div className="text-xs text-gray-500">{service.categoryName}</div>
                           )}
@@ -218,7 +218,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
               {/* Artisan Suggestions */}
               {suggestions.artisans.length > 0 && (
                 <div className="border-b border-gray-200">
-                  <div className="px-4 py-2 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <div className="px-4 py-2 !bg-white text-xs font-semibold !text-black uppercase tracking-wide">
                     Artisans
                   </div>
                   <ul className="divide-y divide-gray-100">
@@ -226,7 +226,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
                       <li key={artisan.publicId || artisan._id}>
                         <button
                           onClick={() => handleArtisanClick(artisan)}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 transition-colors text-left"
+                          className="w-full flex items-center gap-3 px-4 py-3 !bg-white hover:bg-indigo-50 transition-colors text-left"
                         >
                           <img
                             src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 48, height: 48 })}
@@ -237,7 +237,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
                             }}
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-900 truncate">{artisan.fullName}</div>
+                            <div className="font-medium !text-black truncate">{artisan.fullName}</div>
                             <div className="text-xs text-gray-500 truncate">
                               {artisan.craft || artisan.businessName || 'Artisan'}
                             </div>
