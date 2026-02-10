@@ -115,7 +115,7 @@ const AdminProfile = () => {
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
               placeholder="Enter your full name"
             />
           </div>
@@ -142,7 +142,7 @@ const AdminProfile = () => {
             <button
               type="submit"
               disabled={savingProfile}
-              className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-400"
+              className="inline-flex items-center justify-center rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
               {savingProfile ? 'Saving...' : 'Save changes'}
             </button>
@@ -173,7 +173,7 @@ const AdminProfile = () => {
               type="password"
               value={passwords.currentPassword}
               onChange={(e) => setPasswords(prev => ({ ...prev, currentPassword: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
               placeholder="Enter current password"
               required
             />
@@ -184,7 +184,7 @@ const AdminProfile = () => {
               type="password"
               value={passwords.newPassword}
               onChange={(e) => setPasswords(prev => ({ ...prev, newPassword: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
               placeholder="Enter new password"
               required
             />
@@ -195,7 +195,7 @@ const AdminProfile = () => {
               type="password"
               value={passwords.confirmPassword}
               onChange={(e) => setPasswords(prev => ({ ...prev, confirmPassword: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
               placeholder="Re-enter new password"
               required
             />

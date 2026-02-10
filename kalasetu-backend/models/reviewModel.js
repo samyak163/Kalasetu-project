@@ -17,6 +17,7 @@ const reviewSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 reviewSchema.index({ user: 1, booking: 1 }, { unique: true, partialFilterExpression: { booking: { $type: 'objectId' } } });
+reviewSchema.index({ artisan: 1, status: 1 });
 
 const Review = mongoose.model('Review', reviewSchema);
 export default Review;

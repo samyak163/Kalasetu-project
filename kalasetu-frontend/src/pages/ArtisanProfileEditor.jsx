@@ -207,7 +207,7 @@ const ArtisanProfileEditor = () => {
               <TextInput label="Business Phone" value={profile.businessPhone} onChange={(v) => setProfile({ ...profile, businessPhone: v })} />
               <TextInput label="WhatsApp Number" value={profile.whatsappNumber} onChange={(v) => setProfile({ ...profile, whatsappNumber: v })} />
             </div>
-            <TextArea label="Bio" value={profile.bio} onChange={(v) => setProfile({ ...profile, bio: v })} placeholder="Tell USERs about your experience, specialization, and why they should choose you" />
+            <TextArea label="Bio" value={profile.bio} onChange={(v) => setProfile({ ...profile, bio: v })} placeholder="Tell customers about your experience, specialization, and why they should choose you" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700" htmlFor="slug">Public URL (slug)</label>

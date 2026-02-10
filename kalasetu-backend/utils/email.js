@@ -78,11 +78,13 @@ export const sendEmail = async (options) => {
  * @returns {Promise<Object|null>} Email response
  */
 export const sendWelcomeEmail = async (to, name) => {
-  // 🚀 DEVELOPMENT: Log welcome email info
-  console.log('\n📧 ===== WELCOME EMAIL =====');
-  console.log(`👤 To: ${to} (${name})`);
-  console.log(`✅ Account created successfully!`);
-  console.log('===========================\n');
+  // Log welcome email info only in non-production
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('\n📧 ===== WELCOME EMAIL =====');
+    console.log(`👤 To: ${to} (${name})`);
+    console.log(`✅ Account created successfully!`);
+    console.log('===========================\n');
+  }
 
   const html = `
     <!DOCTYPE html>
@@ -107,12 +109,12 @@ export const sendWelcomeEmail = async (to, name) => {
         </div>
         <div class="content">
           <h2>Hello ${name}! 👋</h2>
-          <p>We're excited to have you join the KalaSetu community - where traditional artisans connect with USERs who appreciate authentic craftsmanship.</p>
+          <p>We're excited to have you join the KalaSetu community - where traditional artisans connect with customers who appreciate authentic craftsmanship.</p>
           
           <h3>What's next?</h3>
           <ul>
             <li>Complete your profile to showcase your skills</li>
-            <li>Upload your portfolio to attract USERs</li>
+            <li>Upload your portfolio to attract customers</li>
             <li>Start connecting with potential clients</li>
             <li>Explore other artisans in the community</li>
           </ul>
@@ -284,11 +286,13 @@ export const sendOTPEmail = async (to, name, otpCode, purpose = 'verification') 
 export const sendVerificationEmail = async (to, name, verificationToken) => {
   const verifyUrl = `${EMAIL_CONFIG.appUrl}/verify-email?token=${verificationToken}`;
 
-  // 🚀 DEVELOPMENT: Log verification link to console for testing
-  console.log('\n📧 ===== EMAIL VERIFICATION LINK =====');
-  console.log(`👤 To: ${to}`);
-  console.log(`🔗 Verification URL: ${verifyUrl}`);
-  console.log('=====================================\n');
+  // Log verification link only in non-production
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('\n📧 ===== EMAIL VERIFICATION LINK =====');
+    console.log(`👤 To: ${to}`);
+    console.log(`🔗 Verification URL: ${verifyUrl}`);
+    console.log('=====================================\n');
+  }
 
   const html = `
     <!DOCTYPE html>

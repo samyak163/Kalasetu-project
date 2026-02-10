@@ -43,7 +43,7 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     currency: RAZORPAY_CONFIG.currency,
     status: 'created',
     payerId,
-    payerModel: req.user.role === 'artisan' ? 'Artisan' : 'User',
+    payerModel: req.accountType === 'artisan' ? 'Artisan' : 'User',
     recipientId: recipientId || null,
     recipientModel: recipientId ? 'Artisan' : null,
     purpose,
@@ -204,6 +204,86 @@ export const getUserPayments = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Get artisan earnings summary
+ * GET /api/payments/artisan/earnings
+ */
+export const getArtisanEarnings = asyncHandler(async (req, res) => {
+  const artisanId = req.user._id;
+
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  // Use aggregation pipeline instead of loading all payments into memory
+  const [earningsAgg, transactions] = await Promise.all([
+    Payment.aggregate([
+      {
+        $match: {
+          recipientId: artisanId,
+          recipientModel: 'Artisan',
+          status: 'captured'
+        }
+      },
+      {
+        $facet: {
+          totalEarned: [
+            { $group: { _id: null, total: { $sum: '$amount' } } }
+          ],
+          thisMonthEarnings: [
+            { $match: { createdAt: { $gte: firstDayOfMonth } } },
+            { $group: { _id: null, total: { $sum: '$amount' } } }
+          ]
+        }
+      }
+    ]),
+
+    // Fetch only the 20 most recent transactions for display
+    Payment.find({
+      recipientId: artisanId,
+      recipientModel: 'Artisan',
+      status: 'captured'
+    })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .select('description purpose amount createdAt status razorpayPaymentId')
+      .lean()
+  ]);
+
+  const agg = earningsAgg[0];
+  const totalEarned = agg.totalEarned[0]?.total || 0;
+  const thisMonthEarnings = agg.thisMonthEarnings[0]?.total || 0;
+
+  // For now, assume all captured payments are available (no withdrawal system yet)
+  const availableBalance = totalEarned;
+  const pendingAmount = 0;
+  const lastWithdrawal = 0;
+
+  // Format transactions for display
+  const formattedTransactions = transactions.map(payment => ({
+    _id: payment._id,
+    type: payment.status === 'refunded' ? 'refund' : 'payment',
+    description: payment.description || payment.purpose || 'Payment received',
+    amount: payment.amount,
+    date: payment.createdAt,
+    status: payment.status,
+    paymentId: payment.razorpayPaymentId
+  }));
+
+  res.status(200).json({
+    success: true,
+    data: {
+      summary: {
+        availableBalance,
+        pendingAmount,
+        totalEarned,
+        lastWithdrawal,
+        thisMonth: thisMonthEarnings
+      },
+      transactions: formattedTransactions
+    }
+  });
+});
+
+/**
  * Request refund
  * POST /api/payments/:paymentId/refund
  */
@@ -245,10 +325,19 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
+  // Validate refund amount doesn't exceed original
+  const refundAmount = amount || payment.amount;
+  if (refundAmount > payment.amount) {
+    return res.status(400).json({
+      success: false,
+      message: 'Refund amount cannot exceed original payment amount',
+    });
+  }
+
   // Process refund
   const refund = await refundPayment(
     payment.razorpayPaymentId,
-    amount || payment.amount
+    refundAmount
   );
 
   if (!refund) {
@@ -261,7 +350,7 @@ export const requestRefund = asyncHandler(async (req, res) => {
   // Update payment
   payment.status = 'refunded';
   payment.refundId = refund.id;
-  payment.refundAmount = amount || payment.amount;
+  payment.refundAmount = refundAmount;
   payment.refundedAt = new Date();
   payment.metadata = {
     ...payment.metadata,
@@ -297,19 +386,30 @@ export const handleWebhook = asyncHandler(async (req, res) => {
     });
   }
 
+  const eventId = req.body.event_id || req.body.payload?.payment?.entity?.id;
   const event = req.body.event;
   const paymentData = req.body.payload?.payment?.entity;
 
-  console.log(`📥 Razorpay webhook received: ${event}`);
+  // Atomic idempotency check using findOneAndUpdate
+  if (eventId) {
+    const existing = await Payment.findOneAndUpdate(
+      { webhookEventId: eventId },
+      { $setOnInsert: { webhookEventId: eventId } },
+      { upsert: false }
+    );
+    if (existing) {
+      return res.json({ success: true, message: 'Already processed' });
+    }
+  }
 
   try {
     switch (event) {
       case 'payment.captured':
-        await handlePaymentCaptured(paymentData);
+        await handlePaymentCaptured(paymentData, eventId);
         break;
 
       case 'payment.failed':
-        await handlePaymentFailed(paymentData);
+        await handlePaymentFailed(paymentData, eventId);
         break;
 
       case 'refund.created':
@@ -317,12 +417,11 @@ export const handleWebhook = asyncHandler(async (req, res) => {
         break;
 
       default:
-        console.log(`Unhandled webhook event: ${event}`);
+        break;
     }
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Webhook processing error:', error);
     res.status(500).json({
       success: false,
       message: 'Webhook processing failed',
@@ -333,7 +432,7 @@ export const handleWebhook = asyncHandler(async (req, res) => {
 /**
  * Handle payment captured event
  */
-async function handlePaymentCaptured(paymentData) {
+async function handlePaymentCaptured(paymentData, eventId) {
   const payment = await Payment.findOne({
     razorpayOrderId: paymentData.order_id,
   });
@@ -341,16 +440,15 @@ async function handlePaymentCaptured(paymentData) {
   if (payment && payment.status !== 'captured') {
     payment.status = 'captured';
     payment.razorpayPaymentId = paymentData.id;
+    if (eventId) payment.webhookEventId = eventId;
     await payment.save();
-
-    console.log(`✅ Payment captured: ${payment._id}`);
   }
 }
 
 /**
  * Handle payment failed event
  */
-async function handlePaymentFailed(paymentData) {
+async function handlePaymentFailed(paymentData, eventId) {
   const payment = await Payment.findOne({
     razorpayOrderId: paymentData.order_id,
   });
@@ -361,6 +459,7 @@ async function handlePaymentFailed(paymentData) {
       ...payment.metadata,
       failureReason: paymentData.error_description,
     };
+    if (eventId) payment.webhookEventId = eventId;
     await payment.save();
 
     console.log(`❌ Payment failed: ${payment._id}`);
@@ -391,6 +490,7 @@ export default {
   verifyPayment,
   getPaymentDetails,
   getUserPayments,
+  getArtisanEarnings,
   requestRefund,
   handleWebhook,
 };

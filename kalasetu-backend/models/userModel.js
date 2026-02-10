@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         trim: true,
         match: [
-            /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+            /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/,
             'Please fill a valid email address'
         ]
     },
@@ -25,8 +25,8 @@ const userSchema = new mongoose.Schema({
         sparse: true,
         trim: true,
         match: [
-            /^\+?[0-9\-\s]{6,20}$/,
-            'Please provide a valid phone number'
+            /^\+?[0-9\-\s]{10,20}$/,
+            'Please provide a valid phone number (minimum 10 digits)'
         ]
     },
     password: { 

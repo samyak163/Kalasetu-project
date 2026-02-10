@@ -111,10 +111,14 @@ export const getProfile = asyncHandler(async (req, res) => {
   // Decrypt bank account for owner view
   const data = artisan.toObject();
   if (data.bankDetails?.accountNumber) {
-    const raw = decrypt(data.bankDetails.accountNumber);
-    data.bankDetails.accountNumberMasked = maskAccountNumber(raw);
-    // Do not expose full number by default; provide masked + a flag
-    data.bankDetails.encrypted = isEncryptionEnabled();
+    try {
+      const raw = decrypt(data.bankDetails.accountNumber);
+      data.bankDetails.accountNumberMasked = maskAccountNumber(raw);
+      data.bankDetails.encrypted = isEncryptionEnabled();
+    } catch {
+      data.bankDetails.accountNumberMasked = '****';
+      data.bankDetails.encrypted = isEncryptionEnabled();
+    }
     delete data.bankDetails.accountNumber; // prevent leaking raw/encrypted string
   }
 
@@ -258,7 +262,7 @@ export const updateSlug = asyncHandler(async (req, res) => {
   if (!user) return res.status(404).json({ message: 'Artisan not found' });
   if (user.slug) return res.status(400).json({ message: 'Slug already set and cannot be changed' });
   const exists = await Artisan.findOne({ slug });
-  if (exists) return res.status(409).json({ message: 'Slug already taken' });
+  if (exists && String(exists._id) !== String(userId)) return res.status(409).json({ message: 'Slug already taken' });
   await Artisan.findByIdAndUpdate(userId, { $set: { slug } });
   await logAudit(userId, 'profile.slug.set', { slug });
   res.json({ success: true, data: { slug } });
@@ -298,10 +302,12 @@ export const confirmEmailVerification = asyncHandler(async (req, res) => {
 });
 
 // Phone OTP scaffold (no SMS provider configured). Returns 501.
+// TODO: Integrate an SMS provider (e.g. Twilio, MSG91) to enable phone verification
 export const initiatePhoneVerification = asyncHandler(async (req, res) => {
   return res.status(501).json({ message: 'SMS provider not configured' });
 });
 
+// TODO: Implement OTP confirmation once SMS provider is integrated
 export const confirmPhoneVerification = asyncHandler(async (req, res) => {
   return res.status(501).json({ message: 'SMS provider not configured' });
 });

@@ -1,4 +1,7 @@
 ﻿import express from 'express';
+import jwt from 'jsonwebtoken';
+import User from '../models/userModel.js';
+import Artisan from '../models/artisanModel.js';
 import {
   getChatToken,
   createDMChannel,
@@ -6,27 +9,42 @@ import {
   addMembers,
   removeMembers,
 } from '../controllers/chatController.js';
-import { protect } from '../middleware/authMiddleware.js';
-import { userProtect } from '../middleware/userProtectMiddleware.js';
 
 const router = express.Router();
 
-// Apply either artisan OR USER authentication
-const authMiddleware = (req, res, next) => {
-  // Try artisan auth first
-  protect(req, res, (err) => {
-    if (!err && req.user) {
-      return next();
+// Custom auth middleware that accepts BOTH artisan AND user authentication
+// This replaces the broken middleware that was calling protect() and userProtect()
+const authMiddleware = async (req, res, next) => {
+  try {
+    // Read JWT from cookie
+    const token = req.cookies?.[process.env.COOKIE_NAME || 'ks_auth'];
+
+    if (!token) {
+      return res.status(401).json({ message: 'Not authorized, no token' });
     }
-    
-    // If artisan auth fails, try USER auth
-    userProtect(req, res, (userErr) => {
-      if (userErr || !req.user) {
-        return res.status(401).json({ message: 'Not authorized' });
-      }
-      next();
-    });
-  });
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Try to find user in User collection first
+    let user = await User.findById(decoded.id).select('-password');
+
+    // If not found, try Artisan collection
+    if (!user) {
+      user = await Artisan.findById(decoded.id).select('-password');
+    }
+
+    if (!user) {
+      return res.status(401).json({ message: 'Not authorized, user not found' });
+    }
+
+    // Attach user to request
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Auth middleware error:', error.message);
+    return res.status(401).json({ message: 'Not authorized, token failed' });
+  }
 };
 
 // Chat token

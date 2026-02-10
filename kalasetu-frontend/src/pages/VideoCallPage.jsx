@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import VideoCall from '../components/VideoCall';
 import { createVideoRoom, getMeetingToken, getVideoRoom } from '../lib/dailyco';
 import axios from '../lib/axios';
+import { VIDEO_CONFIG } from '../config/env.config';
 
 const VideoCallPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -28,6 +29,9 @@ const VideoCallPage = () => {
   const [artisans, setArtisans] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Check if Daily.co video calls are configured
+  const isDailyConfigured = VIDEO_CONFIG.enabled && VIDEO_CONFIG.provider === 'daily' && VIDEO_CONFIG.daily?.domain;
+
   // Check if coming from URL with room parameter
   const roomNameFromUrl = searchParams.get('room');
   const isOwner = searchParams.get('owner') === 'true';
@@ -35,6 +39,10 @@ const VideoCallPage = () => {
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
+      return;
+    }
+
+    if (!isDailyConfigured) {
       return;
     }
 
@@ -179,12 +187,39 @@ const VideoCallPage = () => {
     );
   }
 
+  // Render unavailable state when Daily.co is not configured
+  if (!isDailyConfigured) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-50 via-brand-100 to-brand-50">
+        <div className="text-center max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl p-8">
+            <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Video Calls Unavailable</h3>
+            <p className="text-gray-600 mb-6">
+              Video calls are not available at this time. Please try again later or contact support if the issue persists.
+            </p>
+            <button
+              onClick={() => navigate('/')}
+              className="px-6 py-3 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-lg hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg"
+            >
+              Go Home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Render loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-50 via-brand-100 to-brand-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-brand-500 border-t-transparent mx-auto mb-4"></div>
           <p className="text-lg text-gray-700 font-medium">Setting up video call...</p>
         </div>
       </div>
@@ -210,7 +245,7 @@ const VideoCallPage = () => {
                 setActiveTab('new');
                 setSearchParams({});
               }}
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg"
+              className="px-6 py-3 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-lg hover:from-brand-600 hover:to-brand-700 transition-all shadow-lg"
             >
               Back to Calls
             </button>
@@ -222,7 +257,7 @@ const VideoCallPage = () => {
 
   // Main UI with tabs
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-brand-100 to-brand-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -237,7 +272,7 @@ const VideoCallPage = () => {
               onClick={() => setActiveTab('new')}
               className={`flex-1 px-6 py-4 text-lg font-semibold transition-all ${
                 activeTab === 'new'
-                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  ? 'text-brand-600 border-b-2 border-brand-600 bg-brand-50'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
@@ -252,7 +287,7 @@ const VideoCallPage = () => {
               onClick={() => setActiveTab('history')}
               className={`flex-1 px-6 py-4 text-lg font-semibold transition-all ${
                 activeTab === 'history'
-                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  ? 'text-brand-600 border-b-2 border-brand-600 bg-brand-50'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
@@ -278,7 +313,7 @@ const VideoCallPage = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by name, craft, or email..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
                   />
                 </div>
 
@@ -289,8 +324,8 @@ const VideoCallPage = () => {
                       onClick={() => setSelectedArtisan(artisan)}
                       className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
                         selectedArtisan?._id === artisan._id
-                          ? 'border-blue-600 bg-blue-50 shadow-lg'
-                          : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
+                          ? 'border-brand-600 bg-brand-50 shadow-lg'
+                          : 'border-gray-200 hover:border-brand-300 hover:shadow-md'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -320,7 +355,7 @@ const VideoCallPage = () => {
                 <button
                   onClick={handleStartCall}
                   disabled={!selectedArtisan || isLoading}
-                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                  className="w-full py-4 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-xl font-semibold hover:from-brand-600 hover:to-brand-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
                 >
                   {isLoading ? 'Starting Call...' : 'Start Video Call'}
                 </button>
@@ -332,18 +367,18 @@ const VideoCallPage = () => {
               <div className="space-y-4">
                 {isLoadingHistory ? (
                   <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-500 border-t-transparent mx-auto mb-4"></div>
                     <p className="text-gray-600">Loading call history...</p>
                   </div>
                 ) : callHistory.length > 0 ? (
                   callHistory.map((call, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all"
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-brand-300 hover:shadow-md transition-all"
                     >
                       <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                          <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-12 h-12 bg-brand-100 rounded-full flex items-center justify-center">
+                          <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </div>
@@ -362,7 +397,7 @@ const VideoCallPage = () => {
                       {call.roomName && (
                         <button
                           onClick={() => handleRejoinCall(call)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
                         >
                           Rejoin
                         </button>

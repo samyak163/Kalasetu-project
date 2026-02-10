@@ -21,7 +21,7 @@ const formatArtisan = (artisan) => {
     profileImage: artisan.profileImageUrl || artisan.profileImage || '',
     craft: artisan.craft || '',
     city: artisan.location?.city || '',
-    averageRating: artisan.averageRating || artisan.rating || 0,
+    averageRating: artisan.averageRating || 0,
     totalReviews: artisan.totalReviews || 0,
     verified: artisan.isVerified || artisan.emailVerified || false,
   };
@@ -206,13 +206,13 @@ export const getSearchSuggestions = asyncHandler(async (req, res) => {
   try {
     const limit = 5;
     // Categories by prefix
-    const categories = await Category.find({ name: { $regex: `^${q}`, $options: 'i' }, active: true })
+    const categories = await Category.find({ name: { $regex: `^${escapeRegex(q)}`, $options: 'i' }, active: true })
       .select('name slug')
       .limit(limit)
       .lean();
     // Services by prefix
     const services = await ArtisanService.aggregate([
-      { $match: { name: { $regex: `^${q}`, $options: 'i' }, isActive: true } },
+      { $match: { name: { $regex: `^${escapeRegex(q)}`, $options: 'i' }, isActive: true } },
       { $group: { _id: { name: '$name', categoryName: '$categoryName' }, count: { $sum: 1 } } },
       { $project: { name: '$_id.name', categoryName: '$_id.categoryName', count: 1, _id: 0 } },
       { $limit: limit }
@@ -221,7 +221,7 @@ export const getSearchSuggestions = asyncHandler(async (req, res) => {
     const isLikelyName = q.trim().includes(' ');
     let artisans = [];
     if (isLikelyName) {
-      artisans = await Artisan.find({ fullName: { $regex: q, $options: 'i' } })
+      artisans = await Artisan.find({ fullName: { $regex: escapeRegex(q), $options: 'i' } })
         .select('publicId fullName profileImageUrl profileImage')
         .limit(limit)
         .lean();
@@ -238,50 +238,29 @@ export const getSearchSuggestions = asyncHandler(async (req, res) => {
  * GET /api/search/facets
  */
 export const getSearchFacets = asyncHandler(async (req, res) => {
-  const index = getAlgoliaIndex();
-  if (!index) {
-    return res.status(503).json({
-      success: false,
-      message: 'Search service is not available'
-    });
-  }
-
   try {
-    const result = await index.search('', {
-      facets: ['craft', 'location.city', 'location.state', 'skills'],
-      maxValuesPerFacet: 100
-    });
+    const [crafts, cities, states] = await Promise.all([
+      Artisan.distinct('craft'),
+      Artisan.distinct('location.city'),
+      Artisan.distinct('location.state'),
+    ]);
 
     res.json({
       success: true,
-      data: result.facets
+      data: {
+        craft: crafts.filter(Boolean),
+        'location.city': cities.filter(Boolean),
+        'location.state': states.filter(Boolean),
+      },
     });
   } catch (error) {
-    console.error('Facets error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get facets',
-      error: error.message
     });
   }
 });
 
-/**
- * Comprehensive search - returns artisans and categories
- * GET /api/search
- */
-export const search = asyncHandler(async (req, res) => {
-  try {
-    const results = await performSearch(req);
-    res.json({ success: true, ...results });
-  } catch (error) {
-    console.error('Search error:', error);
-    if (Sentry) Sentry.captureException(error);
-    res.status(500).json({
-      success: false,
-      error: 'Search failed',
-      message: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
-  }
-});
+// Alias for searchArtisans (same handler, used by GET /api/search)
+export const search = searchArtisans;
 

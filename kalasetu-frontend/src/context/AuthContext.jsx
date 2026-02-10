@@ -63,7 +63,7 @@ export const AuthContextProvider = ({ children }) => {
       identifyLogRocketUser(auth.user);
       addLogRocketTag('user-type', auth.userType || 'USER');
       identifyPostHogUser(auth.user);
-      
+
       // Set OneSignal user ID and tags
       setOneSignalUserId(auth.user.id || auth.user._id);
       addTags({
@@ -145,6 +145,8 @@ export const AuthContextProvider = ({ children }) => {
       clearSentryUser();
       resetPostHog();
       await removeOneSignalUserId();
+      // Redirect to login page after logout
+      window.location.href = '/user/login';
     }
   };
 
@@ -152,7 +154,7 @@ export const AuthContextProvider = ({ children }) => {
   const login = (userData, type) => {
     setAuth({ user: userData, userType: type });
     setSentryUser(userData);
-    
+
     // Initialize PostHog
     if (window.posthog) {
       window.posthog.identify(userData._id || userData.id, {
@@ -178,8 +180,8 @@ export const AuthContextProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider 
-      value={{ 
+    <AuthContext.Provider
+      value={{
         auth, // The main auth object { user, userType }
         user: auth.user, // Convenience accessor
         userType: auth.userType, // Convenience accessor
@@ -191,11 +193,11 @@ export const AuthContextProvider = ({ children }) => {
         login, // Simple login function
         logout,
         checkAuth, // Check auth function
-        loading 
+        bootstrapAuth, // Re-fetch auth state without full reload
+        loading
       }}
     >
-      {/* Render children only when auth check is complete */}
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

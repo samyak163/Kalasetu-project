@@ -1,59 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom animations */
-@keyframes fade-in {
-  from {
-    opacity: 0;
+@layer base {
+  body {
+    @apply font-body text-gray-900 antialiased;
   }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
+  h1, h2, h3, h4 {
+    @apply font-display;
   }
 }
 
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(100%);
+@layer components {
+  .btn-press {
+    @apply transition-transform duration-100 active:scale-[0.98];
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+  .card-hover {
+    @apply transition-shadow duration-200 hover:shadow-card-hover;
   }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.2s ease-out;
-}
-
-.animate-scale-in {
-  animation: scale-in 0.25s ease-out;
-}
-
-.animate-slide-in-right {
-  animation: slide-in-right 0.2s ease-out;
-}
-
-/* Dark mode base styles */
-.dark {
-  color-scheme: dark;
-}
-
-/* Smooth transitions */
-* {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  .skeleton {
+    @apply animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] rounded;
+  }
+  .divider-craft {
+    @apply border-t border-brand-200/50;
+  }
 }

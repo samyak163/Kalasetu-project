@@ -22,12 +22,7 @@ const AdminUsers = () => {
       setUsers(list);
       setPagination(response.data?.pagination || null);
     } catch (err) {
-      console.error('Failed to fetch users:', {
-        message: err.message,
-        status: err.response?.status,
-        data: err.response?.data,
-        url: err.config?.url
-      });
+      // Log fetch error details for debugging
       if (err.response?.status === 403) {
         setError('Permission denied: your admin role lacks required permissions for users.');
       } else {
@@ -58,7 +53,7 @@ const AdminUsers = () => {
         </div>
         <button
           onClick={() => fetchUsers()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm md:text-base"
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 flex items-center gap-2 text-sm md:text-base"
         >
           <RefreshCcw className="w-4 h-4" />
           Refresh
@@ -77,14 +72,14 @@ const AdminUsers = () => {
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
           <div className="text-sm text-gray-600 truncate">Active Users</div>
-          <div className="text-2xl font-bold text-blue-600 mt-1">{pagination?.total || stats.total}</div>
+          <div className="text-2xl font-bold text-brand-500 mt-1">{pagination?.total || stats.total}</div>
         </div>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or email..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or email..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500" />
         </div>
       </div>
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -162,7 +157,7 @@ const AdminUsers = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><div className="flex items-center gap-2"><Calendar className="w-4 h-4" />{new Date(user.createdAt).toLocaleDateString()}</div></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
-                          <button className="text-blue-600 hover:text-blue-900" title="View Details"><Eye className="w-5 h-5" /></button>
+                          <button className="text-brand-500 hover:text-brand-700" title="View Details"><Eye className="w-5 h-5" /></button>
                         </div>
                       </td>
                     </tr>

@@ -1,22 +1,32 @@
 import asyncHandler from '../utils/asyncHandler.js';
+import { z } from 'zod';
 import Review from '../models/reviewModel.js';
 import Artisan from '../models/artisanModel.js';
 import Booking from '../models/bookingModel.js';
 import { sendEmail } from '../utils/email.js';
 
+const createReviewSchema = z.object({
+  artisanId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid artisan ID'),
+  bookingId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid booking ID').optional(),
+  rating: z.number().int().min(1, 'Rating must be at least 1').max(5, 'Rating must be at most 5'),
+  comment: z.string().max(2000, 'Comment must be under 2000 characters').optional(),
+  images: z.array(z.string().url()).max(10).optional(),
+});
+
 export const createReview = asyncHandler(async (req, res) => {
   const userId = req.user._id || req.user.id;
-  const { artisanId, bookingId, rating, comment, images = [] } = req.body;
 
-  if (!artisanId || !rating) {
-    return res.status(400).json({ success: false, message: 'artisanId and rating are required' });
+  const parsed = createReviewSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, message: parsed.error.issues.map(i => i.message).join(', ') });
   }
+  const { artisanId, bookingId, rating, comment, images = [] } = parsed.data;
 
   // Check if user has a completed booking with this artisan (required for review)
   const bookingQuery = {
     artisan: artisanId,
     user: userId,
-    status: { $in: ['completed', 'confirmed'] }, // Allow reviews for completed or confirmed bookings
+    status: 'completed',
   };
 
   // If bookingId is provided, verify it belongs to the user and artisan
@@ -105,13 +115,15 @@ export const toggleHelpful = asyncHandler(async (req, res) => {
 });
 
 async function recomputeRating(artisanId) {
-  const all = await Review.find({ artisan: artisanId, status: 'active' }).select('rating');
-  const count = all.length;
-  const sum = all.reduce((a, r) => a + (r.rating || 0), 0);
-  const average = count ? Number((sum / count).toFixed(1)) : 0;
-  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-  all.forEach(r => { distribution[r.rating] = (distribution[r.rating] || 0) + 1; });
-  await Artisan.findByIdAndUpdate(artisanId, { $set: { rating: average, reviewCount: count } });
+  const result = await Review.aggregate([
+    { $match: { artisan: artisanId, status: 'active' } },
+    { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } },
+  ]);
+
+  const average = result.length ? Number(result[0].avg.toFixed(1)) : 0;
+  const count = result.length ? result[0].count : 0;
+
+  await Artisan.findByIdAndUpdate(artisanId, { $set: { averageRating: average, totalReviews: count } });
 }
 
 

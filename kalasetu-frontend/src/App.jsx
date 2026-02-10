@@ -9,7 +9,6 @@ import HomePage from './pages/HomePage';
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const ArtisanProfilePage = lazy(() => import('./pages/ArtisanProfilePage'));
-const ArtisanDashboardPage = lazy(() => import('./pages/ArtisanDashboardPage'));
 const ArtisanAccountPage = lazy(() => import('./pages/ArtisanAccountPage'));
 const ArtisanProfileEditor = lazy(() => import('./pages/ArtisanProfileEditor'));
 
@@ -40,7 +39,6 @@ const SearchResults = lazy(() => import('./pages/SearchResults'));
 
 // --- VIDEO CALL PAGE --- (lazy)
 const VideoCallPage = lazy(() => import('./pages/VideoCallPage'));
-const Bookings = lazy(() => import('./pages/dashboard/artisan/Bookings'));
 const CallsHistory = lazy(() => import('./pages/dashboard/artisan/CallsHistory'));
 
 // Auth Components
@@ -90,36 +88,26 @@ function App() {
         <Route path="refunds" element={<CancellationRefund />} />
 
         {/* Protected Artisan Routes */}
-        <Route 
-          path="artisan/dashboard" 
-          element={
-            // This now checks if the logged-in user is an 'artisan'
-            <RequireAuth role="artisan">
-              <ArtisanDashboardPage />
-            </RequireAuth>
-          } 
-        />
-        {/* Artisan Bookings */}
         <Route
-          path="artisan/dashboard/bookings"
+          path="artisan/dashboard"
           element={
             <RequireAuth role="artisan">
-              <Bookings />
+              <ArtisanAccountPage />
             </RequireAuth>
           }
         />
 
         {/* Artisan Profile Editor (Protected) */}
-        <Route 
-          path="artisan/dashboard/profile-editor" 
+        <Route
+          path="artisan/dashboard/profile-editor"
           element={
             <RequireAuth role="artisan">
               <ArtisanProfileEditor />
             </RequireAuth>
-          } 
+          }
         />
 
-        {/* Artisan Account (Profile + tabs) */}
+        {/* Legacy route: redirect /artisan/dashboard/account to /artisan/dashboard */}
         <Route
           path="artisan/dashboard/account"
           element={
@@ -134,7 +122,7 @@ function App() {
         {/* Graceful alias to prevent 404s when clicking a generic Services link */}
         <Route path="services" element={<SearchResults />} />
 
-        {/* Messages Page (Protected - Both artisans and USERs) */}
+        {/* Messages Page (Protected - Both artisans and users) */}
         <Route 
           path="messages" 
           element={
@@ -148,7 +136,7 @@ function App() {
         <Route path="artisan/chat" element={<RequireAuth role="artisan"><MessagesPage /></RequireAuth>} />
         <Route path="user/chat" element={<RequireAuth role="user"><MessagesPage /></RequireAuth>} />
 
-        {/* Video Call Page (Protected - Both artisans and USERs) */}
+        {/* Video Call Page (Protected - Both artisans and users) */}
         <Route 
           path="video-call" 
           element={

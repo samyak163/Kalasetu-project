@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 
 const SEOHelmet = ({ 
   title = 'KalaSetu - Connecting Traditional Artisans',
-  description = 'Discover and connect with skilled traditional artisans across India. KalaSetu bridges the gap between artisans and USERs.',
+  description = 'Discover and connect with skilled traditional artisans across India. KalaSetu bridges the gap between artisans and customers.',
   keywords = 'artisans, handicrafts, traditional crafts, India, KalaSetu',
   image = 'https://kalasetu.com/og-image.jpg',
   url = typeof window !== 'undefined' ? window.location.href : 'https://kalasetu.com',

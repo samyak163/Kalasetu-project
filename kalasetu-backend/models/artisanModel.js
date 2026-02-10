@@ -136,7 +136,7 @@ const artisanSchema = new mongoose.Schema({
           bookingConfirmation: { type: Boolean, default: true },
           paymentReceived: { type: Boolean, default: true },
           // Use alias to maintain backward compatibility with existing documents
-          userMessage: { type: Boolean, default: true, alias: 'USERMessage' },
+          userMessage: { type: Boolean, default: true },
           newReview: { type: Boolean, default: true },
           promotional: { type: Boolean, default: false },
           weeklySummary: { type: Boolean, default: true },
@@ -223,6 +223,7 @@ artisanSchema.index({ location: '2dsphere' });
 // Additional useful indexes (email and phoneNumber already have unique: true in schema definition)
 artisanSchema.index({ createdAt: -1 });
 artisanSchema.index({ 'location.city': 1, 'location.state': 1 });
+artisanSchema.index({ isActive: 1, averageRating: -1 });
 
 const Artisan = mongoose.model('Artisan', artisanSchema);
 export default Artisan;

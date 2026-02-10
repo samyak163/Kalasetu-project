@@ -62,6 +62,15 @@ export default defineConfig(({ command, mode }) => {
           target: env.VITE_API_URL || 'http://localhost:5000',
           changeOrigin: true,
           secure: false,
+          // CRITICAL: Forward cookies to backend for authentication
+          configure: (proxy, options) => {
+            proxy.on('proxyReq', (proxyReq, req, res) => {
+              // Forward cookies from client to backend
+              if (req.headers.cookie) {
+                proxyReq.setHeader('cookie', req.headers.cookie);
+              }
+            });
+          }
         }
       }
     }

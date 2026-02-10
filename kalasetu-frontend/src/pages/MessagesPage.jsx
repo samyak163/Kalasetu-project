@@ -7,9 +7,9 @@ import 'stream-chat-react/dist/css/v2/index.css';
 
 const MessagesPage = () => {
   const { user, isAuthenticated } = useAuth();
-  const { client, isLoading } = useChat();
+  const { client, isLoading, error, isUnavailable } = useChat();
   const navigate = useNavigate();
-  
+
   const [activeChannel, setActiveChannel] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -21,7 +21,7 @@ const MessagesPage = () => {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-50 via-brand-50 to-brand-100">
         <div className="text-center">
           <p className="text-lg text-gray-700 font-medium">Please log in to access messages.</p>
         </div>
@@ -29,11 +29,28 @@ const MessagesPage = () => {
     );
   }
 
+  // Show graceful fallback when Stream Chat is not configured
+  if (isUnavailable) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-50 via-brand-50 to-brand-100">
+        <div className="text-center max-w-md">
+          <svg className="w-24 h-24 mx-auto mb-4 text-brand-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">Chat Unavailable</h3>
+          <p className="text-gray-500">
+            The messaging service is currently unavailable. Please try again later or contact support if the issue persists.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading || !client) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-50 via-brand-50 to-brand-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-brand-500 border-t-transparent mx-auto mb-4"></div>
           <p className="text-lg text-gray-700 font-medium">Loading messages...</p>
         </div>
       </div>
@@ -42,7 +59,7 @@ const MessagesPage = () => {
 
   const filters = {
     type: 'messaging',
-    members: { $in: [user._id || user.id] },
+    members: { $in: [user._id] },
   };
 
   const sort = { last_message_at: -1 };
@@ -54,11 +71,11 @@ const MessagesPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="flex h-screen bg-gradient-to-br from-brand-50 via-brand-50 to-brand-100">
       {/* Sidebar - Channel List */}
       <div className="w-96 bg-white border-r border-gray-200 flex flex-col shadow-lg">
         {/* Header */}
-        <div className="px-6 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
+        <div className="px-6 py-6 border-b border-gray-200 bg-gradient-to-r from-brand-600 to-brand-500">
           <h1 className="text-2xl font-bold text-white mb-4">Messages</h1>
           <div className="relative">
             <input
@@ -97,7 +114,7 @@ const MessagesPage = () => {
         {activeChannel ? (
           <Channel channel={activeChannel}>
             {/* Chat Header */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-brand-50 to-brand-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="relative">
@@ -154,7 +171,7 @@ const MessagesPage = () => {
 // Custom Channel Preview Component
 const CustomChannelPreview = ({ channel, searchQuery, ...previewProps }) => {
   const { setActiveChannel, channel: activeChannel } = previewProps;
-  
+
   const isActive = activeChannel?.id === channel.id;
   const lastMessage = channel.state.messages[channel.state.messages.length - 1];
   const unreadCount = channel.countUnread();
@@ -167,8 +184,8 @@ const CustomChannelPreview = ({ channel, searchQuery, ...previewProps }) => {
   return (
     <div
       onClick={() => setActiveChannel(channel, {})}
-      className={`px-4 py-4 cursor-pointer transition-all border-b border-gray-100 hover:bg-blue-50 ${
-        isActive ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''
+      className={`px-4 py-4 cursor-pointer transition-all border-b border-gray-100 hover:bg-brand-50 ${
+        isActive ? 'bg-brand-50 border-l-4 border-l-brand-600' : ''
       }`}
     >
       <div className="flex items-start space-x-3">
@@ -200,7 +217,7 @@ const CustomChannelPreview = ({ channel, searchQuery, ...previewProps }) => {
           </div>
           {lastMessage && (
             <p className="text-sm text-gray-600 truncate">
-              {lastMessage.text || '📎 Attachment'}
+              {lastMessage.text || 'Attachment'}
             </p>
           )}
         </div>

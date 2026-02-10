@@ -13,7 +13,8 @@ const categorySchema = new mongoose.Schema({
   active: { type: Boolean, default: true },
 }, { timestamps: true });
 
-categorySchema.index({ name: 1 });
+// Note: name field already has unique: true which creates an index automatically
+// No need for additional index declaration
 
 const Category = mongoose.model('Category', categorySchema);
 export default Category;

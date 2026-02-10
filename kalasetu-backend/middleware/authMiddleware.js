@@ -16,6 +16,7 @@ export const protect = async (req, res, next) => {
             throw new Error('User not found');
         }
         req.user = user;
+        req.user.id = user._id.toString();
         next();
     } catch (err) {
         res.status(res.statusCode === 200 ? 401 : res.statusCode);
@@ -81,6 +82,7 @@ export const protectAny = async (req, res, next) => {
 
         if (userAccount) {
             req.user = userAccount;
+            req.user.id = userAccount._id.toString();
             req.account = userAccount;
             req.accountType = 'user';
             return next();
@@ -88,6 +90,7 @@ export const protectAny = async (req, res, next) => {
 
         if (artisanAccount) {
             req.user = artisanAccount;
+            req.user.id = artisanAccount._id.toString();
             req.account = artisanAccount;
             req.accountType = 'artisan';
             return next();

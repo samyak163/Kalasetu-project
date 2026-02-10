@@ -22,7 +22,7 @@ const AdminDashboard = () => {
         setError(response.data.message || 'Failed to load stats.');
       }
     } catch (err) {
-      console.error('Failed to fetch stats:', err);
+      // Failed to fetch stats
       setError(err.response?.data?.message || 'An error occurred while fetching dashboard data.');
     } finally {
       setLoading(false);
@@ -32,7 +32,7 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
       </div>
     );
   }
@@ -45,8 +45,8 @@ const AdminDashboard = () => {
           <p className="font-bold">Error</p>
           <p>{error}</p>
           <button 
-            onClick={fetchStats} 
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            onClick={fetchStats}
+            className="mt-4 px-4 py-2 bg-brand-500 text-white rounded hover:bg-brand-600"
           >
             Retry
           </button>
@@ -65,13 +65,13 @@ const AdminDashboard = () => {
   }
 
   const statCards = [
-    { title: 'Total Artisans', value: stats?.overview.totalArtisans || 0, change: `+${stats?.overview.newArtisans || 0} this period`, icon: Briefcase, color: 'bg-blue-500', trend: 'up' },
-    { title: 'Total Users', value: stats?.overview.totalUsers || 0, change: `+${stats?.overview.newUsers || 0} this period`, icon: Users, color: 'bg-green-500', trend: 'up' },
-    { title: 'Total Reviews', value: stats?.overview.totalReviews || 0, change: 'All time', icon: Star, color: 'bg-yellow-500', trend: 'neutral' },
-    { title: 'Revenue', value: `₹${(stats?.overview.totalRevenue || 0).toLocaleString()}`, change: `${stats?.overview.totalTransactions || 0} transactions`, icon: DollarSign, color: 'bg-purple-500', trend: 'up' }
+    { title: 'Total Artisans', value: stats?.overview.totalArtisans || 0, change: `+${stats?.overview.newArtisans || 0} this period`, icon: Briefcase, color: 'bg-brand-500', trend: 'up' },
+    { title: 'Total Users', value: stats?.overview.totalUsers || 0, change: `+${stats?.overview.newUsers || 0} this period`, icon: Users, color: 'bg-success-500', trend: 'up' },
+    { title: 'Total Reviews', value: stats?.overview.totalReviews || 0, change: 'All time', icon: Star, color: 'bg-warning-500', trend: 'neutral' },
+    { title: 'Revenue', value: `₹${(stats?.overview.totalRevenue || 0).toLocaleString()}`, change: `${stats?.overview.totalTransactions || 0} transactions`, icon: DollarSign, color: 'bg-brand-700', trend: 'up' }
   ];
 
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+  const COLORS = ['#A55233', '#D88A6A', '#E9AF96', '#6E3520', '#F3D1C2'];
 
   return (
     <div className="space-y-6 p-6">
@@ -84,7 +84,7 @@ const AdminDashboard = () => {
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base bg-white"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base bg-white"
           >
             <option value="7days">Last 7 Days</option>
             <option value="30days">Last 30 Days</option>
@@ -93,7 +93,7 @@ const AdminDashboard = () => {
           </select>
           <button
             onClick={fetchStats}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm md:text-base"
+            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 flex items-center gap-2 text-sm md:text-base"
           >
             <RefreshCcw className="w-4 h-4" />
             Refresh
@@ -107,7 +107,7 @@ const AdminDashboard = () => {
           return (
             <div
               key={index}
-              className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 hover:border-blue-300 cursor-pointer"
+              className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 hover:border-brand-300 cursor-pointer"
               onClick={() => {
                 if (stat.title.includes('Artisans')) window.location.href = '/admin/artisans';
                 if (stat.title.includes('Users')) window.location.href = '/admin/users';
@@ -141,8 +141,8 @@ const AdminDashboard = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="artisans" stroke="#3B82F6" strokeWidth={2} name="Artisans" />
-              <Line type="monotone" dataKey="users" stroke="#10B981" strokeWidth={2} name="Users" />
+              <Line type="monotone" dataKey="artisans" stroke="#A55233" strokeWidth={2} name="Artisans" />
+              <Line type="monotone" dataKey="users" stroke="#D88A6A" strokeWidth={2} name="Users" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -166,7 +166,7 @@ const AdminDashboard = () => {
             {(stats?.recentActivity?.artisans || []).map((artisan) => (
               <div key={artisan._id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"><Briefcase className="w-5 h-5 text-blue-600" /></div>
+                  <div className="w-10 h-10 bg-brand-50 rounded-full flex items-center justify-center"><Briefcase className="w-5 h-5 text-brand-500" /></div>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-gray-800 truncate max-w-xs text-sm md:text-base">{artisan.fullName}</p>
                     <p className="text-sm text-gray-500 truncate max-w-xs">{artisan.email}</p>
@@ -186,7 +186,7 @@ const AdminDashboard = () => {
             {(stats?.recentActivity?.users || []).map((user) => (
               <div key={user._id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center"><Users className="w-5 h-5 text-green-600" /></div>
+                  <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center"><Users className="w-5 h-5 text-brand-600" /></div>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-gray-800 truncate max-w-xs text-sm md:text-base">{user.fullName}</p>
                     <p className="text-sm text-gray-500 truncate max-w-xs">{user.email}</p>
@@ -199,7 +199,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-xl shadow-lg text-white">
+      <div className="bg-gradient-to-r from-brand-600 to-brand-800 p-6 rounded-xl shadow-lg text-white">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div>
             <div className="flex items-center gap-2 mb-2"><Activity className="w-5 h-5" /><span className="text-sm opacity-90">Active Artisans</span></div>

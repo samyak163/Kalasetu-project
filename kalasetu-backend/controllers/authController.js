@@ -76,45 +76,32 @@ export const register = async (req, res, next) => {
         const token = signJwt(artisan._id);
         setAuthCookie(res, token);
         
-        // Index artisan in Algolia (non-blocking, fire and forget)
-        // Use setTimeout to avoid blocking the response
-        setTimeout(() => {
-            indexArtisan(artisan).catch(err => {
-                console.error('Failed to index artisan in Algolia (non-critical):', err.message);
-            });
-        }, 0);
-        
-        
-        // Send welcome email and verification email (async, non-blocking)
+        // Index artisan in Algolia (non-blocking with error capture)
+        indexArtisan(artisan).catch(err => {
+            if (Sentry) Sentry.captureException(err);
+        });
+
+        // Send welcome email and verification email
         if (artisan.email) {
             const { sendWelcomeEmail, sendVerificationEmail } = await import('../utils/email.js');
             const verificationToken = crypto.randomBytes(32).toString('hex');
-            
-            // Store verification token in background
-            setImmediate(() => {
-                Artisan.findByIdAndUpdate(
-                    artisan._id,
-                    {
-                        emailVerificationToken: verificationToken,
-                        emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-                    },
-                    { validateBeforeSave: false }
-                ).catch(err => {
-                    console.error('Failed to save verification token:', err);
-                });
-            });
-            
-            // Send emails (non-blocking, fire and forget)
+
+            // Save verification token in main flow (critical - must not be fire-and-forget)
+            await Artisan.findByIdAndUpdate(
+                artisan._id,
+                {
+                    emailVerificationToken: verificationToken,
+                    emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
+                },
+                { validateBeforeSave: false }
+            );
+
+            // Send emails (non-blocking with error capture)
             Promise.allSettled([
                 sendWelcomeEmail(artisan.email, artisan.fullName),
                 sendVerificationEmail(artisan.email, artisan.fullName, verificationToken)
-            ]).then(results => {
-                results.forEach((result, index) => {
-                    const emailType = index === 0 ? 'welcome' : 'verification';
-                    if (result.status === 'rejected') {
-                        console.error(`Failed to send ${emailType} email:`, result.reason);
-                    }
-                });
+            ]).catch(err => {
+                if (Sentry) Sentry.captureException(err);
             });
         }    // Return response WITHOUT sensitive fields
     const artisanPublic = artisan.toObject();
@@ -158,8 +145,7 @@ export const register = async (req, res, next) => {
             success: true,
             message: 'Registration successful',
             artisan: artisanPublic,
-            token, // Include token in response for frontend
-            redirectTo: '/artisan/dashboard/account' // Tell frontend where to redirect
+            redirectTo: '/artisan/dashboard/account'
         });
     } catch (err) {
         console.error('Registration error:', err);
@@ -260,7 +246,7 @@ export const forgotPassword = async (req, res, next) => {
         });
     } else {
         // Fallback for phone-only users
-        console.log(`Artisan password reset link for ${artisan.phoneNumber}: ${resetUrl}`);
+        if (process.env.NODE_ENV !== 'production') { console.log(`Artisan password reset link for ${artisan.phoneNumber}: ${resetUrl}`); }
     }
     
     res.status(200).json({ message: 'If the account exists, you will receive a reset link.' });
@@ -331,14 +317,13 @@ export const firebaseLogin = async (req, res, next) => {
                 email: email || undefined,
                 phoneNumber: phoneNumber || undefined,
                 password: hashedPassword,
+                emailVerified: !!(email && decoded.email_verified),
             });
             
-            // Index new artisan in Algolia (non-blocking)
-            setTimeout(() => {
-                indexArtisan(artisan).catch(err => {
-                    console.error('Failed to index artisan in Algolia (non-critical):', err.message);
-                });
-            }, 0);
+            // Index new artisan in Algolia (non-blocking with error capture)
+            indexArtisan(artisan).catch(err => {
+                if (Sentry) Sentry.captureException(err);
+            });
         } else if (!artisan.firebaseUid) {
             // Link existing artisan with this Firebase UID if not already linked
             artisan.firebaseUid = uid;

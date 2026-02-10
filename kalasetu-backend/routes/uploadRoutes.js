@@ -6,9 +6,24 @@ const router = express.Router();
 // Returns a signature for signed direct uploads to Cloudinary
 // GET /api/uploads/signature?folder=artisan/profiles
 router.get('/signature', (req, res) => {
-  const folder = (req.query.folder || 'artisan/profiles').toString();
-  const timestamp = Math.round(Date.now() / 1000);
+  const ALLOWED_FOLDERS = new Set([
+    'kalasetu/artisan/profiles',
+    'kalasetu/artisan/portfolio',
+    'kalasetu/artisan/services',
+    'kalasetu/artisan/documents/aadhar',
+    'kalasetu/artisan/documents/pan',
+    'kalasetu/artisan/documents/policeVerification',
+    'kalasetu/artisan/documents/businessLicense',
+    'kalasetu/artisan/documents/insurance',
+    'kalasetu/user/profiles',
+    'artisan/profiles',
+    'artisan/portfolio',
+  ]);
 
+  const requestedFolder = (req.query.folder || 'kalasetu/artisan/profiles').toString();
+  const folder = ALLOWED_FOLDERS.has(requestedFolder) ? requestedFolder : 'kalasetu/artisan/profiles';
+
+  const timestamp = Math.round(Date.now() / 1000);
   const paramsToSign = { timestamp, folder };
   const signature = cloudinary.utils.api_sign_request(
     paramsToSign,

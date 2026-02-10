@@ -2,7 +2,7 @@ import express from 'express';
 import { protect, protectAny } from '../middleware/authMiddleware.js';
 import { userProtect } from '../middleware/userProtectMiddleware.js';
 import asyncHandler from '../utils/asyncHandler.js';
-import { createBooking, getMyBookings, getArtisanBookings, cancelBooking, respondToBooking } from '../controllers/bookingController.js';
+import { createBooking, getMyBookings, getArtisanBookings, cancelBooking, respondToBooking, completeBooking } from '../controllers/bookingController.js';
 
 const router = express.Router();
 
@@ -15,6 +15,9 @@ router.get('/artisan', protect, asyncHandler(getArtisanBookings));
 
 // Artisan responds to booking
 router.patch('/:id/respond', protect, asyncHandler(respondToBooking));
+
+// Artisan marks booking as completed
+router.patch('/:id/complete', protect, asyncHandler(completeBooking));
 
 // Cancel booking (user or artisan who owns it)
 router.post('/:id/cancel', protectAny, asyncHandler(cancelBooking));

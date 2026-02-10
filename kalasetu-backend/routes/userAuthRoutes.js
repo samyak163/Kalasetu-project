@@ -24,13 +24,21 @@ const router = express.Router();
 // Stricter rate limiter for sensitive auth endpoints
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200, // Increased from 60 to 200
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many registration attempts, please try again later.' },
+});
+
 // Public routes
-router.post('/register', strictLimiter, registerUser);
+router.post('/register', registerLimiter, registerUser);
 router.post('/login', strictLimiter, loginUser);
 router.post('/logout', strictLimiter, logoutUser);
 router.post('/forgot-password', strictLimiter, forgotPassword);

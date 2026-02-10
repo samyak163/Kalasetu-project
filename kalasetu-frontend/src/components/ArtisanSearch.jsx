@@ -86,25 +86,16 @@ export default function ArtisanSearch() {
                 />
               )}
               <div className="flex-1">
-                <h3
-                  className="text-lg font-semibold"
-                  dangerouslySetInnerHTML={{
-                    __html: artisan._highlightResult?.fullName?.value || artisan.fullName
-                  }}
-                />
-                <p
-                  className="text-gray-600"
-                  dangerouslySetInnerHTML={{
-                    __html: artisan._highlightResult?.craft?.value || artisan.craft
-                  }}
-                />
-                {artisan._snippetResult?.bio && (
-                  <p
-                    className="text-sm text-gray-500 mt-2"
-                    dangerouslySetInnerHTML={{
-                      __html: artisan._snippetResult.bio.value
-                    }}
-                  />
+                <h3 className="text-lg font-semibold">
+                  {artisan.fullName}
+                </h3>
+                <p className="text-gray-600">
+                  {artisan.craft}
+                </p>
+                {artisan.bio && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    {artisan.bio}
+                  </p>
                 )}
                 {artisan.location && (
                   <p className="text-sm text-gray-500 mt-1">

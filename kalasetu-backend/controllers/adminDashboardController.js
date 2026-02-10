@@ -5,6 +5,10 @@ import Review from '../models/reviewModel.js';
 import Payment from '../models/paymentModel.js';
 import Booking from '../models/bookingModel.js';
 
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export const getDashboardStats = async (req, res) => {
   try {
     const { period = '30days' } = req.query;
@@ -49,18 +53,27 @@ export const getDashboardStats = async (req, res) => {
       // ignore if payments not available
     }
 
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const [artisanGrowth, userGrowth] = await Promise.all([
+      Artisan.aggregate([
+        { $match: { createdAt: { $gte: sevenDaysAgo } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } }
+      ]),
+      User.aggregate([
+        { $match: { createdAt: { $gte: sevenDaysAgo } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } }
+      ])
+    ]);
+    const artisanMap = Object.fromEntries(artisanGrowth.map(r => [r._id, r.count]));
+    const userMap = Object.fromEntries(userGrowth.map(r => [r._id, r.count]));
     const last7Days = [];
     for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      date.setHours(0, 0, 0, 0);
-      const nextDate = new Date(date);
-      nextDate.setDate(nextDate.getDate() + 1);
-      const [artisanCount, userCount] = await Promise.all([
-        Artisan.countDocuments({ createdAt: { $gte: date, $lt: nextDate } }),
-        User.countDocuments({ createdAt: { $gte: date, $lt: nextDate } })
-      ]);
-      last7Days.push({ date: date.toISOString().split('T')[0], artisans: artisanCount, users: userCount });
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      last7Days.push({ date: key, artisans: artisanMap[key] || 0, users: userMap[key] || 0 });
     }
 
     const topCategories = await Artisan.aggregate([
@@ -94,7 +107,7 @@ export const getDashboardStats = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Dashboard stats error:', error);
+    // Dashboard stats error
     res.status(500).json({ success: false, message: 'Failed to fetch dashboard stats' });
   }
 };
@@ -104,10 +117,11 @@ export const getAllArtisans = async (req, res) => {
     const { page = 1, limit = 20, search = '', status = 'all', verified = 'all', sort = '-createdAt' } = req.query;
     const query = {};
     if (search) {
+      const escaped = escapeRegex(search);
       query.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { phoneNumber: { $regex: search, $options: 'i' } }
+        { fullName: { $regex: escaped, $options: 'i' } },
+        { email: { $regex: escaped, $options: 'i' } },
+        { phoneNumber: { $regex: escaped, $options: 'i' } }
       ];
     }
     if (status !== 'all') query.isActive = status === 'active';
@@ -116,7 +130,7 @@ export const getAllArtisans = async (req, res) => {
     const count = await Artisan.countDocuments(query);
     res.status(200).json({ success: true, data: artisans, pagination: { total: count, page: parseInt(page), pages: Math.ceil(count / limit) } });
   } catch (error) {
-    console.error('Get artisans error:', error);
+    // Get artisans error
     res.status(500).json({ success: false, message: 'Failed to fetch artisans' });
   }
 };
@@ -126,16 +140,17 @@ export const getAllUsers = async (req, res) => {
     const { page = 1, limit = 20, search = '', sort = '-createdAt' } = req.query;
     const query = {};
     if (search) {
+      const escaped = escapeRegex(search);
       query.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { fullName: { $regex: escaped, $options: 'i' } },
+        { email: { $regex: escaped, $options: 'i' } }
       ];
     }
     const users = await User.find(query).select('-password').sort(sort).limit(limit * 1).skip((page - 1) * limit).lean();
     const count = await User.countDocuments(query);
     res.status(200).json({ success: true, data: users, pagination: { total: count, page: parseInt(page), pages: Math.ceil(count / limit) } });
   } catch (error) {
-    console.error('Get users error:', error);
+    // Get users error
     res.status(500).json({ success: false, message: 'Failed to fetch users' });
   }
 };
@@ -149,7 +164,7 @@ export const verifyArtisan = async (req, res) => {
     await req.user.logActivity(verified ? 'verify' : 'unverify', 'artisan', id, { artisanName: artisan.fullName });
     res.status(200).json({ success: true, data: artisan, message: `Artisan ${verified ? 'verified' : 'unverified'} successfully` });
   } catch (error) {
-    console.error('Verify artisan error:', error);
+    // Verify artisan error
     res.status(500).json({ success: false, message: 'Failed to verify artisan' });
   }
 };
@@ -163,7 +178,7 @@ export const updateArtisanStatus = async (req, res) => {
     await req.user.logActivity(isActive ? 'activate' : 'suspend', 'artisan', id, { artisanName: artisan.fullName, reason });
     res.status(200).json({ success: true, data: artisan, message: `Artisan ${isActive ? 'activated' : 'suspended'} successfully` });
   } catch (error) {
-    console.error('Update artisan status error:', error);
+    // Update artisan status error
     res.status(500).json({ success: false, message: 'Failed to update artisan status' });
   }
 };
@@ -180,7 +195,7 @@ export const deleteArtisan = async (req, res) => {
     await artisan.deleteOne();
     res.status(200).json({ success: true, message: 'Artisan deleted successfully' });
   } catch (error) {
-    console.error('Delete artisan error:', error);
+    // Delete artisan error
     res.status(500).json({ success: false, message: 'Failed to delete artisan' });
   }
 };
@@ -204,29 +219,29 @@ export const getAllReviews = async (req, res) => {
     }
     
     if (search) {
+      const escaped = escapeRegex(search);
       const artisanMatch = await Artisan.find({
         $or: [
-          { fullName: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } }
+          { fullName: { $regex: escaped, $options: 'i' } },
+          { email: { $regex: escaped, $options: 'i' } }
         ]
       }).select('_id');
       const userMatch = await User.find({
         $or: [
-          { fullName: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } }
+          { fullName: { $regex: escaped, $options: 'i' } },
+          { email: { $regex: escaped, $options: 'i' } }
         ]
       }).select('_id');
-      
+
       if (artisanMatch.length > 0 || userMatch.length > 0) {
         query.$or = [];
         if (artisanMatch.length > 0) query.$or.push({ artisan: { $in: artisanMatch.map(a => a._id) } });
         if (userMatch.length > 0) query.$or.push({ user: { $in: userMatch.map(u => u._id) } });
       } else {
-        // If no matches, return empty result
         query._id = { $in: [] };
       }
     }
-    
+
     const reviews = await Review.find(query)
       .populate('artisan', 'fullName email')
       .populate('user', 'fullName email')
@@ -237,7 +252,7 @@ export const getAllReviews = async (req, res) => {
     const count = await Review.countDocuments(query);
     res.status(200).json({ success: true, data: reviews, pagination: { total: count, page: parseInt(page), pages: Math.ceil(count / limit) } });
   } catch (error) {
-    console.error('Get reviews error:', error);
+    // Get reviews error
     res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
   }
 };
@@ -251,7 +266,7 @@ export const moderateReview = async (req, res) => {
     await req.user.logActivity('moderate_review', 'review', id, { status, reason });
     res.status(200).json({ success: true, data: review, message: 'Review moderated successfully' });
   } catch (error) {
-    console.error('Moderate review error:', error);
+    // Moderate review error
     res.status(500).json({ success: false, message: 'Failed to moderate review' });
   }
 };
@@ -265,7 +280,7 @@ export const deleteReview = async (req, res) => {
     await req.user.logActivity('delete_review', 'review', id, { reason });
     res.status(200).json({ success: true, message: 'Review removed successfully' });
   } catch (error) {
-    console.error('Delete review error:', error);
+    // Delete review error
     res.status(500).json({ success: false, message: 'Failed to delete review' });
   }
 };
@@ -290,7 +305,7 @@ export const getReviewsStats = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get reviews stats error:', error);
+    // Get reviews stats error
     res.status(500).json({ success: false, message: 'Failed to fetch reviews stats' });
   }
 };
@@ -303,7 +318,7 @@ export const restoreReview = async (req, res) => {
     await req.user.logActivity('restore_review', 'review', id);
     res.status(200).json({ success: true, data: review, message: 'Review restored successfully' });
   } catch (error) {
-    console.error('Restore review error:', error);
+    // Restore review error
     res.status(500).json({ success: false, message: 'Failed to restore review' });
   }
 };
@@ -334,20 +349,14 @@ export const getAllPayments = async (req, res) => {
     }
     
     if (search) {
+      const escaped = escapeRegex(search);
       query.$or = [
-        { razorpayPaymentId: { $regex: search, $options: 'i' } },
-        { razorpayOrderId: { $regex: search, $options: 'i' } },
-        { orderId: { $regex: search, $options: 'i' } }
+        { razorpayPaymentId: { $regex: escaped, $options: 'i' } },
+        { razorpayOrderId: { $regex: escaped, $options: 'i' } },
+        { orderId: { $regex: escaped, $options: 'i' } }
       ];
     }
-    
-    const populateOptions = [
-      { path: 'payerId', select: 'fullName email', model: 'User' },
-      { path: 'payerId', select: 'fullName email', model: 'Artisan' },
-      { path: 'recipientId', select: 'fullName email', model: 'Artisan' },
-      { path: 'recipientId', select: 'fullName email', model: 'User' }
-    ];
-    
+
     let payments = await Payment.find(query)
       .populate('payerId')
       .populate('recipientId')
@@ -389,7 +398,7 @@ export const getAllPayments = async (req, res) => {
       pagination: { total: count, page: parseInt(page), pages: Math.ceil(count / limit) }
     });
   } catch (error) {
-    console.error('Get payments error:', error);
+    // Get payments error
     res.status(500).json({ success: false, message: 'Failed to fetch payments' });
   }
 };
@@ -422,7 +431,7 @@ export const getPaymentsStats = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get payments stats error:', error);
+    // Get payments stats error
     res.status(500).json({ success: false, message: 'Failed to fetch payments stats' });
   }
 };
@@ -446,7 +455,7 @@ export const processRefund = async (req, res) => {
     await req.user.logActivity('process_refund', 'payment', id, { amount: payment.amount });
     res.status(200).json({ success: true, data: payment, message: 'Refund processed successfully' });
   } catch (error) {
-    console.error('Process refund error:', error);
+    // Process refund error
     res.status(500).json({ success: false, message: 'Failed to process refund' });
   }
 };
@@ -469,21 +478,23 @@ export const getAllBookings = async (req, res) => {
     }
     
     if (artisan) {
-      const artisanDoc = await Artisan.findOne({ fullName: { $regex: artisan, $options: 'i' } });
+      const escapedArtisan = escapeRegex(artisan);
+      const artisanDoc = await Artisan.findOne({ fullName: { $regex: escapedArtisan, $options: 'i' } });
       if (artisanDoc) query.artisan = artisanDoc._id;
     }
-    
+
     if (search) {
+      const escaped = escapeRegex(search);
       const userMatch = await User.find({
         $or: [
-          { fullName: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } }
+          { fullName: { $regex: escaped, $options: 'i' } },
+          { email: { $regex: escaped, $options: 'i' } }
         ]
       }).select('_id');
       const artisanMatch = await Artisan.find({
         $or: [
-          { fullName: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } }
+          { fullName: { $regex: escaped, $options: 'i' } },
+          { email: { $regex: escaped, $options: 'i' } }
         ]
       }).select('_id');
       
@@ -522,7 +533,7 @@ export const getAllBookings = async (req, res) => {
       pagination: { total: count, page: parseInt(page), pages: Math.ceil(count / limit) }
     });
   } catch (error) {
-    console.error('Get bookings error:', error);
+    // Get bookings error
     res.status(500).json({ success: false, message: 'Failed to fetch bookings' });
   }
 };
@@ -549,7 +560,7 @@ export const getBookingsStats = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get bookings stats error:', error);
+    // Get bookings stats error
     res.status(500).json({ success: false, message: 'Failed to fetch bookings stats' });
   }
 };
@@ -562,7 +573,7 @@ export const cancelBooking = async (req, res) => {
     await req.user.logActivity('cancel_booking', 'booking', id);
     res.status(200).json({ success: true, data: booking, message: 'Booking cancelled successfully' });
   } catch (error) {
-    console.error('Cancel booking error:', error);
+    // Cancel booking error
     res.status(500).json({ success: false, message: 'Failed to cancel booking' });
   }
 };
@@ -607,7 +618,7 @@ export const getSettings = async (req, res) => {
       data: settingsCache || defaultSettings
     });
   } catch (error) {
-    console.error('Get settings error:', error);
+    // Get settings error
     res.status(500).json({ success: false, message: 'Failed to fetch settings' });
   }
 };
@@ -625,7 +636,7 @@ export const updateSettings = async (req, res) => {
       message: 'Settings updated successfully'
     });
   } catch (error) {
-    console.error('Update settings error:', error);
+    // Update settings error
     res.status(500).json({ success: false, message: 'Failed to update settings' });
   }
 };

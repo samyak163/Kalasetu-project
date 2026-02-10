@@ -45,7 +45,7 @@ const AdminPayments = () => {
       setPayments(list);
       setPagination(response.data?.pagination || null);
     } catch (err) {
-      console.error('Failed to fetch payments:', err);
+      // Log fetch error
       setError(err.response?.data?.message || 'Failed to load payments');
       setPayments([]);
     } finally {
@@ -60,7 +60,7 @@ const AdminPayments = () => {
         setStats(response.data.data);
       }
     } catch (err) {
-      console.error('Failed to fetch stats:', err);
+      // Log stats error
     }
   };
 
@@ -157,7 +157,7 @@ const AdminPayments = () => {
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
             <div className="text-sm text-gray-600 truncate">Platform Commission</div>
-            <div className="text-2xl font-bold text-blue-600 mt-1 truncate">
+            <div className="text-2xl font-bold text-brand-500 mt-1 truncate">
               {formatCurrency(stats.platformCommission || 0)}
             </div>
           </div>
@@ -175,14 +175,14 @@ const AdminPayments = () => {
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Search by user, artisan, or payment ID..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base"
               />
             </div>
           </div>
           <select
             value={status}
             onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -205,7 +205,7 @@ const AdminPayments = () => {
               type="date"
               value={startDate}
               onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base"
             />
           </div>
           <div>
@@ -214,7 +214,7 @@ const AdminPayments = () => {
               type="date"
               value={endDate}
               onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base"
             />
           </div>
           <div>
@@ -224,7 +224,7 @@ const AdminPayments = () => {
               value={minAmount}
               onChange={(e) => { setMinAmount(e.target.value); setPage(1); }}
               placeholder="0"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base"
             />
           </div>
           <div>
@@ -234,14 +234,14 @@ const AdminPayments = () => {
               value={maxAmount}
               onChange={(e) => { setMaxAmount(e.target.value); setPage(1); }}
               placeholder="100000"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base"
             />
           </div>
         </div>
         <div className="mt-4 flex justify-end">
           <button
             onClick={handleExportCSV}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm md:text-base"
+            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 flex items-center gap-2 text-sm md:text-base"
           >
             <Download className="w-4 h-4" />
             Export to CSV
@@ -381,7 +381,7 @@ const AdminPayments = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleViewDetails(payment)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-brand-500 hover:text-brand-700"
                             title="View Details"
                           >
                             <Eye className="w-5 h-5" />

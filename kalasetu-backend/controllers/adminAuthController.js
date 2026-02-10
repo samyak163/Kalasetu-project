@@ -17,12 +17,15 @@ export const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
-    admin.lastLogin = new Date();
-    admin.loginHistory.push({ timestamp: new Date(), ipAddress: req.ip, userAgent: req.get('user-agent') });
-    if (admin.loginHistory.length > 20) {
-      admin.loginHistory = admin.loginHistory.slice(-20);
-    }
-    await admin.save();
+    await Admin.findByIdAndUpdate(admin._id, {
+      lastLogin: new Date(),
+      $push: {
+        loginHistory: {
+          $each: [{ timestamp: new Date(), ipAddress: req.ip, userAgent: req.get('user-agent') }],
+          $slice: -20
+        }
+      }
+    });
     const token = admin.getSignedJwtToken();
     const cookieName = 'admin_token';
     // Set cookie for cross-site usage (Vercel frontend -> Render backend)
@@ -47,7 +50,7 @@ export const login = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Admin login error:', error);
+    // Admin login error
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
@@ -68,7 +71,7 @@ export const getMe = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get admin error:', error);
+    // Get admin error
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
@@ -90,7 +93,7 @@ export const changePassword = async (req, res) => {
     await admin.save();
     res.status(200).json({ success: true, message: 'Password changed successfully' });
   } catch (error) {
-    console.error('Change password error:', error);
+    // Change password error
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
@@ -132,7 +135,7 @@ export const updateProfile = async (req, res) => {
       message: 'Profile updated successfully',
     });
   } catch (error) {
-    console.error('Update admin profile error:', error);
+    // Update admin profile error
     res.status(500).json({ success: false, message: 'Failed to update profile' });
   }
 };

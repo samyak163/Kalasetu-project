@@ -56,7 +56,7 @@ const AdminLayout = ({ children }) => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-brand-500 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`}
                 title={!sidebarOpen ? item.name : ''}
               >
                 <Icon size={20} />
@@ -78,7 +78,7 @@ const AdminLayout = ({ children }) => {
           <div className="px-6 py-4 flex items-center justify-between">
             <AdminGlobalSearch />
             <div className="flex items-center gap-4">
-              <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Notifications">
                 <Bell size={20} className="text-gray-600" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>

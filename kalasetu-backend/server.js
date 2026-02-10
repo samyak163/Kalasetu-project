@@ -24,6 +24,7 @@ import { scheduleCleanupJob, scheduleDailyReports } from './utils/jobQueue.js';
 import { SERVER_CONFIG, JOBS_CONFIG } from './config/env.config.js';
 import { initRazorpay } from './utils/razorpay.js';
 import { initResend } from './utils/email.js';
+import { protect } from './middleware/authMiddleware.js';
 
 // --- IMPORT ALL OUR ROUTES ---
 // Routes for general artisan data (profiles, search, etc.)
@@ -53,6 +54,8 @@ import adminRoutes from './routes/adminRoutes.js';
 import authHelpersRoutes from './routes/authHelpersRoutes.js';
 import otpRoutes from './routes/otpRoutes.js';
 import portfolioRoutes from './routes/portfolioRoutes.js';
+import artisanDashboardRoutes from './routes/artisanDashboardRoutes.js';
+import artisanCustomerRoutes from './routes/artisanCustomerRoutes.js';
 
 
 // --- Load Environment Variables ---
@@ -116,7 +119,7 @@ app.use(cookieParser());
 // Rate limiting - Increased limits
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000, // Increased from 300 to 1000
+    max: 300,
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -213,40 +216,14 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/reviews', reviewRoutes);
 // /api/artisan/availability -> Availability endpoints (artisan auth)
 app.use('/api/artisan/availability', availabilityRoutes);
+// /api/artisan/dashboard -> Dashboard stats endpoints (artisan auth)
+app.use('/api/artisan/dashboard', protect, artisanDashboardRoutes);
+// /api/artisan/customers -> Customer list endpoints (artisan auth)
+app.use('/api/artisan/customers', protect, artisanCustomerRoutes);
 // /api/admin -> Admin endpoints
 app.use('/api/admin', adminRoutes);
 // /api/artisan/portfolio -> Portfolio endpoints (artisan auth)
 app.use('/api/artisan/portfolio', portfolioRoutes);
-
-// --- Debug Logging (Updated) ---
-// This is now accurate for our new structure
-console.log('Registered routes:');
-console.log('- GET /');
-console.log('- GET /api/test');
-console.log('--- Artisan Data ---');
-console.log('- GET /api/artisans');
-console.log('- GET /api/artisans/id/:id');
-console.log('- GET /api/artisans/nearby?lat=..&lng=..&radiusKm=..&limit=..');
-console.log('- GET /api/artisans/:publicId');
-console.log('--- Artisan Auth ---');
-console.log('- POST /api/auth/register');
-console.log('- POST /api/auth/login');
-console.log('- POST /api/auth/logout');
-console.log('- GET /api/auth/me');
-console.log('--- USER Auth ---');
-console.log('- POST /api/users/register');
-console.log('- POST /api/users/login');
-console.log('- POST /api/users/logout');
-console.log('- GET /api/users/me');
-console.log('--- Search ---');
-console.log('- GET /api/search/artisans');
-console.log('- GET /api/search/facets');
-console.log('--- Calls & Bookings ---');
-console.log('- GET /api/calls/history');
-console.log('- POST /api/bookings');
-console.log('- GET /api/bookings/me');
-console.log('- GET /api/bookings/artisan');
-// ---------------------------------
 
 // --- Error Handlers (Must be last) ---
 // Sentry error handler (must be before other error handlers)

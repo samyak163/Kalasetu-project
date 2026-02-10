@@ -60,14 +60,26 @@ const getArtisanById = async (req, res) => {
 // Update artisan profile
 const updateArtisanProfile = async (req, res) => {
     try {
-        const artisanId = req.user._id || req.user.id;
-        const updates = req.body;
+        const artisanId = req.user._id;
 
-        // Remove sensitive fields that shouldn't be updated this way
-        delete updates.password;
-        delete updates.publicId;
-        delete updates.loginAttempts;
-        delete updates.lockUntil;
+        // Whitelist of fields that can be updated via this endpoint
+        const allowedFields = [
+            'fullName', 'businessName', 'craft', 'bio', 'about',
+            'location', 'address', 'skills', 'languages',
+            'socialLinks', 'workingHours', 'minimumBookingNotice',
+            'profileImageUrl', 'profileImage', 'coverImageUrl',
+        ];
+
+        const updates = {};
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                updates[field] = req.body[field];
+            }
+        }
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({ message: 'No valid fields to update' });
+        }
 
         const artisan = await Artisan.findByIdAndUpdate(
             artisanId,
@@ -141,7 +153,7 @@ const getNearbyArtisans = async (req, res) => {
                 if (skillsArray.length) match.skills = { $in: skillsArray };
             }
             if (parseFloat(minRating) > 0) {
-                match.rating = { $gte: parseFloat(minRating) };
+                match.averageRating = { $gte: parseFloat(minRating) };
             }
             // Note: isActive field may not exist in all schemas
 
@@ -155,7 +167,7 @@ const getNearbyArtisans = async (req, res) => {
                 setTimeout(() => reject(new Error('Query timeout')), queryTimeout)
             );
 
-            const results = (await Promise.race([queryPromise, timeoutPromise])).slice(0, 5);
+            const results = await Promise.race([queryPromise, timeoutPromise]);
 
             // Track with PostHog
             trackEvent(
@@ -182,8 +194,8 @@ const getNearbyArtisans = async (req, res) => {
             
             // Fallback: return top-rated artisans
             const fallbackArtisans = await Artisan.find({})
-                .select('fullName businessName profileImageUrl profileImage profilePicture craft category location address rating publicId')
-                .sort({ 'rating.average': -1 })
+                .select('fullName businessName profileImageUrl craft location address averageRating totalReviews publicId')
+                .sort({ averageRating: -1 })
                 .limit(maxResults)
                 .lean();
 
@@ -206,8 +218,8 @@ const getNearbyArtisans = async (req, res) => {
         // Final fallback: return top-rated artisans on any error
         try {
             const fallbackArtisans = await Artisan.find({})
-                .select('fullName businessName profileImageUrl profileImage profilePicture craft category location address rating publicId')
-                .sort({ 'rating.average': -1 })
+                .select('fullName businessName profileImageUrl craft location address averageRating totalReviews publicId')
+                .sort({ averageRating: -1 })
                 .limit(20)
                 .lean();
 

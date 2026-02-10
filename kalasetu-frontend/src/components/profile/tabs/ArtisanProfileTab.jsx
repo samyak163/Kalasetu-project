@@ -132,7 +132,7 @@ const ArtisanProfileTab = () => {
 
       <div>
         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">About Me</label>
-        <textarea name="bio" value={formData.bio} onChange={handleInputChange} rows={4} className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white resize-none" placeholder="Tell USERs about your experience..." maxLength={500} />
+        <textarea name="bio" value={formData.bio} onChange={handleInputChange} rows={4} className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white resize-none" placeholder="Tell customers about your experience..." maxLength={500} />
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{(formData.bio || '').length}/500 characters</p>
       </div>
 

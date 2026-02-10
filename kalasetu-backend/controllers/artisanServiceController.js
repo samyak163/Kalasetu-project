@@ -1,6 +1,7 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import ArtisanService from '../models/artisanServiceModel.js';
 import Category from '../models/categoryModel.js';
+import Artisan from '../models/artisanModel.js';
 
 export const listServices = asyncHandler(async (req, res) => {
   const { category, q, artisan, limit = 20, page = 1 } = req.query;

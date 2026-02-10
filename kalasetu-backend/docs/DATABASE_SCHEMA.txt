@@ -1,0 +1,961 @@
+═══════════════════════════════════════════════════════════════
+        KALASETU DATABASE SCHEMA DOCUMENTATION
+═══════════════════════════════════════════════════════════════
+
+Generated on: 11/11/2025, 2:44:43 PM
+Database Type: MongoDB Atlas (NoSQL)
+Total Collections: 11
+
+═══════════════════════════════════════════════════════════════
+
+───────────────────────────────────────────────────────────────
+COLLECTION: ADMIN
+───────────────────────────────────────────────────────────────
+Description: Admin users who manage the platform
+Total Records: 1
+
+FIELDS:
+  • fullName
+    Type: String
+    Required: Yes
+    Description: Full name of the user
+
+  • email
+    Type: String
+    Required: Yes
+    Description: Email address
+
+  • password
+    Type: String
+    Required: Yes
+    Description: Encrypted password
+
+  • role
+    Type: String
+    Required: No
+
+  • permissions.users.view
+    Type: Boolean
+    Required: No
+
+  • permissions.users.edit
+    Type: Boolean
+    Required: No
+
+  • permissions.users.delete
+    Type: Boolean
+    Required: No
+
+  • permissions.users.verify
+    Type: Boolean
+    Required: No
+
+  • permissions.artisans.view
+    Type: Boolean
+    Required: No
+
+  • permissions.artisans.edit
+    Type: Boolean
+    Required: No
+
+  • permissions.artisans.delete
+    Type: Boolean
+    Required: No
+
+  • permissions.artisans.verify
+    Type: Boolean
+    Required: No
+
+  • permissions.artisans.suspend
+    Type: Boolean
+    Required: No
+
+  • permissions.bookings.view
+    Type: Boolean
+    Required: No
+
+  • permissions.bookings.edit
+    Type: Boolean
+    Required: No
+
+  • permissions.bookings.cancel
+    Type: Boolean
+    Required: No
+
+  • permissions.bookings.refund
+    Type: Boolean
+    Required: No
+
+  • permissions.payments.view
+    Type: Boolean
+    Required: No
+
+  • permissions.payments.process
+    Type: Boolean
+    Required: No
+
+  • permissions.payments.refund
+    Type: Boolean
+    Required: No
+
+  • permissions.reviews.view
+    Type: Boolean
+    Required: No
+
+  • permissions.reviews.moderate
+    Type: Boolean
+    Required: No
+
+  • permissions.reviews.delete
+    Type: Boolean
+    Required: No
+
+  • permissions.analytics.view
+    Type: Boolean
+    Required: No
+
+  • permissions.analytics.export
+    Type: Boolean
+    Required: No
+
+  • permissions.settings.view
+    Type: Boolean
+    Required: No
+
+  • permissions.settings.edit
+    Type: Boolean
+    Required: No
+
+  • profileImage
+    Type: String
+    Required: No
+
+  • isActive
+    Type: Boolean
+    Required: No
+    Description: Account active status
+
+  • lastLogin
+    Type: Date
+    Required: No
+
+  • activityLog.0.timestamp
+    Type: Date
+    Required: No
+
+INDEXES:
+  1. email
+
+───────────────────────────────────────────────────────────────
+COLLECTION: ARTISAN
+───────────────────────────────────────────────────────────────
+Description: Service providers (artisans) registered on the platform
+Total Records: 27
+
+FIELDS:
+  • publicId
+    Type: String
+    Required: No
+
+  • slug
+    Type: String
+    Required: No
+
+  • firebaseUid
+    Type: String
+    Required: No
+
+  • fullName
+    Type: String
+    Required: Yes
+    Description: Full name of the user
+
+  • email
+    Type: String
+    Required: No
+    Description: Email address
+
+  • phoneNumber
+    Type: String
+    Required: No
+    Description: Contact phone number
+
+  • password
+    Type: String
+    Required: Yes
+    Description: Encrypted password
+
+  • craft
+    Type: String
+    Required: No
+
+  • businessName
+    Type: String
+    Required: No
+
+  • tagline
+    Type: String
+    Required: No
+
+  • location
+    Type: Mixed
+    Required: No
+    Description: Geographic location data
+
+  • bio
+    Type: String
+    Required: No
+
+  • profileImageUrl
+    Type: String
+    Required: No
+
+  • profileImagePublicId
+    Type: String
+    Required: No
+
+  • coverImageUrl
+    Type: String
+    Required: No
+
+  • portfolioImageUrls
+    Type: Array<String>
+    Required: No
+
+  • isActive
+    Type: Boolean
+    Required: No
+    Description: Account active status
+
+  • isVerified
+    Type: Boolean
+    Required: No
+    Description: Verification status
+
+  • yearsOfExperience
+    Type: String
+    Required: No
+
+  • teamSize
+    Type: String
+    Required: No
+
+  • languagesSpoken
+    Type: Array<String>
+    Required: No
+
+  • certifications
+    Type: Array<Mixed>
+    Required: No
+
+  • businessPhone
+    Type: String
+    Required: No
+
+  • whatsappNumber
+    Type: String
+    Required: No
+
+  • workingHours
+    Type: Mixed
+    Required: No
+
+  • emergencyServices
+    Type: Boolean
+    Required: No
+
+  • serviceRadius
+    Type: Number
+    Required: No
+
+  • minimumBookingNotice
+    Type: Number
+    Required: No
+
+  • verificationDocuments
+    Type: Mixed
+    Required: No
+
+  • bankDetails
+    Type: Mixed
+    Required: No
+
+  • businessType
+    Type: String
+    Required: No
+
+  • gstNumber
+    Type: String
+    Required: No
+
+  • gstVerified
+    Type: Boolean
+    Required: No
+
+  • profileViews
+    Type: Number
+    Required: No
+
+  • totalBookings
+    Type: Number
+    Required: No
+
+  • completedBookings
+    Type: Number
+    Required: No
+
+  • cancelledBookings
+    Type: Number
+    Required: No
+
+  • totalEarnings
+    Type: Number
+    Required: No
+
+  • averageRating
+    Type: Number
+    Required: No
+
+  • totalReviews
+    Type: Number
+    Required: No
+
+  • responseRate
+    Type: Number
+    Required: No
+
+  • acceptanceRate
+    Type: Number
+    Required: No
+
+  • autoAcceptBookings
+    Type: Boolean
+    Required: No
+
+  • bufferTimeBetweenBookings
+    Type: Number
+    Required: No
+
+  • maxBookingsPerDay
+    Type: Number
+    Required: No
+
+  • advancePaymentPercentage
+    Type: Number
+    Required: No
+
+  • notifications
+    Type: Mixed
+    Required: No
+
+  • subscriptionPlan
+    Type: String
+    Required: No
+
+  • subscriptionExpiresAt
+    Type: Date
+    Required: No
+
+  • lastLoginAt
+    Type: Date
+    Required: No
+
+  • isOnline
+    Type: Boolean
+    Required: No
+
+  • vacationMode
+    Type: Mixed
+    Required: No
+
+  • lockUntil
+    Type: Date
+    Required: No
+
+  • loginAttempts
+    Type: Number
+    Required: No
+
+  • resetPasswordToken
+    Type: String
+    Required: No
+
+  • resetPasswordExpires
+    Type: Date
+    Required: No
+
+  • emailVerificationToken
+    Type: String
+    Required: No
+
+  • emailVerificationExpires
+    Type: Date
+    Required: No
+
+  • emailVerified
+    Type: Boolean
+    Required: No
+
+  • pendingEmail
+    Type: String
+    Required: No
+
+  • emailVerificationCode
+    Type: String
+    Required: No
+
+  • pendingPhoneNumber
+    Type: String
+    Required: No
+
+  • phoneVerificationCode
+    Type: String
+    Required: No
+
+  • phoneVerificationExpires
+    Type: Date
+    Required: No
+
+  • otpCode
+    Type: String
+    Required: No
+
+  • otpExpires
+    Type: Date
+    Required: No
+
+  • otpAttempts
+    Type: Number
+    Required: No
+
+INDEXES:
+  1. publicId
+  2. slug
+  3. firebaseUid
+  4. email
+  5. phoneNumber
+  6. location
+  7. createdAt
+  8. location.city, location.state
+
+───────────────────────────────────────────────────────────────
+COLLECTION: USER
+───────────────────────────────────────────────────────────────
+Description: End users who book services
+Total Records: 1
+
+FIELDS:
+  • fullName
+    Type: String
+    Required: Yes
+    Description: Full name of the user
+
+  • email
+    Type: String
+    Required: No
+    Description: Email address
+
+  • phoneNumber
+    Type: String
+    Required: No
+    Description: Contact phone number
+
+  • password
+    Type: String
+    Required: Yes
+    Description: Encrypted password
+
+  • lockUntil
+    Type: Date
+    Required: No
+
+  • loginAttempts
+    Type: Number
+    Required: No
+
+  • resetPasswordToken
+    Type: String
+    Required: No
+
+  • resetPasswordExpires
+    Type: Date
+    Required: No
+
+  • emailVerificationToken
+    Type: String
+    Required: No
+
+  • emailVerificationExpires
+    Type: Date
+    Required: No
+
+  • emailVerified
+    Type: Boolean
+    Required: No
+
+  • otpCode
+    Type: String
+    Required: No
+
+  • otpExpires
+    Type: Date
+    Required: No
+
+  • otpAttempts
+    Type: Number
+    Required: No
+
+  • bookmarks.0
+    Type: SchemaObjectId
+    Required: No
+
+INDEXES:
+  1. email
+  2. phoneNumber
+  3. createdAt
+
+───────────────────────────────────────────────────────────────
+COLLECTION: CATEGORY
+───────────────────────────────────────────────────────────────
+Description: Service categories (Handicrafts, Home Services, etc.)
+Total Records: 6
+
+FIELDS:
+  • name
+    Type: String
+    Required: Yes
+
+  • slug
+    Type: String
+    Required: Yes
+
+  • image
+    Type: String
+    Required: No
+
+  • suggestedServices
+    Type: Array<Mixed>
+    Required: No
+
+  • active
+    Type: Boolean
+    Required: No
+
+INDEXES:
+  1. name
+  2. slug
+
+───────────────────────────────────────────────────────────────
+COLLECTION: ARTISANSERVICE
+───────────────────────────────────────────────────────────────
+Description: Services offered by artisans
+Total Records: 25
+
+FIELDS:
+  • artisan
+    Type: SchemaObjectId
+    Required: Yes
+
+  • category
+    Type: SchemaObjectId
+    Required: Yes
+
+  • categoryName
+    Type: String
+    Required: Yes
+
+  • name
+    Type: String
+    Required: Yes
+
+  • description
+    Type: String
+    Required: No
+    Description: Detailed description
+
+  • price
+    Type: Number
+    Required: No
+    Description: Price in INR
+
+  • currency
+    Type: String
+    Required: No
+
+  • durationMinutes
+    Type: Number
+    Required: No
+
+  • images
+    Type: Array<String>
+    Required: No
+
+  • isActive
+    Type: Boolean
+    Required: No
+    Description: Account active status
+
+INDEXES:
+  1. artisan
+  2. category
+  3. name, description, categoryName
+  4. categoryName, name
+
+───────────────────────────────────────────────────────────────
+COLLECTION: BOOKING
+───────────────────────────────────────────────────────────────
+Description: Service booking requests and appointments
+Total Records: 0
+
+FIELDS:
+  • artisan
+    Type: SchemaObjectId
+    Required: Yes
+
+  • user
+    Type: SchemaObjectId
+    Required: Yes
+
+  • service
+    Type: SchemaObjectId
+    Required: No
+
+  • serviceName
+    Type: String
+    Required: No
+
+  • categoryName
+    Type: String
+    Required: No
+
+  • start
+    Type: Date
+    Required: Yes
+
+  • end
+    Type: Date
+    Required: Yes
+
+  • status
+    Type: String
+    Required: No
+    Description: Current status
+
+  • notes
+    Type: String
+    Required: No
+
+  • price
+    Type: Number
+    Required: No
+    Description: Price in INR
+
+  • depositPaid
+    Type: Boolean
+    Required: No
+
+  • requestedAt
+    Type: Date
+    Required: No
+
+  • respondedAt
+    Type: Date
+    Required: No
+
+  • rejectionReason
+    Type: String
+    Required: No
+
+  • chatChannelId
+    Type: String
+    Required: No
+
+  • videoRoomName
+    Type: String
+    Required: No
+
+  • videoRoomUrl
+    Type: String
+    Required: No
+
+INDEXES:
+  1. artisan
+  2. user
+  3. service
+  4. status
+  5. artisan, start, end
+
+───────────────────────────────────────────────────────────────
+COLLECTION: REVIEW
+───────────────────────────────────────────────────────────────
+Description: Customer reviews and ratings for artisans
+Total Records: 1
+
+FIELDS:
+  • artisan
+    Type: SchemaObjectId
+    Required: Yes
+
+  • user
+    Type: SchemaObjectId
+    Required: Yes
+
+  • booking
+    Type: SchemaObjectId
+    Required: No
+
+  • rating
+    Type: Number
+    Required: Yes
+    Description: Rating score
+
+  • comment
+    Type: String
+    Required: Yes
+
+  • images.0
+    Type: String
+    Required: No
+
+  • response.text
+    Type: String
+    Required: No
+
+  • helpfulVotes.0
+    Type: SchemaObjectId
+    Required: No
+
+  • isVerified
+    Type: Boolean
+    Required: No
+    Description: Verification status
+
+  • status
+    Type: String
+    Required: No
+    Description: Current status
+
+INDEXES:
+  1. artisan
+  2. user, booking
+
+───────────────────────────────────────────────────────────────
+COLLECTION: PAYMENT
+───────────────────────────────────────────────────────────────
+Description: Payment transactions via Razorpay
+Total Records: 1
+
+FIELDS:
+  • orderId
+    Type: String
+    Required: Yes
+
+  • razorpayOrderId
+    Type: String
+    Required: Yes
+
+  • razorpayPaymentId
+    Type: String
+    Required: No
+
+  • razorpaySignature
+    Type: String
+    Required: No
+
+  • amount
+    Type: Number
+    Required: Yes
+
+  • currency
+    Type: String
+    Required: No
+
+  • status
+    Type: String
+    Required: No
+    Description: Current status
+
+  • payerId
+    Type: SchemaObjectId
+    Required: Yes
+
+  • payerModel
+    Type: String
+    Required: Yes
+
+  • recipientId
+    Type: SchemaObjectId
+    Required: No
+
+  • recipientModel
+    Type: String
+    Required: No
+
+  • purpose
+    Type: String
+    Required: Yes
+
+  • description
+    Type: String
+    Required: No
+    Description: Detailed description
+
+  • metadata
+    Type: SchemaMixed
+    Required: No
+
+  • refundId
+    Type: String
+    Required: No
+
+  • refundAmount
+    Type: Number
+    Required: No
+
+  • refundedAt
+    Type: Date
+    Required: No
+
+INDEXES:
+  1. orderId
+  2. razorpayOrderId
+  3. razorpayPaymentId
+  4. payerId, status
+  5. recipientId, status
+
+───────────────────────────────────────────────────────────────
+COLLECTION: NOTIFICATION
+───────────────────────────────────────────────────────────────
+Description: Push notifications sent to users
+Total Records: 37
+
+FIELDS:
+  • ownerId
+    Type: SchemaObjectId
+    Required: Yes
+
+  • ownerType
+    Type: String
+    Required: Yes
+
+  • title
+    Type: String
+    Required: No
+
+  • text
+    Type: String
+    Required: Yes
+
+  • url
+    Type: String
+    Required: No
+
+  • read
+    Type: Boolean
+    Required: No
+
+INDEXES:
+  1. ownerId
+  2. ownerType
+  3. read
+  4. ownerId, ownerType, createdAt
+
+───────────────────────────────────────────────────────────────
+COLLECTION: AVAILABILITY
+───────────────────────────────────────────────────────────────
+Description: Artisan availability schedules
+Total Records: 0
+
+FIELDS:
+  • artisan
+    Type: SchemaObjectId
+    Required: Yes
+
+  • recurringSchedule.0.dayOfWeek
+    Type: Number
+    Required: No
+
+  • recurringSchedule.0.slots.0.isActive
+    Type: Boolean
+    Required: No
+    Description: Account active status
+
+  • exceptions.0.slots.0.isActive
+    Type: Boolean
+    Required: No
+    Description: Account active status
+
+  • bufferTime
+    Type: Number
+    Required: No
+
+  • advanceBookingDays
+    Type: Number
+    Required: No
+
+  • minNoticeHours
+    Type: Number
+    Required: No
+
+INDEXES:
+  1. artisan
+
+───────────────────────────────────────────────────────────────
+COLLECTION: CALLHISTORY
+───────────────────────────────────────────────────────────────
+Description: Video call history records
+Total Records: 25
+
+FIELDS:
+  • artisan
+    Type: SchemaObjectId
+    Required: No
+
+  • user
+    Type: SchemaObjectId
+    Required: No
+
+  • startedAt
+    Type: Date
+    Required: Yes
+
+  • endedAt
+    Type: Date
+    Required: No
+
+  • durationSec
+    Type: Number
+    Required: No
+
+  • type
+    Type: String
+    Required: No
+
+  • status
+    Type: String
+    Required: No
+    Description: Current status
+
+INDEXES:
+  1. artisan
+  2. user
+  3. artisan, startedAt
+  4. user, startedAt
+
+═══════════════════════════════════════════════════════════════
+                    DATABASE SUMMARY
+═══════════════════════════════════════════════════════════════
+
+Admin                : 1        documents
+Artisan              : 27       documents
+User                 : 1        documents
+Category             : 6        documents
+ArtisanService       : 25       documents
+Booking              : 0        documents
+Review               : 1        documents
+Payment              : 1        documents
+Notification         : 37       documents
+Availability         : 0        documents
+CallHistory          : 25       documents
+
+═══════════════════════════════════════════════════════════════

@@ -41,12 +41,12 @@ const HeroSearch = () => {
         <div className="absolute inset-0 bg-black opacity-60"></div>
       </div>
       <div className="relative container mx-auto text-center z-10 max-w-4xl">
-        <h2 className="text-4xl md:text-5xl font-extrabold mb-4">Find Local Artisans in Your City</h2>
+        <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">Find Local Artisans in Your City</h2>
         <p className="text-md md:text-lg text-gray-200 mb-8 max-w-2xl mx-auto">
           Discover and connect with the best local talent, from handmade crafts to essential home services.
           {selectedLocation && (
-            <span className="block mt-2 text-indigo-200">
-              📍 Near {selectedLocation.city || selectedLocation.address}
+            <span className="block mt-2 text-brand-200">
+              Near {selectedLocation.city || selectedLocation.address}
             </span>
           )}
         </p>

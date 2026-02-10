@@ -27,12 +27,7 @@ const AdminArtisans = () => {
       setArtisans(list);
       setPagination(response.data?.pagination || null);
     } catch (err) {
-      console.error('Failed to fetch artisans:', {
-        message: err.message,
-        status: err.response?.status,
-        data: err.response?.data,
-        url: err.config?.url
-      });
+      // Log fetch error details for debugging
       if (err.response?.status === 403) {
         setError('Permission denied: your admin role lacks required permissions for artisans.');
       } else {
@@ -100,7 +95,7 @@ const AdminArtisans = () => {
         </div>
         <button
           onClick={() => fetchArtisans()}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm md:text-base"
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 flex items-center gap-2 text-sm md:text-base"
         >
           <RefreshCcw className="w-4 h-4" />
           Refresh
@@ -119,7 +114,7 @@ const AdminArtisans = () => {
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
           <div className="text-sm text-gray-600 truncate">Active</div>
-          <div className="text-2xl font-bold text-blue-600 mt-1">{stats.active}</div>
+          <div className="text-2xl font-bold text-brand-500 mt-1">{stats.active}</div>
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
           <div className="text-sm text-gray-600 truncate">Suspended</div>
@@ -133,7 +128,7 @@ const AdminArtisans = () => {
           onClick={() => { setStatus('all'); setVerified('all'); setPage(1); }}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             status === 'all' && verified === 'all'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-brand-500 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -176,15 +171,15 @@ const AdminArtisans = () => {
           <div className="md:col-span-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, email, or phone..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, email, or phone..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500" />
             </div>
           </div>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500">
             <option value="all">All Status</option>
             <option value="active">Active</option>
             <option value="inactive">Suspended</option>
           </select>
-          <select value={verified} onChange={(e) => setVerified(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <select value={verified} onChange={(e) => setVerified(e.target.value)} className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500">
             <option value="all">All Verification</option>
             <option value="verified">Verified</option>
             <option value="unverified">Unverified</option>
@@ -279,12 +274,12 @@ const AdminArtisans = () => {
                           <div className="flex items-center gap-2 truncate max-w-xs"><Phone className="w-4 h-4 text-gray-400 flex-shrink-0" /><span className="truncate">{artisan.phoneNumber}</span></div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap"><span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 truncate max-w-xs">{artisan.category || 'N/A'}</span></td>
+                      <td className="px-6 py-4 whitespace-nowrap"><span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-brand-50 text-brand-700 truncate max-w-xs">{artisan.category || 'N/A'}</span></td>
                       <td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${artisan.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{artisan.isActive ? 'Active' : 'Suspended'}</span></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><div className="flex items-center gap-2"><Calendar className="w-4 h-4" />{new Date(artisan.createdAt).toLocaleDateString()}</div></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => window.open(`/artisan/${artisan.publicId || artisan._id}`, '_blank')} className="text-blue-600 hover:text-blue-900" title="View Profile"><Eye className="w-5 h-5" /></button>
+                          <button onClick={() => window.open(`/artisan/${artisan.publicId || artisan._id}`, '_blank')} className="text-brand-500 hover:text-brand-700" title="View Profile"><Eye className="w-5 h-5" /></button>
                           <button onClick={() => handleVerify(artisan._id, !artisan.isVerified)} className={artisan.isVerified ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'} title={artisan.isVerified ? 'Unverify' : 'Verify'}><CheckCircle className="w-5 h-5" /></button>
                           <button onClick={() => handleStatusChange(artisan._id, !artisan.isActive)} className={artisan.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} title={artisan.isActive ? 'Suspend' : 'Activate'}><Ban className="w-5 h-5" /></button>
                           <button onClick={() => handleDelete(artisan._id)} className="text-red-600 hover:text-red-900" title="Delete (Super Admin Only)"><Trash2 className="w-5 h-5" /></button>

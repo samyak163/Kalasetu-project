@@ -18,9 +18,12 @@ const bookingSchema = new mongoose.Schema({
   chatChannelId: { type: String, default: '' },
   videoRoomName: { type: String, default: '' },
   videoRoomUrl: { type: String, default: '' },
+  completedAt: { type: Date, default: null },
 }, { timestamps: true });
 
 bookingSchema.index({ artisan: 1, start: 1, end: 1 });
+bookingSchema.index({ user: 1, status: 1 });
+bookingSchema.index({ status: 1, createdAt: -1 });
 
 const Booking = mongoose.model('Booking', bookingSchema);
 export default Booking;

@@ -15,7 +15,9 @@
     "wipe:all": "node scripts/wipeAllAccounts.js",
     "seed:core": "node scripts/seedCoreData.js",
     "check:artisans": "node scripts/checkArtisans.js",
-    "workflow:test": "node scripts/workflowSim.js"
+    "workflow:test": "node scripts/workflowSim.js",
+    "create:admin": "node scripts/createAdmin.js",
+    "generate:db-doc": "node scripts/generateDatabaseDoc.js"
   },
   "keywords": [],
   "author": "",

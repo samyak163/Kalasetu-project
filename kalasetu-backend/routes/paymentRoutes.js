@@ -1,32 +1,28 @@
-﻿import express from 'express';
+import express from 'express';
 import {
   createPaymentOrder,
   verifyPayment,
   getPaymentDetails,
   getUserPayments,
+  getArtisanEarnings,
   requestRefund,
   handleWebhook,
 } from '../controllers/paymentController.js';
-import { protect } from '../middleware/authMiddleware.js';
-import { userProtect } from '../middleware/userProtectMiddleware.js';
+import { protect, protectAny } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 // Webhook (no auth, uses signature verification)
 router.post('/webhook', handleWebhook);
 
-// Artisan routes
-router.post('/create-order', protect, createPaymentOrder);
-router.post('/verify', protect, verifyPayment);
-router.get('/', protect, getUserPayments);
-router.get('/:paymentId', protect, getPaymentDetails);
-router.post('/:paymentId/refund', protect, requestRefund);
+// Shared routes (both user types)
+router.post('/create-order', protectAny, createPaymentOrder);
+router.post('/verify', protectAny, verifyPayment);
+router.get('/', protectAny, getUserPayments);
+router.get('/:paymentId', protectAny, getPaymentDetails);
+router.post('/:paymentId/refund', protectAny, requestRefund);
 
-// USER routes
-router.post('/user/create-order', userProtect, createPaymentOrder);
-router.post('/user/verify', userProtect, verifyPayment);
-router.get('/user/payments', userProtect, getUserPayments);
-router.get('/user/:paymentId', userProtect, getPaymentDetails);
-router.post('/user/:paymentId/refund', userProtect, requestRefund);
+// Artisan-only routes
+router.get('/artisan/earnings', protect, getArtisanEarnings);
 
 export default router;

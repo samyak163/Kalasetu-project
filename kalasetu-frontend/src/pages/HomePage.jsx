@@ -23,9 +23,9 @@ const HomePage = () => {
             
             {/* Nearby Artisans Section (only if Google Maps is enabled) */}
             {isGoogleMapsEnabled() && (
-                <section className="py-16 bg-gray-50">
+                <section className="py-16 bg-brand-50/30">
                     <div className="container mx-auto px-4">
-                        <h2 className="text-3xl font-bold text-center mb-8">Artisans Near You</h2>
+                        <h2 className="text-3xl font-display font-bold text-center mb-8">Artisans Near You</h2>
                         <NearbyArtisans />
                     </div>
                 </section>

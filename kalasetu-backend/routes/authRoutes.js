@@ -8,14 +8,22 @@ const router = express.Router();
 
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200, // Increased from 60 to 200
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-router.post('/register', strictLimiter, asyncHandler(register));
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many registration attempts, please try again later.' },
+});
+
+router.post('/register', registerLimiter, asyncHandler(register));
 router.post('/login', strictLimiter, asyncHandler(login));
-router.post('/logout', strictLimiter, asyncHandler(logout));
+router.post('/logout', asyncHandler(logout));
 router.post('/forgot-password', strictLimiter, asyncHandler(forgotPassword));
 router.post('/reset-password', strictLimiter, asyncHandler(resetPassword));
 router.post('/firebase-login', asyncHandler(firebaseLogin));

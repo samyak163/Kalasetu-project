@@ -12,6 +12,9 @@ export const useNotifications = () => {
   useEffect(() => {
     checkSubscription();
     setupNotificationHandlers();
+    return () => {
+      setNotificationClickHandler(null);
+    };
   }, []);
 
   const checkSubscription = async () => {

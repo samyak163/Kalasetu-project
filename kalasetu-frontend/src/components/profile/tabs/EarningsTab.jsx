@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { ToastContext } from '../../../context/ToastContext.jsx';
+import api from '../../../lib/axios.js';
+import { LoadingState } from '../../ui';
 
 const EarningsTab = () => {
   const { showToast } = useContext(ToastContext);
@@ -13,36 +15,19 @@ const EarningsTab = () => {
 
   const fetchEarnings = async () => {
     try {
-      setLoading(false);
-      // Placeholder data
-      setEarnings({
-        availableBalance: 5420,
-        pendingAmount: 1200,
-        totalEarned: 45680,
-        lastWithdrawal: 3000,
-        thisMonth: 8500
-      });
-      setTransactions([
-        {
-          id: 1,
-          type: 'credit',
-          description: 'Booking Payment - Plumbing Repair',
-          amount: 800,
-          date: 'Jan 8, 2025',
-          status: 'completed'
-        },
-        {
-          id: 2,
-          type: 'debit',
-          description: 'Withdrawal to Bank Account',
-          amount: 3000,
-          date: 'Jan 5, 2025',
-          status: 'completed'
-        }
-      ]);
+      setLoading(true);
+      // Fetch real earnings from backend
+      const response = await api.get('/api/payments/artisan/earnings');
+      if (response.data.success) {
+        setEarnings(response.data.data.summary || {});
+        setTransactions(response.data.data.transactions || []);
+      }
     } catch (error) {
       console.error('Failed to load earnings:', error);
-      showToast('Failed to load earnings', 'error');
+      showToast(error.response?.data?.message || 'Failed to load earnings', 'error');
+      setEarnings({});
+      setTransactions([]);
+    } finally {
       setLoading(false);
     }
   };
@@ -52,18 +37,14 @@ const EarningsTab = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A55233]"></div>
-      </div>
-    );
+    return <LoadingState message="Loading earnings..." />;
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Earnings & Payouts</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <h2 className="text-2xl font-bold text-gray-900">Earnings & Payouts</h2>
+        <p className="text-sm text-gray-500 mt-1">
           Track your income and manage withdrawals
         </p>
       </div>
@@ -81,36 +62,36 @@ const EarningsTab = () => {
           </button>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Pending Amount</div>
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="text-sm text-gray-500 mb-2">Pending Amount</div>
           <div className="text-3xl font-bold text-yellow-600 mb-2">₹{earnings?.pendingAmount?.toLocaleString()}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Will be available in 2-3 days</div>
+          <div className="text-xs text-gray-500">Will be available in 2-3 days</div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">This Month</div>
-          <div className="text-3xl font-bold text-gray-900 dark:text-white mb-2">₹{earnings?.thisMonth?.toLocaleString()}</div>
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <div className="text-sm text-gray-500 mb-2">This Month</div>
+          <div className="text-3xl font-bold text-gray-900 mb-2">₹{earnings?.thisMonth?.toLocaleString()}</div>
           <div className="text-xs text-green-600">+15% from last month</div>
         </div>
       </div>
 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Total Earned</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">₹{earnings?.totalEarned?.toLocaleString()}</div>
+              <div className="text-sm text-gray-500">Total Earned</div>
+              <div className="text-2xl font-bold text-gray-900">₹{earnings?.totalEarned?.toLocaleString()}</div>
             </div>
             <div className="text-3xl">💰</div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">Last Withdrawal</div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">₹{earnings?.lastWithdrawal?.toLocaleString()}</div>
+              <div className="text-sm text-gray-500">Last Withdrawal</div>
+              <div className="text-2xl font-bold text-gray-900">₹{earnings?.lastWithdrawal?.toLocaleString()}</div>
             </div>
             <div className="text-3xl">🏦</div>
           </div>
@@ -119,14 +100,14 @@ const EarningsTab = () => {
 
       {/* Transaction History */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Transaction History</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Transaction History</h3>
         {transactions.length > 0 ? (
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             {transactions.map((transaction, index) => (
-              <div 
+              <div
                 key={transaction.id}
                 className={`p-4 flex items-center justify-between ${
-                  index < transactions.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''
+                  index < transactions.length - 1 ? 'border-b border-gray-200' : ''
                 }`}
               >
                 <div className="flex items-start gap-4">
@@ -136,8 +117,8 @@ const EarningsTab = () => {
                     {transaction.type === 'credit' ? '↓' : '↑'}
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">{transaction.description}</div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">{transaction.date}</div>
+                    <div className="font-medium text-gray-900">{transaction.description}</div>
+                    <div className="text-sm text-gray-500">{transaction.date}</div>
                   </div>
                 </div>
                 <div className={`text-lg font-semibold ${
@@ -149,9 +130,9 @@ const EarningsTab = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <div className="text-center py-8 bg-gray-50 rounded-lg">
             <div className="text-4xl mb-2">📊</div>
-            <p className="text-gray-600 dark:text-gray-400">No transactions yet</p>
+            <p className="text-gray-600">No transactions yet</p>
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
-﻿import asyncHandler from '../utils/asyncHandler.js';
+﻿import mongoose from 'mongoose';
+import asyncHandler from '../utils/asyncHandler.js';
 import {
   createStreamUserToken,
   upsertStreamUser,
@@ -7,6 +8,8 @@ import {
   addChannelMembers,
   removeChannelMembers,
 } from '../utils/streamChat.js';
+import User from '../models/userModel.js';
+import Artisan from '../models/artisanModel.js';
 
 /**
  * @desc    Get Stream Chat token for user
@@ -16,8 +19,13 @@ import {
 export const getChatToken = asyncHandler(async (req, res) => {
   const userId = req.user._id.toString();
 
-  // Upsert user in Stream
-  await upsertStreamUser(req.user);
+  // Upsert user in Stream and validate the result
+  const upsertResult = await upsertStreamUser(req.user);
+
+  if (!upsertResult) {
+    res.status(503);
+    throw new Error('Chat service is currently unavailable');
+  }
 
   // Generate token
   const token = createStreamUserToken(userId, 86400); // 24 hours
@@ -48,9 +56,24 @@ export const createDMChannel = asyncHandler(async (req, res) => {
     throw new Error('Recipient ID is required');
   }
 
+  // Validate recipientId is a valid MongoDB ObjectId
+  if (!mongoose.Types.ObjectId.isValid(recipientId)) {
+    res.status(400);
+    throw new Error('Invalid recipient ID format');
+  }
+
   if (recipientId === userId) {
     res.status(400);
     throw new Error('Cannot create DM channel with yourself');
+  }
+
+  // Validate recipient exists in the database (check both User and Artisan collections)
+  const recipientUser = await User.findById(recipientId).select('_id');
+  const recipientArtisan = await Artisan.findById(recipientId).select('_id');
+
+  if (!recipientUser && !recipientArtisan) {
+    res.status(404);
+    throw new Error('Recipient not found');
   }
 
   const channel = await createDirectMessageChannel(userId, recipientId);

@@ -42,7 +42,7 @@ export const NotificationProvider = ({ children }) => {
       }));
       setNotifications(decorated);
       setUnreadCount(computeUnread(decorated));
-    } catch (_) {}
+    } catch (err) { console.error('Failed to refresh notifications:', err); }
   }, [computeUnread, formatTimeAgo]);
 
   const markRead = useCallback(async (id) => {
@@ -50,7 +50,7 @@ export const NotificationProvider = ({ children }) => {
       await axios.patch(`${API_CONFIG.BASE_URL}/api/notifications/${id}/read`, {}, { withCredentials: true });
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (_) {}
+    } catch (err) { console.error('Failed to mark notification as read:', err); }
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);

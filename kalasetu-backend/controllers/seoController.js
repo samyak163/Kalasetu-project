@@ -4,7 +4,7 @@ export const getArtisanSEO = async (req, res) => {
   try {
     const { publicId } = req.params;
     const artisan = await Artisan.findOne({ publicId })
-      .select('fullName bio skills location profileImageUrl rating reviewCount')
+      .select('fullName bio skills location profileImageUrl averageRating totalReviews')
       .lean();
     if (!artisan) {
       return res.status(404).json({ success: false, message: 'Artisan not found' });
@@ -29,22 +29,22 @@ export const getArtisanSEO = async (req, res) => {
       ]
         .filter(Boolean)
         .join(', '),
-      image: artisan.profileImageUrl || artisan.profilePicture || 'https://kalasetu.com/default-artisan.jpg',
-      url: `https://kalasetu.com/artisan/${publicId}`,
+      image: artisan.profileImageUrl || '',
+      url: `${process.env.FRONTEND_BASE_URL || process.env.FRONTEND_URL || 'https://kalasetu.com'}/artisan/${publicId}`,
       type: 'profile',
       structuredData: {
         '@context': 'https://schema.org',
         '@type': 'Person',
         name: artisan.fullName,
         description: artisan.bio,
-        image: artisan.profileImageUrl || artisan.profilePicture,
-        url: `https://kalasetu.com/artisan/${publicId}`,
+        image: artisan.profileImageUrl || '',
+        url: `${process.env.FRONTEND_BASE_URL || process.env.FRONTEND_URL || 'https://kalasetu.com'}/artisan/${publicId}`,
         aggregateRating:
-          artisan.rating
+          artisan.averageRating
             ? {
                 '@type': 'AggregateRating',
-                ratingValue: artisan.rating,
-                reviewCount: artisan.reviewCount || 0,
+                ratingValue: artisan.averageRating,
+                reviewCount: artisan.totalReviews || 0,
               }
             : undefined,
         address:
@@ -93,7 +93,7 @@ export const getSitemapData = async (req, res) => {
 
 export const getSitemapXml = async (req, res) => {
   try {
-    const baseUrl = process.env.FRONTEND_BASE_URL || 'https://kalasetu.com';
+    const baseUrl = process.env.FRONTEND_BASE_URL || process.env.FRONTEND_URL || 'https://kalasetu.com';
     const artisans = await Artisan.find().select('publicId updatedAt').lean();
 
     let xml = '';

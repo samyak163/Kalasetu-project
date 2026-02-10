@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { uploadToCloudinary, validateImage } from '../../../lib/cloudinary.js';
 import api from '../../../lib/axios.js';
 import { ToastContext } from '../../../context/ToastContext.jsx';
+import { useAuth } from '../../../context/AuthContext.jsx';
 
 const ProfileTab = ({ user, onSave }) => {
   const { showToast } = React.useContext(ToastContext);
+  const { bootstrapAuth } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -123,9 +125,9 @@ const ProfileTab = ({ user, onSave }) => {
 
       showToast('Profile updated successfully!', 'success');
       onSave?.();
-      
-      // Update user context would happen via bootstrapAuth in AuthContext
-      setTimeout(() => window.location.reload(), 1000);
+
+      // Re-fetch auth state to update user context without full page reload
+      await bootstrapAuth();
     } catch (error) {
       showToast(
         error.response?.data?.message || 'Failed to update profile',

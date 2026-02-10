@@ -44,7 +44,7 @@ const AdminReviews = () => {
       setReviews(list);
       setPagination(response.data?.pagination || null);
     } catch (err) {
-      console.error('Failed to fetch reviews:', err);
+      // Log fetch error
       setError(err.response?.data?.message || 'Failed to load reviews');
       setReviews([]);
     } finally {
@@ -59,7 +59,7 @@ const AdminReviews = () => {
         setStats(response.data.data);
       }
     } catch (err) {
-      console.error('Failed to fetch stats:', err);
+      // Log stats error
     }
   };
 
@@ -144,14 +144,14 @@ const AdminReviews = () => {
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 placeholder="Search by artisan or user name..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base"
               />
             </div>
           </div>
           <select
             value={status}
             onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -161,7 +161,7 @@ const AdminReviews = () => {
           <select
             value={rating}
             onChange={(e) => { setRating(e.target.value); setPage(1); }}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base"
           >
             <option value="all">All Ratings</option>
             <option value="5">5 Stars</option>
@@ -185,7 +185,7 @@ const AdminReviews = () => {
               type="date"
               value={startDate}
               onChange={(e) => { setStartDate(e.target.value); setPage(1); }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base"
             />
           </div>
           <div>
@@ -194,7 +194,7 @@ const AdminReviews = () => {
               type="date"
               value={endDate}
               onChange={(e) => { setEndDate(e.target.value); setPage(1); }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm md:text-base"
             />
           </div>
         </div>
@@ -332,7 +332,7 @@ const AdminReviews = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleViewDetails(review)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-brand-500 hover:text-brand-700"
                             title="View Details"
                           >
                             <Eye className="w-5 h-5" />

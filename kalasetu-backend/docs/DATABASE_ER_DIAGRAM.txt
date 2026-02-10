@@ -1,0 +1,211 @@
+# KALASETU DATABASE - ENTITY RELATIONSHIP DIAGRAM
+
+## Visual Database Structure
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         KALASETU DATABASE SCHEMA                            │
+│                            (11 Collections)                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+┌──────────────────┐           ┌──────────────────┐           ┌──────────────────┐
+│      ADMIN       │           │    CATEGORY      │           │       USER       │
+├──────────────────┤           ├──────────────────┤           ├──────────────────┤
+│ _id (PK)         │           │ _id (PK)         │           │ _id (PK)         │
+│ fullName         │           │ name (Unique)    │           │ fullName         │
+│ email (Unique)   │           │ slug (Unique)    │           │ email (Unique)   │
+│ password         │           │ image            │           │ phoneNumber      │
+│ role             │           │ suggestedSvcs[]  │           │ password         │
+│ permissions{}    │           │ active           │           │ location{}       │
+│ isActive         │           └────────┬─────────┘           │ savedArtisans[]  │
+│ lastLogin        │                    │                     └─────────┬────────┘
+└──────────────────┘                    │                               │
+                                        │                               │
+                                        │ (1:Many)                      │
+                                        │                               │
+                                        ▼                               │
+                           ┌─────────────────────────┐                 │
+                           │   ARTISAN_SERVICE       │                 │
+                           ├─────────────────────────┤                 │
+                           │ _id (PK)                │                 │
+                           │ artisan (FK) ────────┐  │                 │
+                           │ category (FK)        │  │                 │
+                           │ name                 │  │                 │
+                           │ description          │  │                 │
+                           │ price                │  │                 │
+                           │ durationMinutes      │  │                 │
+                           │ images[]             │  │                 │
+                           │ isActive             │  │                 │
+                           └──────────┬───────────┘  │                 │
+                                      │              │                 │
+                                      │              │                 │
+                     ┌────────────────┘              │                 │
+                     │                               │                 │
+                     ▼                               │                 │
+        ┌─────────────────────────┐                 │                 │
+        │       ARTISAN           │◄────────────────┘                 │
+        ├─────────────────────────┤                                   │
+        │ _id (PK)                │                                   │
+        │ publicId (Unique)       │                                   │
+        │ fullName                │                                   │
+        │ email (Unique)          │                                   │
+        │ phoneNumber (Unique)    │                                   │
+        │ password                │                                   │
+        │ craft                   │                                   │
+        │ location {              │                                   │
+        │   type: "Point"         │                                   │
+        │   coordinates[lng,lat]  │ (2dsphere index)                 │
+        │   city, state           │                                   │
+        │ }                       │                                   │
+        │ profileImageUrl         │                                   │
+        │ portfolioImageUrls[]    │                                   │
+        │ bio                     │                                   │
+        │ averageRating           │                                   │
+        │ totalReviews            │                                   │
+        │ totalEarnings           │                                   │
+        │ isVerified              │                                   │
+        │ isActive                │                                   │
+        └──────┬────────┬─────────┘                                   │
+               │        │                                             │
+               │        │                                             │
+     (1:Many) │        │ (1:Many)                          (1:Many)  │
+               │        │                                             │
+               ▼        │                                             ▼
+    ┌──────────────┐   │                                  ┌──────────────────┐
+    │   REVIEW     │   │                                  │     BOOKING      │
+    ├──────────────┤   │                                  ├──────────────────┤
+    │ _id (PK)     │   │                                  │ _id (PK)         │
+    │ artisan (FK) │   │                                  │ artisan (FK)     │
+    │ user (FK)    │   │                                  │ user (FK)        │
+    │ rating       │   │                                  │ service (FK)     │
+    │ comment      │   │                                  │ serviceName      │
+    │ response{}   │   │                                  │ start (DateTime) │
+    │ images[]     │   │                                  │ end (DateTime)   │
+    │ isVerified   │   │                                  │ status           │
+    │ createdAt    │   │                                  │ price            │
+    └──────────────┘   │                                  │ notes            │
+                       │                                  │ depositPaid      │
+                       │                                  │ chatChannelId    │
+                       │                                  │ videoRoomUrl     │
+                       │                                  └────────┬─────────┘
+                       │                                           │
+                       │                                           │
+                       │ (1:Many)                       (1:1)      │
+                       │                                           │
+                       ▼                                           ▼
+            ┌─────────────────┐                        ┌──────────────────┐
+            │    PAYMENT      │                        │  CALL_HISTORY    │
+            ├─────────────────┤                        ├──────────────────┤
+            │ _id (PK)        │                        │ _id (PK)         │
+            │ orderId (Unique)│                        │ roomName         │
+            │ razorpayOrderId │                        │ roomUrl          │
+            │ razorpayPaymntId│                        │ artisan (FK)     │
+            │ amount          │                        │ user (FK)        │
+            │ currency: "INR" │                        │ booking (FK)     │
+            │ status          │                        │ startedAt        │
+            │ payerId (FK)    │                        │ endedAt          │
+            │ payerModel      │                        │ duration         │
+            │ recipientId(FK) │                        │ status           │
+            │ recipientModel  │                        └──────────────────┘
+            │ purpose         │
+            │ metadata{}      │
+            └─────────────────┘
+
+
+            ┌─────────────────┐                        ┌──────────────────┐
+            │  NOTIFICATION   │                        │  AVAILABILITY    │
+            ├─────────────────┤                        ├──────────────────┤
+            │ _id (PK)        │                        │ _id (PK)         │
+            │ recipient (FK)  │                        │ artisan (FK)     │
+            │ recipientModel  │                        │ date             │
+            │ type            │                        │ slots[]          │
+            │ title           │                        │ isFullyBooked    │
+            │ message         │                        └──────────────────┘
+            │ data{}          │
+            │ isRead          │
+            │ sentVia[]       │
+            │ createdAt       │
+            └─────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+
+LEGEND:
+  PK = Primary Key (_id in MongoDB)
+  FK = Foreign Key (ObjectId reference to another collection)
+  [] = Array field
+  {} = Embedded/Nested document
+  (1:Many) = One-to-Many relationship
+  (1:1) = One-to-One relationship
+
+═══════════════════════════════════════════════════════════════════════════════
+
+KEY RELATIONSHIPS:
+
+1. CATEGORY ──> ARTISAN_SERVICE (1:Many)
+   - One category contains many services
+
+2. ARTISAN ──> ARTISAN_SERVICE (1:Many)
+   - One artisan offers many services
+
+3. ARTISAN + USER ──> BOOKING (Many:Many through Booking)
+   - Users book services from artisans
+
+4. ARTISAN + USER ──> REVIEW (Many:Many through Review)
+   - Users review artisans
+
+5. USER ──> PAYMENT ──> ARTISAN (Many:Many through Payment)
+   - Money flows from users to artisans
+
+6. BOOKING ──> CALL_HISTORY (1:1)
+   - Each booking may have one video call
+
+7. USER/ARTISAN ──> NOTIFICATION (1:Many)
+   - Recipients receive many notifications
+
+8. ARTISAN ──> AVAILABILITY (1:Many)
+   - Artisans have multiple availability slots
+
+═══════════════════════════════════════════════════════════════════════════════
+
+INDEXES FOR PERFORMANCE:
+
+Collections with Geographic Index (2dsphere):
+  • Artisan.location → Fast proximity search (find nearby artisans)
+
+Collections with Text Index (Full-text search):
+  • ArtisanService (name, description, categoryName)
+
+Collections with Unique Index:
+  • Artisan (email, phoneNumber, publicId, slug)
+  • User (email, phoneNumber)
+  • Category (name, slug)
+  • Admin (email)
+  • Payment (orderId)
+
+Collections with Composite Index:
+  • Booking (artisan + start + end) → Fast availability check
+
+═══════════════════════════════════════════════════════════════════════════════
+
+DATABASE STATISTICS:
+
+Current Data Count:
+  - Admins: 1
+  - Artisans: 27
+  - Users: 1
+  - Categories: 6
+  - Services: 25
+  - Bookings: 0
+  - Reviews: 1
+  - Payments: 1
+  - Notifications: 37
+  - Call History: 25
+  - Availability: 0
+
+Total Documents: 124
+Database Size: ~2 MB
+Average Query Time: < 50ms
+
+═══════════════════════════════════════════════════════════════════════════════

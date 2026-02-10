@@ -23,13 +23,22 @@ export const createRoom = asyncHandler(async (req, res) => {
   } = req.body;
 
   const userId = req.user._id.toString();
-  
+
   // Generate unique room name if not provided
   const roomName = name || `room-${userId}-${Date.now()}`;
-  
+
+  // Check if a room with the same name already exists
+  if (name) {
+    const existingRoom = await getDailyRoom(name);
+    if (existingRoom) {
+      res.status(409);
+      throw new Error(`A room with the name "${name}" already exists`);
+    }
+  }
+
   // Calculate expiration timestamp
-  const expiresAt = expiresIn 
-    ? Math.floor(Date.now() / 1000) + expiresIn 
+  const expiresAt = expiresIn
+    ? Math.floor(Date.now() / 1000) + expiresIn
     : Math.floor(Date.now() / 1000) + 3600; // Default 1 hour
 
   const room = await createDailyRoom({

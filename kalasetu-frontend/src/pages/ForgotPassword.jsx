@@ -26,11 +26,13 @@ const ForgotPassword = ({ USER }) => {
     }
   };
 
+  const loginPath = USER ? '/user/login' : '/artisan/login';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-brand-50 to-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <Link to="/" className="text-3xl font-bold text-[#A55233]">Kala<span className="text-gray-800">Setu</span></Link>
+          <Link to="/" className="text-3xl font-bold text-brand-500">Kala<span className="text-gray-800">Setu</span></Link>
           <h2 className="mt-6 text-2xl font-extrabold text-gray-900">
             Forgot your password?
           </h2>
@@ -40,8 +42,18 @@ const ForgotPassword = ({ USER }) => {
         </div>
         <div className="bg-white py-8 px-6 shadow-xl rounded-2xl border border-gray-100">
           {submitted ? (
-            <div className="text-center text-green-600 font-semibold">
-              If your email exists in our system, you'll receive a reset link shortly.
+            <div className="text-center">
+              <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <p className="text-green-700 font-semibold">
+                If your email exists in our system, you'll receive a reset link shortly.
+              </p>
+              <p className="mt-2 text-sm text-gray-500">
+                Check your inbox and spam folder.
+              </p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -55,7 +67,7 @@ const ForgotPassword = ({ USER }) => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all duration-200"
                   placeholder="Enter your email address"
                 />
               </div>
@@ -67,14 +79,14 @@ const ForgotPassword = ({ USER }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-[#A55233] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#8e462B] focus:outline-none focus:ring-2 focus:ring-[#A55233] transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="w-full bg-brand-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {loading ? 'Sending...' : 'Send Reset Link'}
               </button>
             </form>
           )}
           <div className="mt-6 text-center">
-            <Link to="/artisan/login" className="text-sm text-[#A55233] hover:underline font-semibold">
+            <Link to={loginPath} className="text-sm text-brand-500 hover:text-brand-600 hover:underline font-semibold">
               Back to Login
             </Link>
           </div>

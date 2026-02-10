@@ -68,6 +68,10 @@ const paymentSchema = new mongoose.Schema(
     refundedAt: {
       type: Date,
     },
+    webhookEventId: {
+      type: String,
+      sparse: true,
+    },
   },
   {
     timestamps: true,
@@ -79,6 +83,8 @@ paymentSchema.index({ razorpayOrderId: 1 });
 paymentSchema.index({ razorpayPaymentId: 1 });
 paymentSchema.index({ payerId: 1, status: 1 });
 paymentSchema.index({ recipientId: 1, status: 1 });
+paymentSchema.index({ recipientId: 1, status: 1, createdAt: -1 });
+paymentSchema.index({ webhookEventId: 1 }, { sparse: true });
 
 const Payment = mongoose.model('Payment', paymentSchema);
 

@@ -54,7 +54,10 @@ export const createStreamUserToken = (userId, expiresIn = 3600) => {
   if (!client) return null;
 
   try {
-    const token = client.createToken(userId, expiresIn);
+    // Stream Chat expects exp as Unix timestamp, not duration
+    // Convert expiresIn (seconds) to absolute Unix timestamp
+    const expirationTimestamp = Math.floor(Date.now() / 1000) + expiresIn;
+    const token = client.createToken(userId, expirationTimestamp);
     return token;
   } catch (error) {
     console.error('❌ Failed to create Stream user token:', error.message);
@@ -128,7 +131,7 @@ export const getOrCreateChannel = async (type, channelId, data = {}) => {
   try {
     const channel = client.channel(type, channelId, data);
     await channel.create();
-    
+
     console.log(`✅ Channel created/retrieved: ${channelId}`);
     return channel;
   } catch (error) {
@@ -177,7 +180,7 @@ export const addChannelMembers = async (channelType, channelId, memberIds) => {
   try {
     const channel = client.channel(channelType, channelId);
     const response = await channel.addMembers(memberIds);
-    
+
     console.log(`✅ Members added to channel ${channelId}`);
     return response;
   } catch (error) {
@@ -200,7 +203,7 @@ export const removeChannelMembers = async (channelType, channelId, memberIds) =>
   try {
     const channel = client.channel(channelType, channelId);
     const response = await channel.removeMembers(memberIds);
-    
+
     console.log(`✅ Members removed from channel ${channelId}`);
     return response;
   } catch (error) {

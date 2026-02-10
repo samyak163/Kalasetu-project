@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../../lib/axios.js';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 
 const BookmarksTab = ({ user }) => {
   const { showToast } = React.useContext(ToastContext);
+  const navigate = useNavigate();
   const [bookmarks, setBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,9 +20,9 @@ const BookmarksTab = ({ user }) => {
     try {
       const res = await api.get('/api/users/bookmarks');
       const data = res?.data;
-      setBookmarks(Array.isArray(data) ? data : []);
+      // Filter out null entries (deleted artisans)
+      setBookmarks(Array.isArray(data) ? data.filter(Boolean) : []);
     } catch (error) {
-      console.error('Failed to fetch bookmarks:', error);
       showToast('Failed to load bookmarks', 'error');
     } finally {
       setLoading(false);
@@ -85,13 +86,13 @@ const BookmarksTab = ({ user }) => {
             placeholder="Search by name or specialty..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900"
           />
         </div>
         <select
           value={sortBy}
           onChange={e => setSortBy(e.target.value)}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900"
         >
           <option value="recent">Recently Added</option>
           <option value="rating">Rating (High to Low)</option>
@@ -100,7 +101,7 @@ const BookmarksTab = ({ user }) => {
         <select
           value={filterBy}
           onChange={e => setFilterBy(e.target.value)}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900"
         >
           <option value="all">All Specialties</option>
           {crafts.map(craft => (
@@ -125,7 +126,7 @@ const BookmarksTab = ({ user }) => {
                 />
                 <button
                   onClick={() => handleRemoveBookmark(artisan._id)}
-                  className="text-[#A55233] hover:text-[#8e462b] transition-colors"
+                  className="text-brand-500 hover:text-brand-600 transition-colors"
                   aria-label="Remove bookmark"
                 >
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -146,11 +147,14 @@ const BookmarksTab = ({ user }) => {
               <div className="flex gap-2">
                 <Link
                   to={`/${artisan.publicId}`}
-                  className="flex-1 text-center px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors text-sm"
+                  className="flex-1 text-center px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors text-sm"
                 >
                   View Profile
                 </Link>
-                <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm">
+                <button
+                  onClick={() => navigate(`/messages?artisan=${artisan._id}`)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+                >
                   Contact
                 </button>
               </div>
@@ -165,7 +169,7 @@ const BookmarksTab = ({ user }) => {
           </p>
           <Link
             to="/"
-            className="inline-block px-6 py-3 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors"
+            className="inline-block px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
           >
             Browse Artisans
           </Link>

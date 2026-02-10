@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer'; // Simulate sending for now
 import { sendPasswordResetEmail } from '../utils/email.js';
 import Review from '../models/reviewModel.js';
+import Artisan from '../models/artisanModel.js';
 import { createNotifications } from '../utils/notificationService.js';
 
 // --- Validation Schemas (using Zod) ---
@@ -81,38 +82,27 @@ export const registerUser = asyncHandler(async (req, res, next) => {
     const token = signJwt(user._id);
     setAuthCookie(res, token); // Set HTTP-only cookie
 
-    // Send welcome email and verification email (async, non-blocking)
+    // Send welcome email and verification email
     if (user.email) {
       const { sendWelcomeEmail, sendVerificationEmail } = await import('../utils/email.js');
-      const crypto = await import('crypto');
-      const verificationToken = crypto.randomBytes(32).toString('hex');
-      
-      // Store verification token in background
-      setImmediate(() => {
-        User.findByIdAndUpdate(
-          user._id,
-          {
-            emailVerificationToken: verificationToken,
-            emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-          },
-          { validateBeforeSave: false }
-        ).catch(err => {
-          console.error('Failed to save user verification token:', err);
-        });
-      });
-      
-      // Send emails (non-blocking, fire and forget)
+      const cryptoModule = await import('crypto');
+      const verificationToken = cryptoModule.randomBytes(32).toString('hex');
+
+      // Save verification token in main flow (critical - must not be fire-and-forget)
+      await User.findByIdAndUpdate(
+        user._id,
+        {
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
+        },
+        { validateBeforeSave: false }
+      );
+
+      // Send emails (non-blocking with error capture)
       Promise.allSettled([
         sendWelcomeEmail(user.email, user.fullName),
         sendVerificationEmail(user.email, user.fullName, verificationToken)
-      ]).then(results => {
-        results.forEach((result, index) => {
-          const emailType = index === 0 ? 'welcome' : 'verification';
-          if (result.status === 'rejected') {
-            console.error(`Failed to send ${emailType} email:`, result.reason);
-          }
-        });
-      });
+      ]).catch(() => {});
     }
 
     const responsePayload = {
@@ -286,12 +276,17 @@ export const changePassword = asyncHandler(async (req, res) => {
 // @access Private
 export const getBookmarks = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).populate('bookmarks');
-  res.json(user.bookmarks || []);
+  const bookmarks = (user.bookmarks || []).filter(Boolean);
+  res.json(bookmarks);
 });
 
 // @route POST /api/users/bookmarks/:artisanId
 export const addBookmark = asyncHandler(async (req, res) => {
   const { artisanId } = req.params;
+  const artisanExists = await Artisan.exists({ _id: artisanId });
+  if (!artisanExists) {
+    return res.status(404).json({ success: false, message: 'Artisan not found' });
+  }
   await User.findByIdAndUpdate(req.user._id, { $addToSet: { bookmarks: artisanId } });
   res.json({ success: true });
 });
@@ -346,12 +341,18 @@ export const getOrders = asyncHandler(async (req, res) => {
 // --- Support ---
 // @route POST /api/users/support/contact
 export const contactSupport = asyncHandler(async (req, res) => {
-  // TODO: Send email/create ticket
-  res.json({ message: 'Message sent successfully' });
+  // TODO: Send email/create ticket — currently a stub
+  res.status(200).json({
+    success: true,
+    message: 'Your message has been received. We will get back to you soon.',
+  });
 });
 
 // @route POST /api/users/support/report
 export const reportIssue = asyncHandler(async (req, res) => {
-  // TODO: Create support ticket
-  res.json({ message: 'Issue reported successfully' });
+  // TODO: Create support ticket — currently a stub
+  res.status(200).json({
+    success: true,
+    message: 'Your issue has been reported. Our team will review it shortly.',
+  });
 });

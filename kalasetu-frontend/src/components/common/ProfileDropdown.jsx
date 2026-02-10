@@ -25,15 +25,13 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
 
   const handleLogout = async () => {
     setIsOpen(false);
-    if (globalThis.confirm('Are you sure you want to sign out?')) {
-      await onLogout();
-    }
+    await onLogout();
   };
 
   const handleOpenProfileTab = (tab = 'profile') => {
     // Close dropdown immediately
     setIsOpen(false);
-    
+
     // For artisans, navigate directly without delays
     if (userType === 'artisan') {
       if (typeof onOpenProfile === 'function') {
@@ -44,7 +42,7 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
       }
       return;
     }
-    
+
     // For users, dispatch event synchronously
     if (userType === 'user') {
       const event = new CustomEvent('open-profile', { detail: { tab } });
@@ -54,8 +52,8 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
 
   const avatarUrl = user?.profileImageUrl || '';
   const displayName = user?.fullName || 'User';
-  const truncatedName = displayName.length > 15 
-    ? `${displayName.substring(0, 15)}...` 
+  const truncatedName = displayName.length > 15
+    ? `${displayName.substring(0, 15)}...`
     : displayName;
 
   return (
@@ -69,9 +67,9 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
       >
         <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center flex-shrink-0">
           {avatarUrl ? (
-            <img 
-              src={avatarUrl} 
-              alt={displayName} 
+            <img
+              src={avatarUrl}
+              alt={displayName}
               className="h-full w-full object-cover"
               onError={(e) => {
                 e.target.style.display = 'none';
@@ -79,7 +77,7 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
               }}
             />
           ) : null}
-          <div 
+          <div
             className="h-full w-full bg-[#A55233] text-white flex items-center justify-center text-sm font-semibold"
             style={{ display: avatarUrl ? 'none' : 'flex' }}
           >
@@ -109,9 +107,9 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center flex-shrink-0">
                 {avatarUrl ? (
-                  <img 
-                    src={avatarUrl} 
-                    alt={displayName} 
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
                     className="h-full w-full object-cover"
                     onError={(e) => {
                       e.target.style.display = 'none';
@@ -119,7 +117,7 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
                     }}
                   />
                 ) : null}
-                <div 
+                <div
                   className="h-full w-full bg-[#A55233] text-white flex items-center justify-center text-sm font-semibold"
                   style={{ display: avatarUrl ? 'none' : 'flex' }}
                 >
