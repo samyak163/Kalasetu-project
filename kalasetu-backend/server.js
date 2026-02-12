@@ -46,6 +46,7 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import refundRoutes from './routes/refundRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import artisanProfileRoutes from './routes/artisanProfileRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
@@ -210,6 +211,8 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/jobs', jobRoutes);
 // /api/payments -> Razorpay payment endpoints
 app.use('/api/payments', paymentRoutes);
+// /api/refunds -> Refund request endpoints
+app.use('/api/refunds', refundRoutes);
 // /api/contact -> Contact form
 app.use('/api/contact', contactRoutes);
 // /api/reviews -> Reviews endpoints
