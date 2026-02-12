@@ -8,6 +8,7 @@ import {
   Briefcase,
   Star,
   DollarSign,
+  RefreshCcw,
   MessageSquare,
   Settings,
   LogOut,
@@ -29,6 +30,7 @@ const AdminLayout = ({ children }) => {
     { name: 'Users', icon: Users, path: '/admin/users', permission: ['users', 'view'] },
     { name: 'Reviews', icon: Star, path: '/admin/reviews', permission: ['reviews', 'view'] },
     { name: 'Payments', icon: DollarSign, path: '/admin/payments', permission: ['payments', 'view'] },
+    { name: 'Refunds', icon: RefreshCcw, path: '/admin/refunds', permission: ['payments', 'refund'] },
     { name: 'Bookings', icon: MessageSquare, path: '/admin/bookings', permission: ['bookings', 'view'] },
     { name: 'Settings', icon: Settings, path: '/admin/settings', permission: ['settings', 'view'] }
   ];

@@ -12,8 +12,8 @@ const ArtisanProfilePage = lazy(() => import('./pages/ArtisanProfilePage'));
 const ArtisanAccountPage = lazy(() => import('./pages/ArtisanAccountPage'));
 const ArtisanProfileEditor = lazy(() => import('./pages/ArtisanProfileEditor'));
 
-// --- NEW USER PAGES --- (lazy)
-const UserLoginPage = lazy(() => import('./pages/UserLoginPage'));
+// --- NEW USER PAGES ---
+import UserLoginPage from './pages/UserLoginPage';
 const UserRegisterPage = lazy(() => import('./pages/UserRegisterPage'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const PhoneOTPPage = lazy(() => import('./pages/PhoneOTPPage'));
@@ -51,6 +51,7 @@ import AdminArtisans from './pages/admin/AdminArtisans';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminReviews from './pages/admin/AdminReviews';
 import AdminPayments from './pages/admin/AdminPayments';
+import AdminRefunds from './pages/admin/AdminRefunds';
 import AdminBookings from './pages/admin/AdminBookings';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminProfile from './pages/admin/AdminProfile';
@@ -178,6 +179,7 @@ function App() {
               <Route path="users" element={<AdminUsers />} />
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="payments" element={<AdminPayments />} />
+              <Route path="refunds" element={<AdminRefunds />} />
               <Route path="bookings" element={<AdminBookings />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="profile" element={<AdminProfile />} />
