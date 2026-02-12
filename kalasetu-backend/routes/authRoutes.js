@@ -6,27 +6,28 @@ import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 
-const strictLimiter = rateLimit({
+const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 15,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  message: { success: false, message: 'Too many login attempts. Please try again in 15 minutes.' },
 });
 
 const registerLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 60 * 60 * 1000,
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many registration attempts, please try again later.' },
+  message: { success: false, message: 'Too many registration attempts. Please try again in 1 hour.' },
 });
 
 router.post('/register', registerLimiter, asyncHandler(register));
-router.post('/login', strictLimiter, asyncHandler(login));
+router.post('/login', loginLimiter, asyncHandler(login));
 router.post('/logout', asyncHandler(logout));
-router.post('/forgot-password', strictLimiter, asyncHandler(forgotPassword));
-router.post('/reset-password', strictLimiter, asyncHandler(resetPassword));
-router.post('/firebase-login', asyncHandler(firebaseLogin));
+router.post('/forgot-password', loginLimiter, asyncHandler(forgotPassword));
+router.post('/reset-password', loginLimiter, asyncHandler(resetPassword));
+router.post('/firebase-login', loginLimiter, asyncHandler(firebaseLogin));
 router.get('/me', protect, asyncHandler(me));
 
 export default router;

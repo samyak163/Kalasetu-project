@@ -22,27 +22,28 @@ import rateLimit from 'express-rate-limit';
 const router = express.Router();
 
 // Stricter rate limiter for sensitive auth endpoints
-const strictLimiter = rateLimit({
+const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 15,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  message: { success: false, message: 'Too many login attempts. Please try again in 15 minutes.' },
 });
 
 const registerLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 60 * 60 * 1000,
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many registration attempts, please try again later.' },
+  message: { success: false, message: 'Too many registration attempts. Please try again in 1 hour.' },
 });
 
 // Public routes
 router.post('/register', registerLimiter, registerUser);
-router.post('/login', strictLimiter, loginUser);
-router.post('/logout', strictLimiter, logoutUser);
-router.post('/forgot-password', strictLimiter, forgotPassword);
-router.post('/reset-password', strictLimiter, resetPassword);
+router.post('/login', loginLimiter, loginUser);
+router.post('/logout', logoutUser);
+router.post('/forgot-password', loginLimiter, forgotPassword);
+router.post('/reset-password', loginLimiter, resetPassword);
 
 // Private routes
 router.get('/me', userProtect, getMe);
