@@ -5,7 +5,7 @@
 
 ---
 
-## Phase 1: Critical Bug Fixes
+### Phase 1: Critical Bug Fixes
 **Goal:** Eliminate security vulnerabilities and reliability issues that affect current users.
 
 **Requirements:** BUG-01, BUG-02, BUG-03, BUG-04, BUG-05
@@ -21,10 +21,16 @@
 **Dependencies:** None — can start immediately.
 **Estimated complexity:** Medium (mostly targeted fixes in known locations).
 **Success criteria:** No race conditions in bookings, no infinite loops, uploads validated, auth rate-limited, no empty catches.
+**Plans:** 3 plans (all Wave 1 — parallel)
+
+Plans:
+- [ ] 01-01-PLAN.md — Booking race condition fix (transaction) + auth rate limiting
+- [ ] 01-02-PLAN.md — NotificationContext infinite loop fix + empty catch block replacements
+- [ ] 01-03-PLAN.md — File upload validation (shared multer config + error handling)
 
 ---
 
-## Phase 2: Refund & Support
+### Phase 2: Refund & Support
 **Goal:** Complete the payment refund workflow and support ticket system so users have recourse when things go wrong.
 
 **Requirements:** STUB-01, STUB-02
@@ -40,7 +46,7 @@
 
 ---
 
-## Phase 3: Verification & Recording
+### Phase 3: Verification & Recording
 **Goal:** Complete phone verification and video recording stubs for trust and record-keeping.
 
 **Requirements:** STUB-03, STUB-04
@@ -56,7 +62,7 @@
 
 ---
 
-## Phase 4: Homepage & Polish
+### Phase 4: Homepage & Polish
 **Goal:** Improve first impressions and clean up the codebase.
 
 **Requirements:** UI-01, UI-04, UI-05
@@ -73,7 +79,7 @@
 
 ---
 
-## Phase 5: Dark Mode & i18n
+### Phase 5: Dark Mode & i18n
 **Goal:** Support user preferences for theme and language.
 
 **Requirements:** UI-02, UI-03
@@ -89,7 +95,7 @@
 
 ---
 
-## Phase 6: Availability & Reviews
+### Phase 6: Availability & Reviews
 **Goal:** Add core features that improve the booking experience and artisan-customer interaction.
 
 **Requirements:** FEAT-01, FEAT-02
@@ -105,7 +111,7 @@
 
 ---
 
-## Phase 7: Analytics & Packages
+### Phase 7: Analytics & Packages
 **Goal:** Give artisans business intelligence tools and flexible service offerings.
 
 **Requirements:** FEAT-03, FEAT-04
@@ -121,7 +127,7 @@
 
 ---
 
-## Phase 8: Performance Optimization
+### Phase 8: Performance Optimization
 **Goal:** Reduce load times and improve scalability.
 
 **Requirements:** PERF-01, PERF-02, PERF-03, PERF-04
