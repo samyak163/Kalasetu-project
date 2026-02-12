@@ -47,6 +47,7 @@ import serviceRoutes from './routes/serviceRoutes.js';
 import jobRoutes from './routes/jobRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import refundRoutes from './routes/refundRoutes.js';
+import supportRoutes from './routes/supportRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import artisanProfileRoutes from './routes/artisanProfileRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
@@ -213,6 +214,8 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/payments', paymentRoutes);
 // /api/refunds -> Refund request endpoints
 app.use('/api/refunds', refundRoutes);
+// /api/support -> Support ticket endpoints
+app.use('/api/support', supportRoutes);
 // /api/contact -> Contact form
 app.use('/api/contact', contactRoutes);
 // /api/reviews -> Reviews endpoints

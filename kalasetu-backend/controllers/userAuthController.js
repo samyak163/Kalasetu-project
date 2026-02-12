@@ -341,18 +341,53 @@ export const getOrders = asyncHandler(async (req, res) => {
 // --- Support ---
 // @route POST /api/users/support/contact
 export const contactSupport = asyncHandler(async (req, res) => {
-  // TODO: Send email/create ticket — currently a stub
-  res.status(200).json({
+  const { subject, message, priority } = req.body;
+  if (!subject || !message) {
+    return res.status(400).json({ success: false, message: 'Subject and message are required' });
+  }
+  const SupportTicket = (await import('../models/supportTicketModel.js')).default;
+  const ticket = await SupportTicket.create({
+    subject,
+    description: message,
+    category: 'other',
+    priority: priority || 'medium',
+    createdBy: {
+      userId: req.user._id,
+      userModel: 'User',
+      userName: req.user.fullName,
+      userEmail: req.user.email
+    }
+  });
+  res.status(201).json({
     success: true,
-    message: 'Your message has been received. We will get back to you soon.',
+    message: 'Your support ticket has been created. We will get back to you soon.',
+    data: { ticketId: ticket._id, ticketNumber: ticket.ticketNumber }
   });
 });
 
 // @route POST /api/users/support/report
 export const reportIssue = asyncHandler(async (req, res) => {
-  // TODO: Create support ticket — currently a stub
-  res.status(200).json({
+  const { type, description } = req.body;
+  if (!description) {
+    return res.status(400).json({ success: false, message: 'Description is required' });
+  }
+  const SupportTicket = (await import('../models/supportTicketModel.js')).default;
+  const categoryMap = { bug: 'technical', payment: 'payment', booking: 'booking', other: 'other' };
+  const ticket = await SupportTicket.create({
+    subject: `Issue Report: ${type || 'General'}`,
+    description,
+    category: categoryMap[type] || 'other',
+    priority: 'high',
+    createdBy: {
+      userId: req.user._id,
+      userModel: 'User',
+      userName: req.user.fullName,
+      userEmail: req.user.email
+    }
+  });
+  res.status(201).json({
     success: true,
     message: 'Your issue has been reported. Our team will review it shortly.',
+    data: { ticketId: ticket._id, ticketNumber: ticket.ticketNumber }
   });
 });
