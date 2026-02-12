@@ -3,8 +3,8 @@
 ## Current Status
 - **Milestone:** v2 — Full Feature Milestone
 - **Phase:** 2 — Refund & Support (In Progress)
-- **Current Plan:** 02-06 (Complete)
-- **Next action:** Continue with remaining phase 2 plans
+- **Current Plan:** 02-05 (Complete)
+- **Next action:** `/gsd:execute-phase 2 --plan 06` — Continue with remaining phase 2 plans
 
 ## Phase Progress
 
@@ -23,6 +23,7 @@
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-02-13 | Add bookingId query filter to getUserPayments API | Frontend needs to find payment for a booking to create refund requests; no existing user-facing payment lookup endpoint |
 | 2026-02-13 | Use embedded messages for support tickets | Ticket conversations typically <100 messages; embedding simplifies queries and ensures atomic updates |
 | 2026-02-13 | Dynamic import SupportTicket in userAuthController | Avoids circular dependency issues in large controller file with many existing imports |
 | 2026-02-13 | Filter internal notes from user ticket views | Admins need internal discussion capability without exposing sensitive context to users |
@@ -58,12 +59,13 @@ None.
 | 02-01 | 296s | 2 | 7 | 2026-02-13 |
 | 02-02 | 320s | 2 | 8 | 2026-02-13 |
 | 02-03 | 209s | 2 | 3 | 2026-02-13 |
+| 02-05 | 314s | 1 | 2 | 2026-02-13 |
 | 02-06 | 156s | 1 | 1 | 2026-02-13 |
 
 ## Session Info
 
-- **Last session:** 2026-02-12T21:18:36.239Z
-- **Stopped at:** Completed 02-06-PLAN.md
+- **Last session:** 2026-02-13T15:05:09Z
+- **Stopped at:** Completed 02-05-PLAN.md
 
 ## Notes
 - v1 overhaul (16-task bug fix + accessibility) completed prior to this milestone
