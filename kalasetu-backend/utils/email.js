@@ -559,6 +559,153 @@ export const sendContactFormEmail = async (data) => {
   });
 };
 
+/**
+ * Send ticket response email
+ * @param {string} to - Recipient email
+ * @param {string} userName - Recipient name
+ * @param {Object} ticket - Support ticket object
+ * @param {string} message - Admin response message
+ * @returns {Promise<Object|null>} Email response
+ */
+export const sendTicketResponseEmail = async (to, userName, ticket, message) => {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Support Ticket Response - KalaSetu</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #A55233; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #fff; padding: 30px; }
+        .ticket-info { background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .response-box { background: #fff7ed; border-left: 4px solid #A55233; padding: 15px; margin: 20px 0; }
+        .button { display: inline-block; padding: 12px 30px; background: #A55233; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        .footer { background: #f9f9f9; padding: 20px; text-align: center; color: #666; font-size: 14px; border-radius: 0 0 10px 10px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Support Ticket Response</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${userName},</h2>
+          <p>Our support team has responded to your ticket.</p>
+
+          <div class="ticket-info">
+            <p><strong>Ticket Number:</strong> ${ticket.ticketNumber}</p>
+            <p><strong>Subject:</strong> ${ticket.subject}</p>
+          </div>
+
+          <div class="response-box">
+            <h3>Admin Response:</h3>
+            <p>${message.replace(/\n/g, '<br>')}</p>
+          </div>
+
+          <a href="${EMAIL_CONFIG.appUrl}/support/tickets/${ticket._id}" class="button">View Ticket</a>
+
+          <p style="margin-top: 30px;">You can reply to this ticket by logging into your account and adding a message.</p>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} KalaSetu. All rights reserved.</p>
+          <p>Connecting artisans with the world.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Support Ticket Response - ${ticket.ticketNumber}`,
+    html,
+  });
+};
+
+/**
+ * Send ticket status change email
+ * @param {string} to - Recipient email
+ * @param {string} userName - Recipient name
+ * @param {Object} ticket - Support ticket object
+ * @param {string} newStatus - New ticket status
+ * @returns {Promise<Object|null>} Email response
+ */
+export const sendTicketStatusEmail = async (to, userName, ticket, newStatus) => {
+  const statusColors = {
+    resolved: '#4caf50',
+    closed: '#666',
+    open: '#2196f3',
+    in_progress: '#ff9800'
+  };
+
+  const statusMessages = {
+    resolved: 'Your ticket has been resolved. We hope your issue was addressed satisfactorily.',
+    closed: 'Your ticket has been closed. If you need further assistance, please create a new ticket.',
+    open: 'Your ticket status has been updated to open.',
+    in_progress: 'Your ticket is now being actively worked on by our support team.'
+  };
+
+  const headerColor = statusColors[newStatus] || '#A55233';
+  const statusMessage = statusMessages[newStatus] || `Your ticket status has been updated to ${newStatus}.`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Support Ticket ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)} - KalaSetu</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: ${headerColor}; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #fff; padding: 30px; }
+        .ticket-info { background: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .status-badge { display: inline-block; padding: 8px 15px; background: ${headerColor}; color: white; border-radius: 20px; font-weight: bold; text-transform: uppercase; }
+        .button { display: inline-block; padding: 12px 30px; background: #A55233; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        .footer { background: #f9f9f9; padding: 20px; text-align: center; color: #666; font-size: 14px; border-radius: 0 0 10px 10px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Ticket Status Update</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${userName},</h2>
+          <p>${statusMessage}</p>
+
+          <div class="ticket-info">
+            <p><strong>Ticket Number:</strong> ${ticket.ticketNumber}</p>
+            <p><strong>Subject:</strong> ${ticket.subject}</p>
+            <p><strong>New Status:</strong> <span class="status-badge">${newStatus}</span></p>
+          </div>
+
+          <a href="${EMAIL_CONFIG.appUrl}/support/tickets/${ticket._id}" class="button">View Ticket</a>
+
+          ${newStatus === 'resolved' || newStatus === 'closed' ?
+            '<p style="margin-top: 30px;">If you need further assistance, feel free to create a new support ticket.</p>' :
+            '<p style="margin-top: 30px;">You can continue the conversation by adding messages to this ticket.</p>'}
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} KalaSetu. All rights reserved.</p>
+          <p>Connecting artisans with the world.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to,
+    subject: `Support Ticket ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)} - ${ticket.ticketNumber}`,
+    html,
+  });
+};
+
 export default {
   initResend,
   sendEmail,
@@ -570,4 +717,6 @@ export default {
   sendNotificationEmail,
   sendBatchEmails,
   sendContactFormEmail,
+  sendTicketResponseEmail,
+  sendTicketStatusEmail,
 };

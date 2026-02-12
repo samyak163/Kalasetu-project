@@ -5,6 +5,7 @@ import Review from '../models/reviewModel.js';
 import Payment from '../models/paymentModel.js';
 import Booking from '../models/bookingModel.js';
 import RefundRequest from '../models/refundRequestModel.js';
+import SupportTicket from '../models/supportTicketModel.js';
 import { refundPayment } from '../utils/razorpay.js';
 import { sendEmail } from '../utils/email.js';
 import { sendNotificationToUser } from '../utils/onesignal.js';
@@ -1044,5 +1045,316 @@ function buildRefundEmailHTML(userName, refundRequest, status) {
     </html>
   `;
 }
+
+// --- Support Ticket Management ---
+
+// @desc    Get all support tickets with pagination and filters
+// @route   GET /api/admin/support/tickets
+// @access  Protected (Admin)
+export const getAllSupportTickets = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status = 'all',
+      category = 'all',
+      priority = 'all',
+      search,
+      assignedTo
+    } = req.query;
+
+    let query = {};
+
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+
+    if (priority && priority !== 'all') {
+      query.priority = priority;
+    }
+
+    if (assignedTo) {
+      query.assignedTo = assignedTo;
+    }
+
+    if (search && search.trim()) {
+      const escapedSearch = escapeRegex(search.trim());
+      query.$or = [
+        { ticketNumber: { $regex: escapedSearch, $options: 'i' } },
+        { subject: { $regex: escapedSearch, $options: 'i' } },
+        { 'createdBy.userName': { $regex: escapedSearch, $options: 'i' } },
+        { 'createdBy.userEmail': { $regex: escapedSearch, $options: 'i' } }
+      ];
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await SupportTicket.countDocuments(query);
+
+    const tickets = await SupportTicket.find(query)
+      .select('-messages')
+      .sort({ status: 1, priority: -1, updatedAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      data: tickets,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        limit: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get support tickets statistics
+// @route   GET /api/admin/support/tickets/stats
+// @access  Protected (Admin)
+export const getSupportTicketsStats = async (req, res) => {
+  try {
+    const [total, statusCounts, categoryCounts, priorityCounts] = await Promise.all([
+      SupportTicket.countDocuments(),
+      SupportTicket.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } }
+      ]),
+      SupportTicket.aggregate([
+        { $group: { _id: '$category', count: { $sum: 1 } } }
+      ]),
+      SupportTicket.aggregate([
+        { $match: { status: { $in: ['open', 'in_progress'] } } },
+        { $group: { _id: '$priority', count: { $sum: 1 } } }
+      ])
+    ]);
+
+    const byStatus = {};
+    statusCounts.forEach(item => {
+      byStatus[item._id] = item.count;
+    });
+
+    const byCategory = {};
+    categoryCounts.forEach(item => {
+      byCategory[item._id] = item.count;
+    });
+
+    const byPriority = {};
+    priorityCounts.forEach(item => {
+      byPriority[item._id] = item.count;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        total,
+        byStatus,
+        byCategory,
+        byPriority
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Respond to a support ticket
+// @route   POST /api/admin/support/tickets/:id/respond
+// @access  Protected (Admin)
+export const respondToTicket = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message, internal } = req.body;
+
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Message is required' });
+    }
+
+    if (message.length > 5000) {
+      return res.status(400).json({ success: false, message: 'Message must be at most 5000 characters' });
+    }
+
+    const ticket = await SupportTicket.findById(id);
+
+    if (!ticket) {
+      return res.status(404).json({ success: false, message: 'Ticket not found' });
+    }
+
+    if (ticket.status === 'resolved' || ticket.status === 'closed') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot respond to a ${ticket.status} ticket`
+      });
+    }
+
+    const newMessage = {
+      sender: {
+        senderId: req.user._id,
+        senderModel: 'Admin',
+        senderName: req.user.fullName
+      },
+      message: message.trim(),
+      internal: internal || false
+    };
+
+    ticket.messages.push(newMessage);
+
+    if (ticket.status === 'open') {
+      ticket.status = 'in_progress';
+    }
+
+    if (!ticket.assignedTo) {
+      ticket.assignedTo = req.user._id;
+    }
+
+    await ticket.save();
+
+    // If not an internal note, notify the user
+    if (!internal) {
+      try {
+        // Load user model
+        const UserModel = ticket.createdBy.userModel === 'User'
+          ? (await import('../models/userModel.js')).default
+          : (await import('../models/artisanModel.js')).default;
+        const user = await UserModel.findById(ticket.createdBy.userId).lean();
+
+        if (user) {
+          // Create in-app notification
+          await Notification.create({
+            ownerId: ticket.createdBy.userId,
+            ownerType: ticket.createdBy.userModel === 'User' ? 'user' : 'artisan',
+            title: 'Support Ticket Response',
+            text: `Admin responded to your ticket "${ticket.subject}"`,
+            url: `/support/tickets/${ticket._id}`,
+            read: false
+          });
+
+          // Send email
+          const { sendTicketResponseEmail } = await import('../utils/email.js');
+          await sendTicketResponseEmail(user.email, user.fullName, ticket, message).catch(() => {});
+
+          // Send push notification
+          await sendNotificationToUser(
+            ticket.createdBy.userId,
+            'Support Ticket Response',
+            `Admin responded to your ticket "${ticket.subject}"`
+          ).catch(() => {});
+        }
+      } catch (notifError) {
+        console.error('Failed to send ticket response notification:', notifError);
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Response added successfully',
+      data: ticket
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update support ticket status
+// @route   PATCH /api/admin/support/tickets/:id/status
+// @access  Protected (Admin)
+export const updateTicketStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, reason } = req.body;
+
+    const validStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid status is required (open, in_progress, resolved, closed)'
+      });
+    }
+
+    const ticket = await SupportTicket.findById(id);
+
+    if (!ticket) {
+      return res.status(404).json({ success: false, message: 'Ticket not found' });
+    }
+
+    ticket.status = status;
+
+    if (status === 'resolved') {
+      ticket.resolvedAt = new Date();
+      ticket.closedBy = {
+        userId: req.user._id,
+        userModel: 'Admin'
+      };
+    }
+
+    if (status === 'closed') {
+      ticket.closedAt = new Date();
+      ticket.closedBy = {
+        userId: req.user._id,
+        userModel: 'Admin'
+      };
+    }
+
+    // Add system message
+    const systemMessage = {
+      sender: {
+        senderId: req.user._id,
+        senderModel: 'Admin',
+        senderName: req.user.fullName
+      },
+      message: `Ticket ${status} by admin.${reason ? ` Reason: ${reason}` : ''}`,
+      internal: false
+    };
+    ticket.messages.push(systemMessage);
+
+    await ticket.save();
+
+    // Notify user
+    try {
+      const UserModel = ticket.createdBy.userModel === 'User'
+        ? (await import('../models/userModel.js')).default
+        : (await import('../models/artisanModel.js')).default;
+      const user = await UserModel.findById(ticket.createdBy.userId).lean();
+
+      if (user) {
+        // Create in-app notification
+        await Notification.create({
+          ownerId: ticket.createdBy.userId,
+          ownerType: ticket.createdBy.userModel === 'User' ? 'user' : 'artisan',
+          title: `Ticket ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+          text: `Your support ticket "${ticket.subject}" has been ${status}`,
+          url: `/support/tickets/${ticket._id}`,
+          read: false
+        });
+
+        // Send email
+        const { sendTicketStatusEmail } = await import('../utils/email.js');
+        await sendTicketStatusEmail(user.email, user.fullName, ticket, status).catch(() => {});
+
+        // Send push notification
+        await sendNotificationToUser(
+          ticket.createdBy.userId,
+          `Ticket ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+          `Your support ticket "${ticket.subject}" has been ${status}`
+        ).catch(() => {});
+      }
+    } catch (notifError) {
+      console.error('Failed to send ticket status notification:', notifError);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Ticket status updated successfully',
+      data: ticket
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 
