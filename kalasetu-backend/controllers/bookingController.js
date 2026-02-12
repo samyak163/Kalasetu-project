@@ -1,5 +1,6 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 import Booking from '../models/bookingModel.js';
 import ArtisanService from '../models/artisanServiceModel.js';
 import Artisan from '../models/artisanModel.js';
@@ -62,30 +63,46 @@ export const createBooking = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'End time must be after start time' });
   }
 
-  // Check for overlapping bookings
-  const overlap = await Booking.findOne({
-    artisan: artisanId,
-    status: { $in: ['pending', 'confirmed'] },
-    start: { $lt: endTime },
-    end: { $gt: startTime },
-  }).lean();
-  if (overlap) {
-    return res.status(409).json({ success: false, message: 'This time slot is already booked' });
-  }
+  // Check for overlapping bookings within a transaction to prevent race conditions
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  const finalPrice = price ?? service?.price ?? 0;
-  const booking = await Booking.create({
-    artisan: artisanId,
-    user: userId,
-    service: service?._id,
-    serviceName,
-    categoryName,
-    start: startTime,
-    end: endTime,
-    notes: notes || '',
-    price: finalPrice,
-  });
-  res.status(201).json({ success: true, data: booking });
+  try {
+    const overlap = await Booking.findOne({
+      artisan: artisanId,
+      status: { $in: ['pending', 'confirmed'] },
+      start: { $lt: endTime },
+      end: { $gt: startTime },
+    }).session(session);
+
+    if (overlap) {
+      await session.abortTransaction();
+      return res.status(409).json({ success: false, message: 'This time slot is already booked' });
+    }
+
+    const finalPrice = price ?? service?.price ?? 0;
+
+    // .create() requires array syntax when using sessions
+    const [booking] = await Booking.create([{
+      artisan: artisanId,
+      user: userId,
+      service: service?._id,
+      serviceName,
+      categoryName,
+      start: startTime,
+      end: endTime,
+      notes: notes || '',
+      price: finalPrice,
+    }], { session });
+
+    await session.commitTransaction();
+    res.status(201).json({ success: true, data: booking });
+  } catch (err) {
+    await session.abortTransaction();
+    throw err; // asyncHandler catches and passes to errorMiddleware
+  } finally {
+    session.endSession(); // CRITICAL: prevent connection leaks
+  }
 });
 
 export const getMyBookings = asyncHandler(async (req, res) => {
