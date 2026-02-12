@@ -2,15 +2,16 @@
 
 ## Current Status
 - **Milestone:** v2 — Full Feature Milestone
-- **Phase:** 1 — Critical Bug Fixes (Complete)
-- **Next action:** `/gsd:plan-phase 2` — Refund & Support
+- **Phase:** 2 — Refund & Support (In Progress)
+- **Current Plan:** 02-01 (Complete)
+- **Next action:** `/gsd:execute-phase 2 --plan 02` — Support ticket system
 
 ## Phase Progress
 
 | Phase | Name | Status | Started | Completed |
 |-------|------|--------|---------|-----------|
 | 1 | Critical Bug Fixes | ✓ Complete | 2026-02-13 | 2026-02-13 |
-| 2 | Refund & Support | Pending | — | — |
+| 2 | Refund & Support | In Progress | 2026-02-13 | — |
 | 3 | Verification & Recording | Pending | — | — |
 | 4 | Homepage & Polish | Pending | — | — |
 | 5 | Dark Mode & i18n | Pending | — | — |
@@ -22,6 +23,9 @@
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-02-13 | Cumulative refund validation | Query all non-final refunds and sum amounts to prevent over-refunding when multiple partial refunds exist |
+| 2026-02-13 | Non-blocking refund notifications | All email/push/in-app notifications wrapped in try/catch so critical path (approval/webhook) never fails due to notification errors |
+| 2026-02-13 | Immediate Razorpay call on approval | Skip 'approved' state and go directly to 'processing' since refund is initiated immediately via Razorpay API |
 | 2026-02-13 | 10MB size limit for all uploads | Balances user needs with bandwidth/storage costs; sufficient for high-quality images and scanned documents |
 | 2026-02-13 | Use MulterError for validation failures | Enables centralized error handling in errorMiddleware with user-friendly JSON responses instead of raw HTML errors |
 | 2026-02-13 | Separate imageUpload and documentUpload instances | Profile photos don't need PDF support; documents may be scanned as PDF; separation enforces correct types per use case |
@@ -42,11 +46,12 @@ None.
 |------------|----------|-------|-------|-----------------|
 | 01-02 | 144s | 2 | 4 | 2026-02-13 |
 | 01-03 | 137s | 2 | 3 | 2026-02-13 |
+| 02-01 | 296s | 2 | 7 | 2026-02-13 |
 
 ## Session Info
 
 - **Last session:** 2026-02-13
-- **Stopped at:** Completed 01-03-PLAN.md
+- **Stopped at:** Completed 02-01-PLAN.md
 
 ## Notes
 - v1 overhaul (16-task bug fix + accessibility) completed prior to this milestone
