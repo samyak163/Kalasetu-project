@@ -1,5 +1,5 @@
 ﻿import React, { useContext, useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 import ArtisanInfoModal from './ArtisanInfoModal.jsx';
 import HowItWorksModal from './HowItWorksModal.jsx';
@@ -14,6 +14,7 @@ import LocationSearch from './LocationSearch.jsx';
 const Header = () => {
   const { auth, logout } = useContext(AuthContext);
   const { notifications, unreadCount } = useNotifications();
+  const navigate = useNavigate();
   const [showArtisanInfo, setShowArtisanInfo] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -47,7 +48,7 @@ const Header = () => {
   const handleOpenProfile = () => {
     // Only artisans use this handler (users open modal from ProfileDropdown directly)
     if (auth.userType === 'artisan') {
-      globalThis.location.href = '/artisan/dashboard/account';
+      navigate('/artisan/dashboard/account');
     }
   };
 
