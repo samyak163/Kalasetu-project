@@ -1,0 +1,31 @@
+{
+  "project": "kalasetu-v2",
+  "version": "2.0",
+  "created": "2026-02-12",
+  "workflow": {
+    "mode": "guided",
+    "depth": "thorough",
+    "parallelization": true,
+    "git_tracking": "auto-commit",
+    "agents": true
+  },
+  "conventions": {
+    "commit_prefix": true,
+    "branch_per_phase": false,
+    "verify_after_phase": true
+  },
+  "phases": {
+    "total": 8,
+    "current": 0,
+    "order": [
+      "Critical Bug Fixes",
+      "Refund & Support",
+      "Verification & Recording",
+      "Homepage & Polish",
+      "Dark Mode & i18n",
+      "Availability & Reviews",
+      "Analytics & Packages",
+      "Performance Optimization"
+    ]
+  }
+}
