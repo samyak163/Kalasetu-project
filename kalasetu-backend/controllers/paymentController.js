@@ -168,7 +168,7 @@ export const getPaymentDetails = asyncHandler(async (req, res) => {
  */
 export const getUserPayments = asyncHandler(async (req, res) => {
   const userId = req.user.id || req.user._id.toString();
-  const { status, type = 'sent', limit = 20, page = 1 } = req.query;
+  const { status, type = 'sent', limit = 20, page = 1, bookingId } = req.query;
 
   const query = {};
 
@@ -182,6 +182,11 @@ export const getUserPayments = asyncHandler(async (req, res) => {
   // Filter by status
   if (status) {
     query.status = status;
+  }
+
+  // Filter by bookingId (from metadata)
+  if (bookingId) {
+    query['metadata.bookingId'] = bookingId;
   }
 
   const payments = await Payment.find(query)
