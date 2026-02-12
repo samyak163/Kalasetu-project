@@ -2,15 +2,14 @@
 
 ## Current Status
 - **Milestone:** v2 — Full Feature Milestone
-- **Phase:** 1 — Critical Bug Fixes (In Progress)
-- **Current Plan:** 01-04 (3 of N plans complete)
-- **Next action:** Execute remaining plans in Phase 01
+- **Phase:** 1 — Critical Bug Fixes (Complete)
+- **Next action:** `/gsd:plan-phase 2` — Refund & Support
 
 ## Phase Progress
 
 | Phase | Name | Status | Started | Completed |
 |-------|------|--------|---------|-----------|
-| 1 | Critical Bug Fixes | In Progress | 2026-02-13 | — |
+| 1 | Critical Bug Fixes | ✓ Complete | 2026-02-13 | 2026-02-13 |
 | 2 | Refund & Support | Pending | — | — |
 | 3 | Verification & Recording | Pending | — | — |
 | 4 | Homepage & Polish | Pending | — | — |
