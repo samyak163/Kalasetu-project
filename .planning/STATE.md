@@ -3,8 +3,8 @@
 ## Current Status
 - **Milestone:** v2 — Full Feature Milestone
 - **Phase:** 2 — Refund & Support (In Progress)
-- **Current Plan:** 02-02 (Complete)
-- **Next action:** `/gsd:execute-phase 2 --plan 03` — Admin refund UI (if not already complete) or `--plan 04` — User refund UI
+- **Current Plan:** 02-06 (Complete)
+- **Next action:** Continue with remaining phase 2 plans
 
 ## Phase Progress
 
@@ -38,6 +38,8 @@
 | 2026-02-13 | Separate imageUpload and documentUpload instances | Profile photos don't need PDF support; documents may be scanned as PDF; separation enforces correct types per use case |
 | 2026-02-13 | Use useRef pattern for NotificationContext | Prevents infinite loop by keeping stable function reference while allowing access to latest closure values |
 | 2026-02-13 | No user-facing toasts for non-critical errors | Facet loading and post-registration notification refresh failures are non-critical; Sentry tracking is sufficient |
+| 2026-02-13 | Category-first help flow reduces friction compared to blank form | Users don't have to think about subject/priority — click category, describe issue. Industry standard pattern (GitHub issues, Zendesk). |
+| 2026-02-13 | My Tickets shows top 5 tickets inline, not separate page | Users primarily need quick status check, not full ticket management. Dedicated ticket page would be over-engineering for v2 scope. |
 | 2026-02-12 | Admin-approved refunds | Marketplace trust; prevents refund abuse |
 | 2026-02-12 | MSG91 for SMS | India-focused; cheaper for Indian numbers |
 | 2026-02-12 | Hindi + English i18n | Two most common Indian languages |
@@ -56,11 +58,12 @@ None.
 | 02-01 | 296s | 2 | 7 | 2026-02-13 |
 | 02-02 | 320s | 2 | 8 | 2026-02-13 |
 | 02-03 | 209s | 2 | 3 | 2026-02-13 |
+| 02-06 | 156s | 1 | 1 | 2026-02-13 |
 
 ## Session Info
 
-- **Last session:** 2026-02-13
-- **Stopped at:** Completed 02-02-PLAN.md
+- **Last session:** 2026-02-12T21:18:36.239Z
+- **Stopped at:** Completed 02-06-PLAN.md
 
 ## Notes
 - v1 overhaul (16-task bug fix + accessibility) completed prior to this milestone
