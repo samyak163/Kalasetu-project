@@ -45,13 +45,15 @@ Plans:
 **Dependencies:** Phase 1 (bug-free foundation).
 **Estimated complexity:** High (new models, admin UI, Razorpay refund API integration).
 **Success criteria:** Users can request refunds and create support tickets. Admins can manage both from the panel. Email notifications sent at each status change.
-**Plans:** 4 plans (Wave 1: backend parallel, Wave 2: frontend parallel)
+**Plans:** 6 plans (Wave 1: refund backend, Wave 2: support backend + admin refund UI, Wave 3: admin support UI + checkpoint, Wave 4: user-facing UX gap closure)
 
 Plans:
-- [ ] 02-01-PLAN.md — Refund backend (model, user API, admin API, webhook, notifications)
-- [ ] 02-02-PLAN.md — Support backend (model, user API, admin API, wire stubs, notifications)
-- [ ] 02-03-PLAN.md — Admin Refunds UI (AdminRefunds.jsx page + route)
-- [ ] 02-04-PLAN.md — Admin Support UI (AdminSupport.jsx page + route) + verification checkpoint
+- [x] 02-01-PLAN.md — Refund backend (model, user API, admin API, webhook, notifications)
+- [x] 02-02-PLAN.md — Support backend (model, user API, admin API, wire stubs, notifications)
+- [x] 02-03-PLAN.md — Admin Refunds UI (AdminRefunds.jsx page + route)
+- [x] 02-04-PLAN.md — Admin Support UI (AdminSupport.jsx page + route) + verification checkpoint
+- [ ] 02-05-PLAN.md — [gap] Request Refund button on order history + refund status display
+- [ ] 02-06-PLAN.md — [gap] Help tab redesign with category cards + My Tickets + fix API paths
 
 ---
 
