@@ -65,7 +65,7 @@ const ArtisanAccountPage = () => {
               return (
                 <button key={t.key} onClick={() => setActiveTab(t.key)} className={`
                   w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all flex items-center gap-3 whitespace-nowrap
-                  ${activeTab === t.key ? 'bg-brand-50 text-brand-500 shadow-sm' : 'hover:bg-gray-100 text-gray-700'}
+                  ${activeTab === t.key ? 'bg-brand-50 text-brand-500 shadow-sm dark:bg-brand-900/20 dark:text-brand-400' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'}
                 `} role="tab" aria-selected={activeTab === t.key}>
                   <IconComp className="h-5 w-5 shrink-0" />
                   <span>{t.label}</span>

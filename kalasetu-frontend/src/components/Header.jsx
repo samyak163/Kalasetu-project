@@ -111,7 +111,7 @@ const Header = () => {
                   </svg>
                 </button>
                 {showHeaderLocationSearch && (
-                  <div className="absolute top-full left-0 mt-2 z-50 !bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80">
+                  <div className="absolute top-full left-0 mt-2 z-50 !bg-white rounded-lg shadow-xl border border-gray-200 p-4 w-80" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold !text-black text-sm">Set Your Location</h3>
                       <button
@@ -245,7 +245,7 @@ const Header = () => {
                 </span>
               </button>
               {showHeaderLocationSearch && (
-                <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4">
+                <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white rounded-lg shadow-xl border border-gray-200 p-4" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-semibold text-gray-900 text-sm">Set Your Location</h3>
                     <button

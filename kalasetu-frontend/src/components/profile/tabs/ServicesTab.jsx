@@ -426,8 +426,8 @@ const ServiceModal = ({
   const suggestions = selectedCategory?.suggestedServices || [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6 overflow-y-auto">
+      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl my-8">
         <form onSubmit={onSubmit}>
           <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
             <div>
@@ -518,7 +518,7 @@ const ServiceModal = ({
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="grid gap-2">
                 <label className="text-sm font-medium text-gray-700">Base price (INR)</label>
                 <input
