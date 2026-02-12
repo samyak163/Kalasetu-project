@@ -19,7 +19,11 @@ import {
   getBookingsStats,
   cancelBooking,
   getSettings,
-  updateSettings
+  updateSettings,
+  getAllRefundRequests,
+  getRefundRequestsStats,
+  approveRefundRequest,
+  rejectRefundRequest
 } from '../controllers/adminDashboardController.js';
 import { protectAdmin, checkPermission } from '../middleware/authMiddleware.js';
 
@@ -49,6 +53,11 @@ router.patch('/reviews/:id/restore', protectAdmin, checkPermission('reviews', 'm
 router.get('/payments', protectAdmin, checkPermission('payments', 'view'), getAllPayments);
 router.get('/payments/stats', protectAdmin, checkPermission('payments', 'view'), getPaymentsStats);
 router.post('/payments/:id/refund', protectAdmin, checkPermission('payments', 'refund'), processRefund);
+
+router.get('/refunds', protectAdmin, checkPermission('payments', 'view'), getAllRefundRequests);
+router.get('/refunds/stats', protectAdmin, checkPermission('payments', 'view'), getRefundRequestsStats);
+router.post('/refunds/:id/approve', protectAdmin, checkPermission('payments', 'refund'), approveRefundRequest);
+router.post('/refunds/:id/reject', protectAdmin, checkPermission('payments', 'refund'), rejectRefundRequest);
 
 router.get('/bookings', protectAdmin, checkPermission('bookings', 'view'), getAllBookings);
 router.get('/bookings/stats', protectAdmin, checkPermission('bookings', 'view'), getBookingsStats);

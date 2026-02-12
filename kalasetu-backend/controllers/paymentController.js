@@ -1,6 +1,9 @@
 import asyncHandler from '../utils/asyncHandler.js';
 import Payment from '../models/paymentModel.js';
+import RefundRequest from '../models/refundRequestModel.js';
+import Notification from '../models/notificationModel.js';
 import { createOrder, verifyPaymentSignature, fetchPayment, refundPayment, verifyWebhookSignature } from '../utils/razorpay.js';
+import { sendEmail } from '../utils/email.js';
 import { RAZORPAY_CONFIG } from '../config/env.config.js';
 
 /**
@@ -413,7 +416,11 @@ export const handleWebhook = asyncHandler(async (req, res) => {
         break;
 
       case 'refund.created':
-        await handleRefundCreated(paymentData);
+        await handleRefundCreated(req.body.payload?.refund?.entity || paymentData);
+        break;
+
+      case 'refund.failed':
+        await handleRefundFailed(req.body.payload?.refund?.entity || paymentData);
         break;
 
       default:
@@ -483,6 +490,195 @@ async function handleRefundCreated(refundData) {
 
     console.log(`✅ Refund processed: ${payment._id}`);
   }
+
+  // Update RefundRequest status
+  const refundRequest = await RefundRequest.findOne({ razorpayRefundId: refundData.id });
+  if (refundRequest && refundRequest.status !== 'processed') {
+    refundRequest.status = 'processed';
+    refundRequest.razorpayRefundStatus = refundData.status;
+    refundRequest.processedAt = new Date();
+    await refundRequest.save();
+
+    // Notify user that refund is complete
+    try {
+      const RequesterModel = refundRequest.requestedByModel === 'User'
+        ? (await import('../models/userModel.js')).default
+        : (await import('../models/artisanModel.js')).default;
+      const requester = await RequesterModel.findById(refundRequest.requestedBy).lean();
+
+      if (requester) {
+        await Notification.create({
+          ownerId: refundRequest.requestedBy,
+          ownerType: refundRequest.requestedByModel === 'User' ? 'user' : 'artisan',
+          title: 'Refund Processed',
+          text: `Your refund of Rs.${refundRequest.amount} has been processed successfully.`,
+          url: `/refunds/${refundRequest._id}`,
+          read: false
+        });
+
+        const emailHtml = buildRefundProcessedEmailHTML(requester.fullName, refundRequest);
+        await sendEmail({
+          to: requester.email,
+          subject: 'Your Refund Has Been Processed - KalaSetu',
+          html: emailHtml
+        }).catch(() => {});
+      }
+    } catch (notifError) {
+      // Non-critical: don't fail webhook for notification errors
+      console.error('Failed to send refund processed notification:', notifError.message);
+    }
+  }
+}
+
+/**
+ * Handle refund failed event
+ */
+async function handleRefundFailed(refundData) {
+  const refundRequest = await RefundRequest.findOne({ razorpayRefundId: refundData.id });
+
+  if (refundRequest) {
+    refundRequest.status = 'failed';
+    refundRequest.failureReason = refundData.error_description || 'Refund failed';
+    refundRequest.razorpayRefundStatus = refundData.status;
+    await refundRequest.save();
+
+    // Notify user about failure
+    try {
+      const RequesterModel = refundRequest.requestedByModel === 'User'
+        ? (await import('../models/userModel.js')).default
+        : (await import('../models/artisanModel.js')).default;
+      const requester = await RequesterModel.findById(refundRequest.requestedBy).lean();
+
+      if (requester) {
+        await Notification.create({
+          ownerId: refundRequest.requestedBy,
+          ownerType: refundRequest.requestedByModel === 'User' ? 'user' : 'artisan',
+          title: 'Refund Failed',
+          text: `Your refund request for Rs.${refundRequest.amount} could not be processed. Please contact support.`,
+          url: `/refunds/${refundRequest._id}`,
+          read: false
+        });
+
+        const emailHtml = buildRefundFailedEmailHTML(requester.fullName, refundRequest);
+        await sendEmail({
+          to: requester.email,
+          subject: 'Refund Processing Failed - KalaSetu',
+          html: emailHtml
+        }).catch(() => {});
+      }
+    } catch (notifError) {
+      // Non-critical: don't fail webhook for notification errors
+      console.error('Failed to send refund failed notification:', notifError.message);
+    }
+
+    console.log(`❌ Refund failed: ${refundRequest._id}`);
+  }
+}
+
+function buildRefundProcessedEmailHTML(userName, refundRequest) {
+  const brandColor = '#A55233';
+  const frontendUrl = process.env.FRONTEND_URL || 'https://kalasetu.com';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Refund Processed</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: ${brandColor}; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .amount { font-size: 24px; font-weight: bold; color: ${brandColor}; margin: 20px 0; }
+        .button { display: inline-block; padding: 12px 30px; background: ${brandColor}; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Refund Processed Successfully</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${userName},</h2>
+          <p>Great news! Your refund has been successfully processed.</p>
+
+          <div class="amount">
+            Amount: Rs.${refundRequest.amount.toLocaleString('en-IN')}
+          </div>
+
+          <p>The refund should reflect in your original payment method within 5-7 business days depending on your bank.</p>
+
+          <a href="${frontendUrl}/refunds/${refundRequest._id}" class="button">View Refund Details</a>
+
+          <p style="margin-top: 30px; color: #666; font-size: 14px;">
+            If you don't see the refund after 7 business days, please contact your bank or our support team.
+          </p>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} KalaSetu. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+function buildRefundFailedEmailHTML(userName, refundRequest) {
+  const frontendUrl = process.env.FRONTEND_URL || 'https://kalasetu.com';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Refund Processing Failed</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #f44336; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .amount { font-size: 24px; font-weight: bold; color: #f44336; margin: 20px 0; }
+        .reason { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+        .button { display: inline-block; padding: 12px 30px; background: #f44336; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Refund Processing Failed</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${userName},</h2>
+          <p>We're sorry, but your refund could not be processed at this time.</p>
+
+          <div class="amount">
+            Amount: Rs.${refundRequest.amount.toLocaleString('en-IN')}
+          </div>
+
+          <div class="reason">
+            <strong>Reason:</strong> ${refundRequest.failureReason || 'Unknown error'}
+          </div>
+
+          <p>Our support team has been notified and will investigate this issue. We'll reach out to you shortly to resolve this.</p>
+
+          <a href="${frontendUrl}/refunds/${refundRequest._id}" class="button">View Refund Details</a>
+
+          <p style="margin-top: 30px; color: #666; font-size: 14px;">
+            If you have urgent questions, please contact our support team directly.
+          </p>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} KalaSetu. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 }
 
 export default {

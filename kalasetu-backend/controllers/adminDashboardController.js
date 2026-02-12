@@ -4,6 +4,11 @@ import User from '../models/userModel.js';
 import Review from '../models/reviewModel.js';
 import Payment from '../models/paymentModel.js';
 import Booking from '../models/bookingModel.js';
+import RefundRequest from '../models/refundRequestModel.js';
+import { refundPayment } from '../utils/razorpay.js';
+import { sendEmail } from '../utils/email.js';
+import { sendNotificationToUser } from '../utils/onesignal.js';
+import Notification from '../models/notificationModel.js';
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -640,5 +645,404 @@ export const updateSettings = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to update settings' });
   }
 };
+
+// ===== REFUND REQUEST MANAGEMENT =====
+
+export const getAllRefundRequests = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, status = 'all', startDate, endDate, search } = req.query;
+    let query = {};
+
+    // Filter by status
+    if (status !== 'all') {
+      query.status = status;
+    }
+
+    // Filter by date range
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = end;
+      }
+    }
+
+    // Search by payment ID
+    if (search) {
+      const escaped = escapeRegex(search);
+      const matchingPayments = await Payment.find({
+        $or: [
+          { razorpayPaymentId: { $regex: escaped, $options: 'i' } },
+          { razorpayOrderId: { $regex: escaped, $options: 'i' } }
+        ]
+      }).select('_id');
+
+      if (matchingPayments.length > 0) {
+        query.payment = { $in: matchingPayments.map(p => p._id) };
+      } else {
+        // No matching payments, return empty result
+        query._id = { $in: [] };
+      }
+    }
+
+    const [refunds, total] = await Promise.all([
+      RefundRequest.find(query)
+        .populate('payment', 'amount razorpayPaymentId razorpayOrderId status purpose')
+        .populate('requestedBy', 'fullName email profileImageUrl')
+        .populate('adminResponse.adminId', 'fullName email')
+        .sort({ createdAt: -1 })
+        .limit(limit * 1)
+        .skip((page - 1) * limit)
+        .lean(),
+      RefundRequest.countDocuments(query)
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: refunds,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch refund requests' });
+  }
+};
+
+export const getRefundRequestsStats = async (req, res) => {
+  try {
+    const [statusCounts, amountAgg] = await Promise.all([
+      RefundRequest.aggregate([
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        }
+      ]),
+      RefundRequest.aggregate([
+        {
+          $group: {
+            _id: '$status',
+            totalAmount: { $sum: '$amount' }
+          }
+        }
+      ])
+    ]);
+
+    // Build stats object
+    const statusMap = Object.fromEntries(statusCounts.map(s => [s._id, s.count]));
+    const amountMap = Object.fromEntries(amountAgg.map(s => [s._id, s.totalAmount]));
+
+    const stats = {
+      total: statusCounts.reduce((sum, s) => sum + s.count, 0),
+      pending: statusMap.pending || 0,
+      approved: statusMap.approved || 0,
+      processing: statusMap.processing || 0,
+      processed: statusMap.processed || 0,
+      rejected: statusMap.rejected || 0,
+      failed: statusMap.failed || 0,
+      totalPendingAmount: (amountMap.pending || 0) + (amountMap.approved || 0) + (amountMap.processing || 0),
+      totalProcessedAmount: amountMap.processed || 0
+    };
+
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch refund stats' });
+  }
+};
+
+export const approveRefundRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const refundRequest = await RefundRequest.findById(id);
+    if (!refundRequest) {
+      return res.status(404).json({ success: false, message: 'Refund request not found' });
+    }
+
+    if (refundRequest.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only approve pending requests'
+      });
+    }
+
+    // Set admin response
+    refundRequest.adminResponse = {
+      adminId: req.user._id,
+      action: 'approved',
+      reason: reason || 'Approved by admin',
+      respondedAt: new Date()
+    };
+    refundRequest.status = 'processing';
+
+    // Get payment details
+    const payment = await Payment.findById(refundRequest.payment);
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment not found' });
+    }
+
+    // Call Razorpay API
+    try {
+      const razorpayRefund = await refundPayment(payment.razorpayPaymentId, refundRequest.amount);
+
+      if (!razorpayRefund) {
+        throw new Error('Razorpay refund API returned null');
+      }
+
+      refundRequest.razorpayRefundId = razorpayRefund.id;
+      refundRequest.razorpayRefundStatus = razorpayRefund.status;
+      await refundRequest.save();
+
+      // Send notifications (non-blocking)
+      notifyRefundApproved(refundRequest).catch(() => {});
+
+      await req.user.logActivity('approve_refund', 'refund', id, { amount: refundRequest.amount });
+
+      res.status(200).json({
+        success: true,
+        message: 'Refund approved and processing',
+        data: refundRequest
+      });
+    } catch (razorpayError) {
+      // If Razorpay fails, mark as failed
+      refundRequest.status = 'failed';
+      refundRequest.failureReason = razorpayError.message;
+      await refundRequest.save();
+
+      res.status(500).json({
+        success: false,
+        message: 'Failed to process refund with payment gateway',
+        error: razorpayError.message
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to approve refund request' });
+  }
+};
+
+export const rejectRefundRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rejection reason is required'
+      });
+    }
+
+    const refundRequest = await RefundRequest.findById(id);
+    if (!refundRequest) {
+      return res.status(404).json({ success: false, message: 'Refund request not found' });
+    }
+
+    if (refundRequest.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Can only reject pending requests'
+      });
+    }
+
+    // Set admin response
+    refundRequest.adminResponse = {
+      adminId: req.user._id,
+      action: 'rejected',
+      reason,
+      respondedAt: new Date()
+    };
+    refundRequest.status = 'rejected';
+    await refundRequest.save();
+
+    // Send notifications (non-blocking)
+    notifyRefundRejected(refundRequest).catch(() => {});
+
+    await req.user.logActivity('reject_refund', 'refund', id, { reason });
+
+    res.status(200).json({
+      success: true,
+      message: 'Refund request rejected',
+      data: refundRequest
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to reject refund request' });
+  }
+};
+
+// Helper functions for notifications
+async function notifyRefundApproved(refundRequest) {
+  try {
+    // Load requester
+    const RequesterModel = refundRequest.requestedByModel === 'User'
+      ? (await import('../models/userModel.js')).default
+      : (await import('../models/artisanModel.js')).default;
+    const requester = await RequesterModel.findById(refundRequest.requestedBy).lean();
+
+    if (!requester) return;
+
+    // Create in-app notification
+    await Notification.create({
+      ownerId: refundRequest.requestedBy,
+      ownerType: refundRequest.requestedByModel === 'User' ? 'user' : 'artisan',
+      title: 'Refund Approved',
+      text: `Your refund request for Rs.${refundRequest.amount} has been approved and is being processed.`,
+      url: `/refunds/${refundRequest._id}`,
+      read: false
+    });
+
+    // Send email
+    const emailHtml = buildRefundEmailHTML(requester.fullName, refundRequest, 'approved');
+    await sendEmail({
+      to: requester.email,
+      subject: 'Your Refund Has Been Approved - KalaSetu',
+      html: emailHtml
+    }).catch(() => {});
+
+    // Send push notification
+    try {
+      await sendNotificationToUser(
+        refundRequest.requestedBy.toString(),
+        'Refund Approved',
+        `Your refund of Rs.${refundRequest.amount} is being processed.`
+      );
+    } catch {
+      // Push notification failure is non-critical
+    }
+  } catch (error) {
+    // Notification errors should not block the main operation
+  }
+}
+
+async function notifyRefundRejected(refundRequest) {
+  try {
+    // Load requester
+    const RequesterModel = refundRequest.requestedByModel === 'User'
+      ? (await import('../models/userModel.js')).default
+      : (await import('../models/artisanModel.js')).default;
+    const requester = await RequesterModel.findById(refundRequest.requestedBy).lean();
+
+    if (!requester) return;
+
+    // Create in-app notification
+    await Notification.create({
+      ownerId: refundRequest.requestedBy,
+      ownerType: refundRequest.requestedByModel === 'User' ? 'user' : 'artisan',
+      title: 'Refund Request Rejected',
+      text: `Your refund request for Rs.${refundRequest.amount} has been rejected. Reason: ${refundRequest.adminResponse.reason}`,
+      url: `/refunds/${refundRequest._id}`,
+      read: false
+    });
+
+    // Send email
+    const emailHtml = buildRefundEmailHTML(requester.fullName, refundRequest, 'rejected');
+    await sendEmail({
+      to: requester.email,
+      subject: 'Refund Request Update - KalaSetu',
+      html: emailHtml
+    }).catch(() => {});
+
+    // Send push notification
+    try {
+      await sendNotificationToUser(
+        refundRequest.requestedBy.toString(),
+        'Refund Rejected',
+        `Your refund request for Rs.${refundRequest.amount} was not approved.`
+      );
+    } catch {
+      // Push notification failure is non-critical
+    }
+  } catch (error) {
+    // Notification errors should not block the main operation
+  }
+}
+
+function buildRefundEmailHTML(userName, refundRequest, status) {
+  const brandColor = '#A55233';
+  const statusColors = {
+    approved: '#4caf50',
+    rejected: '#f44336',
+    processed: brandColor,
+    failed: '#f44336'
+  };
+  const headerColor = statusColors[status] || brandColor;
+
+  const statusTitles = {
+    approved: 'Refund Approved',
+    rejected: 'Refund Request Rejected',
+    processed: 'Refund Processed',
+    failed: 'Refund Failed'
+  };
+
+  const frontendUrl = process.env.FRONTEND_URL || 'https://kalasetu.com';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${statusTitles[status]}</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: ${headerColor}; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .amount { font-size: 24px; font-weight: bold; color: ${headerColor}; margin: 20px 0; }
+        .reason { background: white; border-left: 4px solid ${headerColor}; padding: 15px; margin: 20px 0; }
+        .button { display: inline-block; padding: 12px 30px; background: ${headerColor}; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>${statusTitles[status]}</h1>
+        </div>
+        <div class="content">
+          <h2>Hello ${userName},</h2>
+          <p>Your refund request has been ${status}.</p>
+
+          <div class="amount">
+            Amount: Rs.${refundRequest.amount.toLocaleString('en-IN')}
+          </div>
+
+          ${status === 'rejected' || status === 'failed' ? `
+            <div class="reason">
+              <strong>Reason:</strong> ${refundRequest.adminResponse?.reason || refundRequest.failureReason || 'No reason provided'}
+            </div>
+          ` : ''}
+
+          ${status === 'approved' ? `
+            <p>Your refund is currently being processed by our payment gateway. You should receive the amount in your original payment method within 5-7 business days.</p>
+          ` : ''}
+
+          ${status === 'processed' ? `
+            <p>The refund has been successfully processed. The amount should reflect in your account within 5-7 business days depending on your bank.</p>
+          ` : ''}
+
+          <a href="${frontendUrl}/refunds/${refundRequest._id}" class="button">View Refund Details</a>
+
+          <p style="margin-top: 30px; color: #666; font-size: 14px;">
+            If you have any questions, please contact our support team.
+          </p>
+        </div>
+        <div class="footer">
+          <p>&copy; ${new Date().getFullYear()} KalaSetu. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
 
 
