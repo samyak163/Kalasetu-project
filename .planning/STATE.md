@@ -3,7 +3,7 @@
 ## Current Status
 - **Milestone:** v2 — Full Feature Milestone
 - **Phase:** 1 — Critical Bug Fixes (In Progress)
-- **Current Plan:** 01-03 (2 of N plans complete)
+- **Current Plan:** 01-04 (3 of N plans complete)
 - **Next action:** Execute remaining plans in Phase 01
 
 ## Phase Progress
@@ -23,6 +23,9 @@
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-02-13 | 10MB size limit for all uploads | Balances user needs with bandwidth/storage costs; sufficient for high-quality images and scanned documents |
+| 2026-02-13 | Use MulterError for validation failures | Enables centralized error handling in errorMiddleware with user-friendly JSON responses instead of raw HTML errors |
+| 2026-02-13 | Separate imageUpload and documentUpload instances | Profile photos don't need PDF support; documents may be scanned as PDF; separation enforces correct types per use case |
 | 2026-02-13 | Use useRef pattern for NotificationContext | Prevents infinite loop by keeping stable function reference while allowing access to latest closure values |
 | 2026-02-13 | No user-facing toasts for non-critical errors | Facet loading and post-registration notification refresh failures are non-critical; Sentry tracking is sufficient |
 | 2026-02-12 | Admin-approved refunds | Marketplace trust; prevents refund abuse |
@@ -39,14 +42,23 @@ None.
 | Phase-Plan | Duration | Tasks | Files | Completion Date |
 |------------|----------|-------|-------|-----------------|
 | 01-02 | 144s | 2 | 4 | 2026-02-13 |
+| 01-03 | 137s | 2 | 3 | 2026-02-13 |
 
 ## Session Info
 
 - **Last session:** 2026-02-13
-- **Stopped at:** Completed 01-02-PLAN.md
+- **Stopped at:** Completed 01-03-PLAN.md
 
 ## Notes
 - v1 overhaul (16-task bug fix + accessibility) completed prior to this milestone
 - Codebase analysis available in `.planning/codebase/` (ARCHITECTURE, CONCERNS, CONVENTIONS, INTEGRATIONS, STACK, STRUCTURE, TESTING)
 - 3 pre-existing ESLint errors resolved in plan 01-02 (BUG-05)
 - Workflow: Guided mode, thorough depth, auto-commit, parallel agents
+
+## Plan 01-01 Execution Notes
+- Completed: 2026-02-13
+- Duration: 105 seconds
+- Tasks: 2
+- Files modified: 3
+- Commits: dd4f734 (BUG-01), f1e90f0 (BUG-04)
+- Decisions: MongoDB transactions for booking atomicity, login rate 20/15min, register rate 5/60min, no rate limit on logout
