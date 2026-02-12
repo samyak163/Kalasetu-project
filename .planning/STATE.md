@@ -2,14 +2,15 @@
 
 ## Current Status
 - **Milestone:** v2 — Full Feature Milestone
-- **Phase:** 0 (Initialization complete, ready to start Phase 1)
-- **Next action:** `/gsd:plan-phase 1` — Critical Bug Fixes
+- **Phase:** 1 — Critical Bug Fixes (In Progress)
+- **Current Plan:** 01-03 (2 of N plans complete)
+- **Next action:** Execute remaining plans in Phase 01
 
 ## Phase Progress
 
 | Phase | Name | Status | Started | Completed |
 |-------|------|--------|---------|-----------|
-| 1 | Critical Bug Fixes | Pending | — | — |
+| 1 | Critical Bug Fixes | In Progress | 2026-02-13 | — |
 | 2 | Refund & Support | Pending | — | — |
 | 3 | Verification & Recording | Pending | — | — |
 | 4 | Homepage & Polish | Pending | — | — |
@@ -22,6 +23,8 @@
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-02-13 | Use useRef pattern for NotificationContext | Prevents infinite loop by keeping stable function reference while allowing access to latest closure values |
+| 2026-02-13 | No user-facing toasts for non-critical errors | Facet loading and post-registration notification refresh failures are non-critical; Sentry tracking is sufficient |
 | 2026-02-12 | Admin-approved refunds | Marketplace trust; prevents refund abuse |
 | 2026-02-12 | MSG91 for SMS | India-focused; cheaper for Indian numbers |
 | 2026-02-12 | Hindi + English i18n | Two most common Indian languages |
@@ -31,8 +34,19 @@
 ## Blockers
 None.
 
+## Performance Metrics
+
+| Phase-Plan | Duration | Tasks | Files | Completion Date |
+|------------|----------|-------|-------|-----------------|
+| 01-02 | 144s | 2 | 4 | 2026-02-13 |
+
+## Session Info
+
+- **Last session:** 2026-02-13
+- **Stopped at:** Completed 01-02-PLAN.md
+
 ## Notes
 - v1 overhaul (16-task bug fix + accessibility) completed prior to this milestone
 - Codebase analysis available in `.planning/codebase/` (ARCHITECTURE, CONCERNS, CONVENTIONS, INTEGRATIONS, STACK, STRUCTURE, TESTING)
-- 3 pre-existing ESLint errors will be addressed in BUG-05
+- 3 pre-existing ESLint errors resolved in plan 01-02 (BUG-05)
 - Workflow: Guided mode, thorough depth, auto-commit, parallel agents
