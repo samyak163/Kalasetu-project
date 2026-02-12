@@ -3,8 +3,8 @@
 ## Current Status
 - **Milestone:** v2 — Full Feature Milestone
 - **Phase:** 2 — Refund & Support (In Progress)
-- **Current Plan:** 02-03 (Complete)
-- **Next action:** `/gsd:execute-phase 2 --plan 04` — User refund UI
+- **Current Plan:** 02-02 (Complete)
+- **Next action:** `/gsd:execute-phase 2 --plan 03` — Admin refund UI (if not already complete) or `--plan 04` — User refund UI
 
 ## Phase Progress
 
@@ -23,6 +23,10 @@
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-02-13 | Use embedded messages for support tickets | Ticket conversations typically <100 messages; embedding simplifies queries and ensures atomic updates |
+| 2026-02-13 | Dynamic import SupportTicket in userAuthController | Avoids circular dependency issues in large controller file with many existing imports |
+| 2026-02-13 | Filter internal notes from user ticket views | Admins need internal discussion capability without exposing sensitive context to users |
+| 2026-02-13 | Use 'users' permission for support ticket admin routes | No dedicated 'support' permission exists; user management permission is semantically appropriate |
 | 2026-02-13 | Inline reject form in modal | Simpler UX with textarea in detail modal instead of separate modal; fewer clicks for admin |
 | 2026-02-13 | Confirm approve only, reject requires reason | Approve is immediate/critical (Razorpay call), reject needs reason anyway so no extra confirmation |
 | 2026-02-13 | Refunds between Payments and Bookings | Logical grouping in sidebar since refunds are payment-related operations |
@@ -50,12 +54,13 @@ None.
 | 01-02 | 144s | 2 | 4 | 2026-02-13 |
 | 01-03 | 137s | 2 | 3 | 2026-02-13 |
 | 02-01 | 296s | 2 | 7 | 2026-02-13 |
+| 02-02 | 320s | 2 | 8 | 2026-02-13 |
 | 02-03 | 209s | 2 | 3 | 2026-02-13 |
 
 ## Session Info
 
 - **Last session:** 2026-02-13
-- **Stopped at:** Completed 02-03-PLAN.md
+- **Stopped at:** Completed 02-02-PLAN.md
 
 ## Notes
 - v1 overhaul (16-task bug fix + accessibility) completed prior to this milestone
