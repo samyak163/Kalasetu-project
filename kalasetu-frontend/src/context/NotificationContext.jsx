@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { API_CONFIG } from '../config/env.config.js';
 
@@ -32,7 +32,10 @@ export const NotificationProvider = ({ children }) => {
     return `${years} yr${years > 1 ? 's' : ''} ago`;
   }, []);
 
-  const refresh = useCallback(async () => {
+  // Store refresh implementation in ref to prevent identity changes
+  const refreshRef = useRef();
+
+  refreshRef.current = async () => {
     try {
       const res = await axios.get(`${API_CONFIG.BASE_URL}/api/notifications`, { withCredentials: true });
       const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
@@ -42,8 +45,13 @@ export const NotificationProvider = ({ children }) => {
       }));
       setNotifications(decorated);
       setUnreadCount(computeUnread(decorated));
-    } catch (err) { console.error('Failed to refresh notifications:', err); }
-  }, [computeUnread, formatTimeAgo]);
+    } catch (err) {
+      console.error('Failed to refresh notifications:', err);
+    }
+  };
+
+  // Stable reference that never changes identity
+  const refresh = useCallback(() => refreshRef.current(), []);
 
   const markRead = useCallback(async (id) => {
     try {
@@ -53,7 +61,10 @@ export const NotificationProvider = ({ children }) => {
     } catch (err) { console.error('Failed to mark notification as read:', err); }
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  // Fetch once on mount - empty deps, no infinite loop
+  useEffect(() => {
+    refreshRef.current();
+  }, []);
 
   return (
     <NotificationContext.Provider value={{ notifications, unreadCount, refresh, markRead }}>
