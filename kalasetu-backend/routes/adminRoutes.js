@@ -26,6 +26,7 @@ import {
   rejectRefundRequest,
   getAllSupportTickets,
   getSupportTicketsStats,
+  getTicketById,
   respondToTicket,
   updateTicketStatus
 } from '../controllers/adminDashboardController.js';
@@ -72,6 +73,7 @@ router.put('/settings', protectAdmin, checkPermission('settings', 'edit'), updat
 
 router.get('/support/tickets', protectAdmin, checkPermission('users', 'view'), getAllSupportTickets);
 router.get('/support/tickets/stats', protectAdmin, checkPermission('users', 'view'), getSupportTicketsStats);
+router.get('/support/tickets/:id', protectAdmin, checkPermission('users', 'view'), getTicketById);
 router.post('/support/tickets/:id/respond', protectAdmin, checkPermission('users', 'view'), respondToTicket);
 router.patch('/support/tickets/:id/status', protectAdmin, checkPermission('users', 'view'), updateTicketStatus);
 

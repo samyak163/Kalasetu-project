@@ -1163,6 +1163,22 @@ export const getSupportTicketsStats = async (req, res) => {
   }
 };
 
+// @desc    Get support ticket by ID with full details
+// @route   GET /api/admin/support/tickets/:id
+// @access  Protected (Admin)
+export const getTicketById = async (req, res) => {
+  try {
+    const ticket = await SupportTicket.findById(req.params.id)
+      .populate('assignedTo', 'fullName email');
+    if (!ticket) {
+      return res.status(404).json({ success: false, message: 'Ticket not found' });
+    }
+    res.status(200).json({ success: true, data: ticket });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch ticket' });
+  }
+};
+
 // @desc    Respond to a support ticket
 // @route   POST /api/admin/support/tickets/:id/respond
 // @access  Protected (Admin)

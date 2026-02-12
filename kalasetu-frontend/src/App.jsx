@@ -52,6 +52,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminReviews from './pages/admin/AdminReviews';
 import AdminPayments from './pages/admin/AdminPayments';
 import AdminRefunds from './pages/admin/AdminRefunds';
+import AdminSupport from './pages/admin/AdminSupport';
 import AdminBookings from './pages/admin/AdminBookings';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminProfile from './pages/admin/AdminProfile';
@@ -180,6 +181,7 @@ function App() {
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="payments" element={<AdminPayments />} />
               <Route path="refunds" element={<AdminRefunds />} />
+              <Route path="support" element={<AdminSupport />} />
               <Route path="bookings" element={<AdminBookings />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="profile" element={<AdminProfile />} />
