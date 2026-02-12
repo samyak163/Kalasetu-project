@@ -1,7 +1,7 @@
 import express from 'express';
-import multer from 'multer';
 import { protect } from '../middleware/authMiddleware.js';
 import { cache, invalidateCache } from '../middleware/cacheMiddleware.js';
+import { imageUpload, documentUpload } from '../config/multer.js';
 // validation handled in controller; we can add per-route when needed
 import {
   getProfile,
@@ -20,10 +20,6 @@ import {
 } from '../controllers/artisanProfileController.js';
 
 const router = express.Router();
-
-// Multer temporary storage (memory) - Cloudinary upload reads buffer via temp file path
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
 
 // For Cloudinary uploader which expects a path, convert memory buffer to temp file
 import fs from 'node:fs';
@@ -56,7 +52,7 @@ router.put(
 router.post(
   '/profile/photo',
   protect,
-  upload.single('image'),
+  imageUpload.single('image'),
   toTempFile,
   invalidateCache(['cache:artisan:profile*','cache:artisans:public*']),
   uploadProfilePhoto
@@ -88,7 +84,7 @@ router.put('/profile/bank', protect, invalidateCache(['cache:artisan:profile*'])
 router.post(
   '/profile/documents/upload',
   protect,
-  upload.single('file'),
+  documentUpload.single('file'),
   toTempFile,
   invalidateCache(['cache:artisan:profile*']),
   uploadDocument

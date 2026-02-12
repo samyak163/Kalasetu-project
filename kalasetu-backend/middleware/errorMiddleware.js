@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import multer from 'multer';
 
 export const notFound = (req, res, next) => {
     const error = new Error(`Not Found - ${req.originalUrl}`);
@@ -7,6 +8,33 @@ export const notFound = (req, res, next) => {
 };
 
 export const errorHandler = (err, req, res, next) => {
+    // Handle Multer file upload errors
+    if (err instanceof multer.MulterError) {
+        let message = 'File upload error';
+        let statusCode = 400;
+
+        switch (err.code) {
+            case 'LIMIT_FILE_SIZE':
+                message = 'File is too large. Maximum size is 10MB.';
+                break;
+            case 'LIMIT_UNEXPECTED_FILE':
+                message = 'Invalid file type. Only images (JPEG, PNG, WebP) and PDF documents are allowed.';
+                break;
+            case 'LIMIT_FILE_COUNT':
+                message = 'Too many files uploaded.';
+                break;
+            default:
+                message = `Upload error: ${err.message}`;
+        }
+
+        return res.status(statusCode).json({ success: false, message });
+    }
+
+    // Handle multer fileFilter errors thrown as plain Error
+    if (err.message && err.message.includes('Invalid file type')) {
+        return res.status(400).json({ success: false, message: err.message });
+    }
+
     // Zod validation errors
     if (err instanceof z.ZodError) {
         return res.status(400).json({
