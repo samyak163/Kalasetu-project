@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { API_CONFIG } from '../../config/env.config.js';
+import { captureException } from '../../lib/sentry.js';
 
 export default function AdvancedFilters({ value, onChange }) {
   const [facets, setFacets] = useState({ crafts: [], cities: [], states: [] });
@@ -14,7 +15,10 @@ export default function AdvancedFilters({ value, onChange }) {
         const cities = Object.keys(data['location.city'] || {});
         const states = Object.keys(data['location.state'] || {});
         setFacets({ crafts, cities, states });
-      } catch (_) {}
+      } catch (err) {
+        captureException(err, { context: 'search_facets_load', component: 'AdvancedFilters' });
+        if (import.meta.env.DEV) console.error('Failed to load search facets:', err);
+      }
     })();
   }, []);
 

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ToastContext } from '../context/ToastContext.jsx';
 import { useNotifications } from '../context/NotificationContext.jsx';
+import { captureException } from '../lib/sentry.js';
 
 const UserRegisterPage = () => {
     const [formData, setFormData] = useState({ 
@@ -67,7 +68,9 @@ const UserRegisterPage = () => {
 
             try {
                 await refreshNotifications();
-            } catch (_) {}
+            } catch (err) {
+                captureException(err, { context: 'post_registration_notification_refresh', component: 'UserRegisterPage' });
+            }
 
             showToast('A verification link has been sent to your Gmail. Please verify to continue.', 'info', 6000);
             navigate('/', { replace: true });

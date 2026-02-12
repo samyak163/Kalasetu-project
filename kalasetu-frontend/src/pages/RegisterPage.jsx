@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import axios from 'axios';
 import { ToastContext } from '../context/ToastContext.jsx';
 import { useNotifications } from '../context/NotificationContext.jsx';
+import { captureException } from '../lib/sentry.js';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({ 
@@ -47,8 +48,8 @@ const RegisterPage = () => {
             const registrationData = {
                 fullName: formData.fullName,
                 password: formData.password,
-                email: formData.useEmail ? formData.email : '',
-                phoneNumber: formData.useEmail ? '' : formData.phoneNumber
+                email: formData.useEmail ? formData.email : undefined,
+                phoneNumber: formData.useEmail ? undefined : formData.phoneNumber
             };
 
             const response = await axios.post(
@@ -62,7 +63,9 @@ const RegisterPage = () => {
                 login(response.data.artisan, 'artisan');
                 try {
                     await refreshNotifications();
-                } catch (_) {}
+                } catch (err) {
+                    captureException(err, { context: 'post_registration_notification_refresh', component: 'RegisterPage' });
+                }
 
                 showToast('A verification link has been sent to your Gmail. Please verify to continue.', 'info', 6000);
                 
