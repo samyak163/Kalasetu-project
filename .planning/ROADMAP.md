@@ -52,8 +52,10 @@ Plans:
 - [x] 02-02-PLAN.md — Support backend (model, user API, admin API, wire stubs, notifications)
 - [x] 02-03-PLAN.md — Admin Refunds UI (AdminRefunds.jsx page + route)
 - [x] 02-04-PLAN.md — Admin Support UI (AdminSupport.jsx page + route) + verification checkpoint
-- [ ] 02-05-PLAN.md — [gap] Request Refund button on order history + refund status display
-- [ ] 02-06-PLAN.md — [gap] Help tab redesign with category cards + My Tickets + fix API paths
+- [x] 02-05-PLAN.md — [gap] Request Refund button on order history + refund status display
+- [x] 02-06-PLAN.md — [gap] Help tab redesign with category cards + My Tickets + fix API paths
+
+**Status:** ✓ Complete (2026-02-13)
 
 ---
 
