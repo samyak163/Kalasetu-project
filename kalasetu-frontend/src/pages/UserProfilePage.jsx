@@ -64,7 +64,7 @@ export default function UserProfilePage() {
           </div>
         </aside>
 
-        <section className="md:col-span-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 md:p-6" role="tabpanel" id="main-content">
+        <section className="md:col-span-3 rounded-xl border border-gray-200 dark:border-gray-800 p-4 md:p-6" role="tabpanel" id="main-content">
           {activeTab === 'profile' && <ProfileTab user={user} />}
           {activeTab === 'ratings' && <RatingsTab user={user} />}
           {activeTab === 'saved' && <BookmarksTab user={user} />}

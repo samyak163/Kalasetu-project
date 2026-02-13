@@ -338,6 +338,25 @@ const ResultsView = ({ results, onBook, onChat, onViewProfile }) => {
   );
 };
 
+const StarRating = ({ rating, count }) => (
+  <div className="flex items-center gap-1.5">
+    <div className="flex items-center">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <svg
+          key={star}
+          className={`w-4 h-4 ${star <= Math.round(rating || 0) ? 'text-yellow-400' : 'text-gray-200'}`}
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      ))}
+    </div>
+    <span className="text-sm font-medium text-gray-700">{(rating || 0).toFixed(1)}</span>
+    {count !== undefined && <span className="text-sm text-gray-400">({count})</span>}
+  </div>
+);
+
 const ArtisanCard = ({ artisan, onBook, onChat, onViewProfile }) => {
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(true);
@@ -354,7 +373,7 @@ const ArtisanCard = ({ artisan, onBook, onChat, onViewProfile }) => {
           setServices(res.data.data || []);
         }
       } catch (err) {
-        console.error('Failed to load services:', err);
+        if (import.meta.env.DEV) console.error('Failed to load services:', err);
       } finally {
         setLoadingServices(false);
       }
@@ -363,12 +382,12 @@ const ArtisanCard = ({ artisan, onBook, onChat, onViewProfile }) => {
   }, [artisan.publicId]);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="flex flex-col md:flex-row">
-        {/* Left Side - Profile Picture (Small Square) */}
-        <div className="w-full md:w-32 h-32 md:h-auto bg-gray-100 flex-shrink-0">
+        {/* Left Side - Profile Picture */}
+        <div className="w-full md:w-40 h-40 md:h-auto bg-gray-100 flex-shrink-0">
           <img
-            src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 128, height: 128 })}
+            src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 160, height: 160 })}
             alt={artisan.fullName}
             className="w-full h-full object-cover"
             onError={(e) => { e.target.src = '/default-avatar.png'; }}
@@ -376,50 +395,66 @@ const ArtisanCard = ({ artisan, onBook, onChat, onViewProfile }) => {
         </div>
 
         {/* Right Side - Content */}
-        <div className="flex-1 p-6">
-          {/* Name - Full Text */}
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">{artisan.fullName}</h3>
-          
-          {/* About Me Description */}
-          <div className="mb-4">
-            <p className="text-sm font-medium text-gray-700 mb-1">About Me:</p>
-            <p className="text-sm text-gray-600 line-clamp-2">
-              {artisan.bio || 'Experienced artisan delivering quality craftsmanship.'}
-            </p>
-          </div>
-
-          {/* Services Section */}
-          <div className="mb-4">
-            <p className="text-sm font-medium text-gray-700 mb-2">Services:</p>
-            {loadingServices ? (
-              <p className="text-xs text-gray-500">Loading services...</p>
-            ) : services.length > 0 ? (
-              <div className="space-y-1">
-                {services.slice(0, 3).map((service) => (
-                  <div key={service._id} className="text-xs text-gray-600">
-                    • {service.name} - ₹{service.price || 'Contact for pricing'} ({service.durationMinutes || 60} min)
-                  </div>
-                ))}
-                {services.length > 3 && (
-                  <p className="text-xs text-gray-500">+ {services.length - 3} more services</p>
-                )}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-500">No services listed yet.</p>
+        <div className="flex-1 p-5">
+          {/* Name + Verification */}
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-xl font-semibold text-gray-900">{artisan.fullName}</h3>
+            {artisan.verified && (
+              <svg className="w-5 h-5 text-brand-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-label="Verified artisan">
+                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
             )}
           </div>
 
-          {/* Portfolio Images - Small Rectangles */}
+          {/* Rating */}
+          <div className="mb-3">
+            <StarRating rating={artisan.averageRating} count={artisan.totalReviews} />
+          </div>
+
+          {/* Craft Badge */}
+          {artisan.craft && (
+            <span className="inline-block px-2.5 py-0.5 bg-brand-50 text-brand-700 text-xs font-medium rounded-full mb-3">
+              {artisan.craft}
+            </span>
+          )}
+
+          {/* Bio */}
+          <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+            {artisan.bio || 'Experienced artisan delivering quality craftsmanship.'}
+          </p>
+
+          {/* Services Section */}
+          <div className="mb-4">
+            <p className="text-sm font-medium text-gray-700 mb-1.5">Services:</p>
+            {loadingServices ? (
+              <p className="text-xs text-gray-400">Loading...</p>
+            ) : services.length > 0 ? (
+              <div className="space-y-0.5">
+                {services.slice(0, 3).map((service) => (
+                  <div key={service._id} className="text-xs text-gray-600">
+                    • {service.name} – ₹{service.price || 'Contact for pricing'} ({service.durationMinutes || 60} min)
+                  </div>
+                ))}
+                {services.length > 3 && (
+                  <p className="text-xs text-gray-400">+ {services.length - 3} more</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">No services listed yet.</p>
+            )}
+          </div>
+
+          {/* Portfolio Images */}
           {artisan.portfolioImageUrls && artisan.portfolioImageUrls.length > 0 && (
             <div className="mb-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">Portfolio:</p>
+              <p className="text-sm font-medium text-gray-700 mb-1.5">Portfolio:</p>
               <div className="flex gap-2 flex-wrap">
                 {artisan.portfolioImageUrls.slice(0, 4).map((img, idx) => (
                   <img
                     key={idx}
-                    src={optimizeImage(img, { width: 80, height: 80, crop: 'fill' })}
+                    src={optimizeImage(img, { width: 96, height: 96, crop: 'fill' })}
                     alt={`Portfolio ${idx + 1}`}
-                    className="w-20 h-20 object-cover rounded border border-gray-200"
+                    className="w-24 h-24 object-cover rounded-lg border border-gray-200"
                   />
                 ))}
               </div>
@@ -427,7 +462,7 @@ const ArtisanCard = ({ artisan, onBook, onChat, onViewProfile }) => {
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200">
+          <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
             <button
               onClick={() => onViewProfile(artisan)}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
@@ -436,13 +471,13 @@ const ArtisanCard = ({ artisan, onBook, onChat, onViewProfile }) => {
             </button>
             <button
               onClick={() => onChat(artisan)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors text-sm font-medium"
             >
               Chat
             </button>
             <button
               onClick={() => onBook(artisan)}
-              className="px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors text-sm font-medium"
+              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors text-sm font-medium"
             >
               Book
             </button>
@@ -454,26 +489,32 @@ const ArtisanCard = ({ artisan, onBook, onChat, onViewProfile }) => {
 };
 
 const ServiceCard = ({ service, onBook }) => {
+  const navigate = useNavigate();
   const artisan = service.artisan || {};
   const serviceName = service.name || service.serviceName;
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
+    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-4">
         <img
           src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 72, height: 72 })}
           alt={artisan.fullName}
-          className="w-18 h-18 rounded-lg object-cover"
+          className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
           onError={(e) => { e.target.src = '/default-avatar.png'; }}
         />
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h3 className="text-lg font-semibold text-gray-900">{serviceName}</h3>
           <p className="text-sm text-gray-500">
             by <span className="font-medium text-gray-800">{artisan.fullName}</span>
           </p>
+          {(artisan.averageRating > 0 || artisan.totalReviews > 0) && (
+            <div className="mt-1">
+              <StarRating rating={artisan.averageRating} count={artisan.totalReviews} />
+            </div>
+          )}
           <p className="mt-2 text-sm text-gray-600 line-clamp-2">{service.description || artisan.bio || 'Trusted local artisan offering professional services.'}</p>
         </div>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 mt-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100">
         <div className="text-sm text-gray-600">
           <div>
             <span className="font-medium text-gray-800">Price:</span> ₹{service.price || 0}
@@ -482,13 +523,24 @@ const ServiceCard = ({ service, onBook }) => {
             <span className="font-medium text-gray-800">Duration:</span> {service.durationMinutes || 60} minutes
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onBook({ service, artisan })}
-          className="px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors"
-        >
-          Book
-        </button>
+        <div className="flex gap-2">
+          {artisan.publicId && (
+            <button
+              type="button"
+              onClick={() => navigate(`/${artisan.publicId}`)}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+            >
+              View Profile
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onBook({ service, artisan })}
+            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors text-sm font-medium"
+          >
+            Book
+          </button>
+        </div>
       </div>
     </div>
   );

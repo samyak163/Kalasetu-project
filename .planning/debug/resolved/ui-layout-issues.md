@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: resolved
 trigger: "Investigate and fix multiple UI/layout issues in KalaSetu."
 created: 2026-02-13T00:00:00Z
 updated: 2026-02-13T00:00:00Z

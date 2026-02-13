@@ -24,6 +24,8 @@ const formatArtisan = (artisan) => {
     averageRating: artisan.averageRating || 0,
     totalReviews: artisan.totalReviews || 0,
     verified: artisan.isVerified || artisan.emailVerified || false,
+    bio: artisan.bio || '',
+    portfolioImageUrls: artisan.portfolioImageUrls || [],
   };
 };
 
@@ -60,7 +62,7 @@ const performSearch = async (req) => {
     mode = 'service';
     const regex = new RegExp(`^${escapeRegex(selectedService)}`, 'i');
     const serviceDocs = await ArtisanService.find({ name: regex, isActive: true })
-      .populate({ path: 'artisan', select: 'publicId fullName businessName profileImageUrl profileImage craft location averageRating totalReviews isVerified emailVerified' })
+      .populate({ path: 'artisan', select: 'publicId fullName businessName profileImageUrl profileImage craft location averageRating totalReviews isVerified emailVerified bio portfolioImageUrls' })
       .sort({ createdAt: -1 })
       .limit(limitInt * 4) // fetch more to dedupe
       .lean();
@@ -95,7 +97,7 @@ const performSearch = async (req) => {
       category: selectedCategory._id,
       isActive: true,
     })
-      .populate({ path: 'artisan', select: 'publicId fullName businessName profileImageUrl profileImage craft location averageRating totalReviews isVerified emailVerified' })
+      .populate({ path: 'artisan', select: 'publicId fullName businessName profileImageUrl profileImage craft location averageRating totalReviews isVerified emailVerified bio portfolioImageUrls' })
       .sort({ createdAt: -1 })
       .lean();
 
@@ -159,7 +161,7 @@ const performSearch = async (req) => {
     : {};
 
   const artisans = await Artisan.find(artisanFilter)
-    .select('publicId fullName businessName profileImageUrl profileImage craft location averageRating totalReviews isVerified emailVerified')
+    .select('publicId fullName businessName profileImageUrl profileImage craft location averageRating totalReviews isVerified emailVerified bio portfolioImageUrls')
     .sort({ averageRating: -1, createdAt: -1 })
     .limit(limitInt)
     .lean();
