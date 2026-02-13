@@ -62,8 +62,15 @@ export const initLogRocket = () => {
       },
     });
 
-    // Setup React integration
-    setupLogRocketReact(LogRocket);
+    // Setup React integration (gracefully handle version mismatches)
+    try {
+      setupLogRocketReact(LogRocket);
+    } catch (reactError) {
+      // LogRocket React wrapper may not be compatible with this React version
+      if (import.meta.env.DEV) {
+        console.warn('⚠️ LogRocket React wrapper not compatible, continuing with core LogRocket');
+      }
+    }
 
     console.log('✅ LogRocket initialized');
   } catch (error) {
