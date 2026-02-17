@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SearchBar from './SearchBar.jsx';
 import LocationSearch from './LocationSearch.jsx';
@@ -9,8 +9,9 @@ const HeroSearch = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [showLocationSearch, setShowLocationSearch] = useState(false);
   const { categories, loading } = useCategories();
+  const locationRef = useRef(null);
 
-  // Load saved location from localStorage on mount
+  // Load saved location from localStorage on mount + listen for cross-component sync
   useEffect(() => {
     const savedLocation = localStorage.getItem('userLocation');
     if (savedLocation) {
@@ -20,6 +21,22 @@ const HeroSearch = () => {
         console.error('Error loading saved location:', error);
       }
     }
+
+    const handleLocationChanged = (e) => {
+      setSelectedLocation(e.detail);
+    };
+    const handleClickOutside = (e) => {
+      if (locationRef.current && !locationRef.current.contains(e.target)) {
+        setShowLocationSearch(false);
+      }
+    };
+
+    window.addEventListener('locationChanged', handleLocationChanged);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      window.removeEventListener('locationChanged', handleLocationChanged);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const quickCategories = useMemo(() => {
@@ -55,7 +72,7 @@ const HeroSearch = () => {
         <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-2xl p-4">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Location Dropdown Toggle */}
-            <div className="relative">
+            <div className="relative" ref={locationRef}>
               <button
                 onClick={() => setShowLocationSearch(!showLocationSearch)}
                 className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors w-full md:w-auto whitespace-nowrap"
@@ -90,8 +107,8 @@ const HeroSearch = () => {
                     onLocationSelect={(location) => {
                       setSelectedLocation(location);
                       setShowLocationSearch(false);
-                      // Store in localStorage for persistence
                       localStorage.setItem('userLocation', JSON.stringify(location));
+                      window.dispatchEvent(new CustomEvent('locationChanged', { detail: location }));
                     }}
                     defaultValue={selectedLocation?.address || ''}
                     showMap={false}

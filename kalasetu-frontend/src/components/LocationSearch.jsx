@@ -5,23 +5,12 @@ import { getGoogleMapsApiKey } from '../lib/googleMaps.js';
 const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', showMap = false }) => {
   const [autocomplete, setAutocomplete] = useState(null);
   const [inputValue, setInputValue] = useState(defaultValue);
-  const [showDropdown, setShowDropdown] = useState(false);
   const inputRef = useRef(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: getGoogleMapsApiKey(),
     libraries: ['places']
   });
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (inputRef.current && !inputRef.current.contains(e.target)) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   useEffect(() => {
     if (defaultValue && defaultValue !== inputValue) {
@@ -56,25 +45,16 @@ const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', s
         };
         
         setInputValue(place.formatted_address);
-        setShowDropdown(false);
         if (onLocationSelect) {
           onLocationSelect(location);
         }
 
-        // Open Google Maps preview for user context
-        if (typeof window !== 'undefined') {
-          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lng}`;
-          window.open(mapsUrl, '_blank', 'noopener,noreferrer');
-        }
       }
     }
   };
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
-    if (e.target.value.length > 0) {
-      setShowDropdown(true);
-    }
   };
 
   const handleUseCurrentLocation = () => {
@@ -107,7 +87,6 @@ const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', s
                     )?.long_name || 'India'
                   };
                   setInputValue(results[0].formatted_address);
-                  setShowDropdown(false);
                   if (onLocationSelect) {
                     onLocationSelect(location);
                   }
@@ -166,7 +145,6 @@ const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', s
               type="text"
               value={inputValue}
               onChange={handleInputChange}
-              onFocus={() => inputValue.length > 0 && setShowDropdown(true)}
               placeholder="Enter city or location..."
               className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm md:text-base text-gray-900 placeholder-gray-400"
             />
@@ -211,26 +189,21 @@ const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', s
         )}
       </div>
 
-      {/* Helper text */}
+      {/* Use Current Location Button — always visible below input */}
+      <button
+        type="button"
+        onClick={handleUseCurrentLocation}
+        className="w-full mt-2 flex items-center justify-center gap-2 px-4 py-2 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors text-sm"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" />
+        </svg>
+        Use Current Location
+      </button>
       <p className="mt-1 text-xs text-gray-500">
-        Start typing to see suggestions
+        Start typing to search cities or use your current location
       </p>
-
-      {/* Use Current Location Button (optional, can be shown in dropdown) */}
-      {showDropdown && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50">
-          <button
-            onClick={handleUseCurrentLocation}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors text-sm md:text-base"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 11c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" />
-            </svg>
-            Use Current Location
-          </button>
-        </div>
-      )}
     </div>
   );
 };
