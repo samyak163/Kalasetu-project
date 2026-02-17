@@ -10,12 +10,14 @@ import ReviewsTab from '../components/profile/tabs/ReviewsTab.jsx';
 import MyClientsTab from '../components/profile/tabs/MyClientsTab.jsx';
 import AppearanceTab from '../components/profile/tabs/AppearanceTab.jsx';
 import HelpSupportTab from '../components/profile/tabs/HelpSupportTab.jsx';
+import AvailabilityTab from '../components/profile/tabs/AvailabilityTab.jsx';
 import {
   LayoutDashboard,
   User,
   Wrench,
   Palette,
   CalendarDays,
+  Clock,
   Wallet,
   Star,
   Users,
@@ -29,6 +31,7 @@ const tabs = [
   { key: 'services', label: 'Services', icon: Wrench },
   { key: 'portfolio', label: 'Portfolio', icon: Palette },
   { key: 'bookings', label: 'Bookings', icon: CalendarDays },
+  { key: 'availability', label: 'Availability', icon: Clock },
   { key: 'earnings', label: 'Earnings', icon: Wallet },
   { key: 'reviews', label: 'Reviews', icon: Star },
   { key: 'clients', label: 'My Clients', icon: Users },
@@ -82,6 +85,7 @@ const ArtisanAccountPage = () => {
           {activeTab === 'services' && <ServicesTab user={user} />}
           {activeTab === 'portfolio' && <PortfolioTab user={user} />}
           {activeTab === 'bookings' && <BookingsTab user={user} />}
+          {activeTab === 'availability' && <AvailabilityTab user={user} />}
           {activeTab === 'earnings' && <EarningsTab user={user} />}
           {activeTab === 'reviews' && <ReviewsTab user={user} />}
           {activeTab === 'clients' && <MyClientsTab user={user} />}

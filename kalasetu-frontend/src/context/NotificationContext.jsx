@@ -56,7 +56,7 @@ export const NotificationProvider = ({ children }) => {
   const markRead = useCallback(async (id) => {
     try {
       await axios.patch(`${API_CONFIG.BASE_URL}/api/notifications/${id}/read`, {}, { withCredentials: true });
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+      setNotifications(prev => prev.map(n => (n._id === id || n.id === id) ? { ...n, read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) { console.error('Failed to mark notification as read:', err); }
   }, []);

@@ -72,14 +72,25 @@ const ReviewsTab = () => {
     }
   };
 
-  const handleReply = (reviewId) => {
+  const handleReply = async (reviewId) => {
     if (!replyText.trim()) {
       showToast('Please enter a reply', 'error');
       return;
     }
-    showToast('Reply posted successfully!', 'success');
-    setReplyingTo(null);
-    setReplyText('');
+    try {
+      const res = await api.patch(`/api/reviews/${reviewId}/respond`, { text: replyText.trim() });
+      if (res.data.success) {
+        // Update the review in local state with the response
+        setReviews(prev => prev.map(r =>
+          r._id === reviewId ? { ...r, response: res.data.data.response } : r
+        ));
+        showToast('Reply posted successfully!', 'success');
+        setReplyingTo(null);
+        setReplyText('');
+      }
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Failed to post reply', 'error');
+    }
   };
 
   const renderStars = (rating) => {

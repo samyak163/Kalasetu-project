@@ -19,6 +19,16 @@ const bookingSchema = new mongoose.Schema({
   videoRoomName: { type: String, default: '' },
   videoRoomUrl: { type: String, default: '' },
   completedAt: { type: Date, default: null },
+  cancellationReason: { type: String, default: '' },
+  cancelledBy: { type: mongoose.Schema.Types.ObjectId },
+  modificationRequest: {
+    newStart: Date,
+    newEnd: Date,
+    reason: { type: String, default: '' },
+    requestedBy: { type: mongoose.Schema.Types.ObjectId },
+    requestedAt: Date,
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  },
 }, { timestamps: true });
 
 bookingSchema.index({ artisan: 1, start: 1, end: 1 });

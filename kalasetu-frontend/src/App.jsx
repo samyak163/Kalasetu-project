@@ -20,6 +20,9 @@ const PhoneOTPPage = lazy(() => import('./pages/PhoneOTPPage'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'));
 const UserDashboard = lazy(() => import('./pages/dashboard/user/UserDashboard'));
+const UserDashboardHome = lazy(() => import('./pages/dashboard/user/UserDashboardHome'));
+const UserBookings = lazy(() => import('./pages/dashboard/user/UserBookings'));
+const UserPayments = lazy(() => import('./pages/dashboard/user/UserPayments'));
 const UserPreferences = lazy(() => import('./pages/dashboard/user/Preferences'));
 const UserSupport = lazy(() => import('./pages/dashboard/user/Support'));
 
@@ -165,6 +168,9 @@ function App() {
         />
         {/* USER Dashboard */}
         <Route path="dashboard" element={<RequireAuth role="user"><UserDashboard /></RequireAuth>}>
+          <Route index element={<UserDashboardHome />} />
+          <Route path="bookings" element={<UserBookings />} />
+          <Route path="payments" element={<UserPayments />} />
           <Route path="preferences" element={<UserPreferences />} />
           <Route path="support" element={<UserSupport />} />
         </Route>

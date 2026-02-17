@@ -104,6 +104,38 @@ export const getArtisanReviews = asyncHandler(async (req, res) => {
   res.json({ success: true, data: reviews, count });
 });
 
+// Artisan responds to a review on their profile
+const respondToReviewSchema = z.object({
+  text: z.string().trim().min(1, 'Response cannot be empty').max(500, 'Response must be under 500 characters'),
+});
+
+export const respondToReview = asyncHandler(async (req, res) => {
+  const artisanId = req.user._id || req.user.id;
+  const { id } = req.params;
+
+  const parsed = respondToReviewSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, message: parsed.error.issues.map(i => i.message).join(', ') });
+  }
+
+  const review = await Review.findById(id);
+  if (!review) return res.status(404).json({ success: false, message: 'Review not found' });
+
+  // Only the reviewed artisan can respond
+  if (String(review.artisan) !== String(artisanId)) {
+    return res.status(403).json({ success: false, message: 'You can only respond to reviews on your profile' });
+  }
+
+  if (review.response?.text) {
+    return res.status(400).json({ success: false, message: 'You have already responded to this review' });
+  }
+
+  review.response = { text: parsed.data.text, createdAt: new Date() };
+  await review.save();
+
+  res.json({ success: true, data: review });
+});
+
 export const toggleHelpful = asyncHandler(async (req, res) => {
   const userId = req.user._id || req.user.id;
   const { id } = req.params;

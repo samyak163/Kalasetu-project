@@ -7,6 +7,7 @@ import Artisan from '../models/artisanModel.js';
 import User from '../models/userModel.js';
 import { createDirectMessageChannel, upsertStreamUser, sendMessage } from '../utils/streamChat.js';
 import { createDailyRoom } from '../utils/dailyco.js';
+import { createNotification } from '../utils/notificationService.js';
 
 const createBookingSchema = z.object({
   artisan: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid artisan ID'),
@@ -97,6 +98,16 @@ export const createBooking = asyncHandler(async (req, res) => {
     }], { session });
 
     await session.commitTransaction();
+
+    // Notify artisan about new booking request
+    const startDate = new Date(startTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    createNotification({
+      ownerId: artisanId,
+      ownerType: 'artisan',
+      title: 'New Booking Request',
+      text: `You have a new booking request for ${serviceName || 'a service'} on ${startDate}. Please respond to confirm or decline.`,
+    }).catch(() => {}); // non-blocking
+
     res.status(201).json({ success: true, data: booking });
   } catch (err) {
     await session.abortTransaction();
@@ -129,13 +140,120 @@ export const getArtisanBookings = asyncHandler(async (req, res) => {
 export const cancelBooking = asyncHandler(async (req, res) => {
   const userId = req.user?._id || req.user?.id;
   const { id } = req.params;
+  const { reason } = req.body || {};
   const b = await Booking.findById(id);
   if (!b) return res.status(404).json({ success: false, message: 'Booking not found' });
   const isOwner = String(b.user) === String(userId) || String(b.artisan) === String(userId);
   if (!isOwner) return res.status(403).json({ success: false, message: 'Forbidden' });
+  if (['completed', 'cancelled'].includes(b.status)) {
+    return res.status(400).json({ success: false, message: `Cannot cancel a ${b.status} booking` });
+  }
   b.status = 'cancelled';
+  b.cancellationReason = reason || '';
+  b.cancelledBy = userId;
   await b.save();
+
+  // Notify the other party about cancellation
+  const isUserCancelling = String(b.user) === String(userId);
+  const notifyId = isUserCancelling ? b.artisan : b.user;
+  const notifyType = isUserCancelling ? 'artisan' : 'user';
+  createNotification({
+    ownerId: notifyId,
+    ownerType: notifyType,
+    title: 'Booking Cancelled',
+    text: `A booking for ${b.serviceName || 'a service'} has been cancelled.${reason ? ' Reason: ' + reason : ''}`,
+  }).catch(() => {}); // non-blocking
+
   res.json({ success: true, data: { id: b._id, status: b.status } });
+});
+
+const modifyBookingSchema = z.object({
+  newStart: z.string().min(1, 'New start time required'),
+  newEnd: z.string().optional(),
+  reason: z.string().max(300).optional(),
+});
+
+// User or artisan requests to modify a confirmed booking's time
+export const requestModification = asyncHandler(async (req, res) => {
+  const userId = req.user?._id || req.user?.id;
+  const { id } = req.params;
+
+  const parsed = modifyBookingSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ success: false, message: parsed.error.issues.map(i => i.message).join(', ') });
+  }
+
+  const booking = await Booking.findById(id);
+  if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+  const isOwner = String(booking.user) === String(userId) || String(booking.artisan) === String(userId);
+  if (!isOwner) return res.status(403).json({ success: false, message: 'Forbidden' });
+
+  if (!['pending', 'confirmed'].includes(booking.status)) {
+    return res.status(400).json({ success: false, message: 'Only pending or confirmed bookings can be modified' });
+  }
+
+  if (booking.modificationRequest?.status === 'pending') {
+    return res.status(400).json({ success: false, message: 'A modification request is already pending' });
+  }
+
+  const newStart = new Date(parsed.data.newStart);
+  if (isNaN(newStart.getTime()) || newStart <= new Date()) {
+    return res.status(400).json({ success: false, message: 'New start time must be in the future' });
+  }
+
+  const duration = booking.end.getTime() - booking.start.getTime();
+  const newEnd = parsed.data.newEnd ? new Date(parsed.data.newEnd) : new Date(newStart.getTime() + duration);
+
+  booking.modificationRequest = {
+    newStart,
+    newEnd,
+    reason: parsed.data.reason || '',
+    requestedBy: userId,
+    requestedAt: new Date(),
+    status: 'pending',
+  };
+  await booking.save();
+
+  res.json({ success: true, data: booking });
+});
+
+// The other party responds to a modification request
+export const respondToModification = asyncHandler(async (req, res) => {
+  const userId = req.user?._id || req.user?.id;
+  const { id } = req.params;
+  const { action } = req.body || {};
+
+  const booking = await Booking.findById(id);
+  if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+  const isOwner = String(booking.user) === String(userId) || String(booking.artisan) === String(userId);
+  if (!isOwner) return res.status(403).json({ success: false, message: 'Forbidden' });
+
+  if (!booking.modificationRequest || booking.modificationRequest.status !== 'pending') {
+    return res.status(400).json({ success: false, message: 'No pending modification request' });
+  }
+
+  // The responder must be different from the requester
+  if (String(booking.modificationRequest.requestedBy) === String(userId)) {
+    return res.status(400).json({ success: false, message: 'You cannot respond to your own modification request' });
+  }
+
+  if (action === 'approve') {
+    booking.start = booking.modificationRequest.newStart;
+    booking.end = booking.modificationRequest.newEnd;
+    booking.modificationRequest.status = 'approved';
+    await booking.save();
+    return res.json({ success: true, data: booking });
+  }
+
+  if (action === 'reject') {
+    booking.modificationRequest.status = 'rejected';
+    await booking.save();
+    return res.json({ success: true, data: booking });
+  }
+
+  res.status(400).json({ success: false, message: 'Invalid action (use approve or reject)' });
 });
 
 const ensureCommunicationChannels = async (booking) => {
@@ -199,6 +317,18 @@ export const respondToBooking = asyncHandler(async (req, res) => {
     booking.rejectionReason = '';
     await booking.save();
     await ensureCommunicationChannels(booking);
+
+    // Notify the customer that booking is confirmed
+    const startDate = new Date(booking.start).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const startTime = new Date(booking.start).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    createNotification({
+      ownerId: booking.user,
+      ownerType: 'user',
+      title: 'Booking Confirmed',
+      text: `Your booking for ${booking.serviceName || 'a service'} on ${startDate} at ${startTime} has been confirmed.`,
+      url: '/dashboard/bookings',
+    }).catch(() => {}); // non-blocking
+
     return res.json({ success: true, data: booking });
   }
 
@@ -206,6 +336,16 @@ export const respondToBooking = asyncHandler(async (req, res) => {
     booking.status = 'rejected';
     booking.rejectionReason = reason || '';
     await booking.save();
+
+    // Notify the customer that booking was rejected
+    createNotification({
+      ownerId: booking.user,
+      ownerType: 'user',
+      title: 'Booking Declined',
+      text: `Your booking request for ${booking.serviceName || 'a service'} was declined.${reason ? ' Reason: ' + reason : ''}`,
+      url: '/dashboard/bookings',
+    }).catch(() => {}); // non-blocking
+
     return res.json({ success: true, data: booking });
   }
 
@@ -226,6 +366,16 @@ export const completeBooking = asyncHandler(async (req, res) => {
   booking.status = 'completed';
   booking.completedAt = new Date();
   await booking.save();
+
+  // Notify customer — prompt for review
+  createNotification({
+    ownerId: booking.user,
+    ownerType: 'user',
+    title: 'Service Completed',
+    text: `Your booking for ${booking.serviceName || 'a service'} has been marked as completed. How was your experience? Leave a review!`,
+    url: '/dashboard/bookings',
+  }).catch(() => {}); // non-blocking
+
   res.json({ success: true, data: booking });
 });
 
