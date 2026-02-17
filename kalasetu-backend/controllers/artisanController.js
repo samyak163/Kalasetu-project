@@ -51,8 +51,23 @@ const getArtisanByPublicId = async (req, res) => {
 
 const getAllArtisans = async (req, res) => {
     try {
-        const artisans = await Artisan.find({}).select(PUBLIC_FIELDS);
-        res.json(artisans);
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.min(200, Math.max(1, parseInt(req.query.limit) || 50));
+        const skip = (page - 1) * limit;
+
+        const [artisans, total] = await Promise.all([
+            Artisan.find({ isActive: true }).select(PUBLIC_FIELDS)
+                .sort({ averageRating: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            Artisan.countDocuments({ isActive: true }),
+        ]);
+
+        res.json({
+            artisans,
+            pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+        });
     } catch (error) {
         console.error('Error fetching all artisans:', error);
         res.status(500).json({ message: 'Server Error' });

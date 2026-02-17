@@ -12,7 +12,7 @@ const router = express.Router();
 // Rate limit OTP requests (prevent SMS/email quota abuse)
 const otpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many OTP requests. Please try again later.' },

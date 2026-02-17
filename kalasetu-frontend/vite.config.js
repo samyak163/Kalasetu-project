@@ -52,6 +52,12 @@ export default defineConfig(({ command, mode }) => {
       },
       chunkSizeWarningLimit: 1000,
     },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.js'],
+      include: ['src/**/*.test.{js,jsx}'],
+    },
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx']
     },

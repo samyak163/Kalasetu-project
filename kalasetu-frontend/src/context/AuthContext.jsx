@@ -152,13 +152,13 @@ export const AuthContextProvider = ({ children }) => {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
+      const loginPath = auth.userType === 'artisan' ? '/artisan/login' : '/user/login';
       setAuth(initialAuthState);
       setCsrfToken(null);
       clearSentryUser();
       resetPostHog();
       await removeOneSignalUserId();
-      // Redirect to login page after logout
-      window.location.href = '/user/login';
+      window.location.href = loginPath;
     }
   };
 

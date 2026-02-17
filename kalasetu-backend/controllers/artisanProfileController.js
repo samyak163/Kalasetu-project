@@ -6,6 +6,7 @@ import { encrypt, decrypt, isEncryptionEnabled, maskAccountNumber } from '../uti
 import { logAudit } from '../utils/audit.js';
 import { sendEmail } from '../utils/email.js';
 import fs from 'node:fs/promises';
+import crypto from 'node:crypto';
 
 // ---------- Sanitization Helpers ----------
 const sanitizeString = (str) => {
@@ -293,7 +294,10 @@ export const confirmEmailVerification = asyncHandler(async (req, res) => {
   if (new Date(user.emailVerificationExpires).getTime() < Date.now()) {
     return res.status(400).json({ message: 'Verification code expired' });
   }
-  if (code !== user.emailVerificationCode) {
+  // Timing-safe comparison to prevent timing attacks on verification codes
+  const codeA = Buffer.from(String(code).padEnd(6));
+  const codeB = Buffer.from(String(user.emailVerificationCode || '').padEnd(6));
+  if (codeA.length !== codeB.length || !crypto.timingSafeEqual(codeA, codeB)) {
     return res.status(400).json({ message: 'Invalid code' });
   }
   await Artisan.findByIdAndUpdate(userId, { $set: { email: user.pendingEmail, pendingEmail: '', emailVerificationCode: '', emailVerificationExpires: null } });
