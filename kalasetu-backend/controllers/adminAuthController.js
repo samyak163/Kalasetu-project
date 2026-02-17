@@ -1,4 +1,5 @@
 import Admin from '../models/adminModel.js';
+import { generateCsrfToken } from '../middleware/csrfMiddleware.js';
 
 export const login = async (req, res) => {
   try {
@@ -40,6 +41,7 @@ export const login = async (req, res) => {
     res.cookie(cookieName, token, cookieOptions);
     res.status(200).json({
       success: true,
+      csrfToken: generateCsrfToken(admin._id.toString()),
       admin: {
         id: admin._id,
         fullName: admin.fullName,
@@ -60,6 +62,7 @@ export const getMe = async (req, res) => {
     const admin = await Admin.findById(req.user._id);
     res.status(200).json({
       success: true,
+      csrfToken: generateCsrfToken(admin._id.toString()),
       admin: {
         id: admin._id,
         fullName: admin.fullName,
@@ -77,7 +80,13 @@ export const getMe = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
-  res.cookie('admin_token', 'none', { expires: new Date(Date.now() + 1000), httpOnly: true });
+  // Must match the same options used when setting the cookie (secure, sameSite)
+  res.cookie('admin_token', '', {
+    expires: new Date(0),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  });
   res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
 

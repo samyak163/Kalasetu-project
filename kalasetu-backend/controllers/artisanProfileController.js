@@ -286,7 +286,7 @@ const emailConfirmSchema = z.object({ code: z.string().min(4).max(6) });
 export const confirmEmailVerification = asyncHandler(async (req, res) => {
   const userId = req.user._id || req.user.id;
   const { code } = emailConfirmSchema.parse(req.body);
-  const user = await Artisan.findById(userId).select('pendingEmail emailVerificationCode emailVerificationExpires email');
+  const user = await Artisan.findById(userId).select('email +pendingEmail +emailVerificationCode +emailVerificationExpires');
   if (!user?.pendingEmail || !user.emailVerificationCode || !user.emailVerificationExpires) {
     return res.status(400).json({ message: 'No pending verification' });
   }

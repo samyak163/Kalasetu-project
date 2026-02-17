@@ -24,7 +24,7 @@ const resetTestAdmin = async () => {
             fullName: 'KalaSetu Admin',
             email: email,
             password: 'Admin@123456',
-            role: 'superadmin',
+            role: 'super_admin',
             phoneNumber: '+919876543212',
             emailVerified: true,
             isActive: true

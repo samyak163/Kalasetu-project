@@ -1,6 +1,6 @@
 ﻿import { createContext, useContext, useEffect, useState, useCallback } from "react";
 // FIX: Using relative path from context/ to lib/
-import api from "../lib/axios.js";
+import api, { setCsrfToken } from "../lib/axios.js";
 import { setSentryUser, clearSentryUser } from "../lib/sentry.js";
 import { identifyLogRocketUser } from "../lib/logrocket.js";
 import { addLogRocketTag } from "../lib/logrocket.js";
@@ -34,17 +34,20 @@ export const AuthContextProvider = ({ children }) => {
     try {
       // 1. First, try to get a USER user
       const userRes = await api.get("/api/users/me");
+      if (userRes.data.csrfToken) setCsrfToken(userRes.data.csrfToken);
       setAuth({ user: userRes.data, userType: 'user' });
       setSentryUser(userRes.data);
     } catch (userErr) {
       // 2. If no USER, try to get an ARTISAN user
       try {
         const artisanRes = await api.get("/api/auth/me");
+        if (artisanRes.data.csrfToken) setCsrfToken(artisanRes.data.csrfToken);
         setAuth({ user: artisanRes.data, userType: 'artisan' });
         setSentryUser(artisanRes.data);
       } catch (artisanErr) {
         // 3. If neither, we are logged out.
         setAuth(initialAuthState);
+        setCsrfToken(null);
         clearSentryUser();
       }
     } finally {
@@ -78,11 +81,13 @@ export const AuthContextProvider = ({ children }) => {
   const artisanLogin = async (inputs) => {
     try {
       const res = await api.post("/api/auth/login", inputs);
+      if (res.data.csrfToken) setCsrfToken(res.data.csrfToken);
       setAuth({ user: res.data, userType: 'artisan' });
       setSentryUser(res.data);
       return res.data;
     } catch (error) {
-      setAuth(initialAuthState); // Clear auth on failed login
+      setAuth(initialAuthState);
+      setCsrfToken(null);
       clearSentryUser();
       throw error;
     }
@@ -91,12 +96,14 @@ export const AuthContextProvider = ({ children }) => {
   const artisanRegister = async (inputs) => {
     try {
       const res = await api.post("/api/auth/register", inputs);
+      if (res.data.csrfToken) setCsrfToken(res.data.csrfToken);
       const artisanData = res.data?.artisan || res.data;
       setAuth({ user: artisanData, userType: 'artisan' });
       setSentryUser(artisanData);
       return artisanData;
     } catch (error) {
-      setAuth(initialAuthState); // Clear auth on failed register
+      setAuth(initialAuthState);
+      setCsrfToken(null);
       clearSentryUser();
       throw error;
     }
@@ -106,11 +113,13 @@ export const AuthContextProvider = ({ children }) => {
   const userLogin = async (inputs) => {
     try {
       const res = await api.post("/api/users/login", inputs);
+      if (res.data.csrfToken) setCsrfToken(res.data.csrfToken);
       setAuth({ user: res.data, userType: 'user' });
       setSentryUser(res.data);
       return res.data;
     } catch (error) {
-      setAuth(initialAuthState); // Clear auth on failed login
+      setAuth(initialAuthState);
+      setCsrfToken(null);
       clearSentryUser();
       throw error;
     }
@@ -119,11 +128,13 @@ export const AuthContextProvider = ({ children }) => {
   const userRegister = async (inputs) => {
     try {
       const res = await api.post("/api/users/register", inputs);
+      if (res.data.csrfToken) setCsrfToken(res.data.csrfToken);
       setAuth({ user: res.data, userType: 'user' });
       setSentryUser(res.data);
       return res.data;
     } catch (error) {
-      setAuth(initialAuthState); // Clear auth on failed register
+      setAuth(initialAuthState);
+      setCsrfToken(null);
       clearSentryUser();
       throw error;
     }
@@ -141,7 +152,8 @@ export const AuthContextProvider = ({ children }) => {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      setAuth(initialAuthState); // Reset auth state regardless of error
+      setAuth(initialAuthState);
+      setCsrfToken(null);
       clearSentryUser();
       resetPostHog();
       await removeOneSignalUserId();

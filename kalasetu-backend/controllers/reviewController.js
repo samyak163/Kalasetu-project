@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import { z } from 'zod';
 import Review from '../models/reviewModel.js';
@@ -115,8 +116,10 @@ export const toggleHelpful = asyncHandler(async (req, res) => {
 });
 
 async function recomputeRating(artisanId) {
+  // Convert to ObjectId for aggregation pipeline (string IDs won't match)
+  const objectId = new mongoose.Types.ObjectId(artisanId);
   const result = await Review.aggregate([
-    { $match: { artisan: artisanId, status: 'active' } },
+    { $match: { artisan: objectId, status: 'active' } },
     { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } },
   ]);
 

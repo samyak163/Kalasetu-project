@@ -100,3 +100,41 @@ Frontend requires: `VITE_API_URL` and various `VITE_*` keys for Firebase, Algoli
 - Artisan: `showcase.artisan@demo.kalasetu.com` / `Demo@1234`
 - User: `showcase.user@kalasetu.com` / `Demo@1234`
 - Admin: `showcase.admin@kalasetu.com` / `SuperAdmin@123`
+
+## Security Rules
+
+- **Never read:** `.env`, `serviceAccountKey.json`, `*.key`, `*.pem`. Only `.env.example`.
+- **Never do:** Commit secrets, log sensitive data, expose internal errors in API responses, store plain-text passwords.
+- **Auth awareness:** Two separate auth systems (artisan + user). Always verify which middleware (`protect` vs `userProtect` vs `protectAny`) is appropriate for a route.
+
+## Documentation Map
+
+| Folder | Purpose |
+|--------|---------|
+| `docs/product/` | Mental model, core features, V1/V2 scope |
+| `docs/technical/` | Architecture, system diagrams |
+| `docs/development/` | Workflow, daily status, session handover |
+| `docs/development/daily-archive/` | Archived daily statuses |
+| `docs/research/` | Technical and product research |
+| `docs/` (root) | API docs, integrations guide, setup, CI/CD |
+| `kalasetu-backend/docs/` | Database schema and ER diagrams |
+
+## Session Management
+
+- **Start of session:** Read `docs/development/HANDOVER.md` for current state
+- **During session:** Track progress in `docs/development/DAILY_STATUS.md`
+- **End of session:** Update HANDOVER.md, commit clean state
+- **Full workflow:** See `docs/development/DAILY_WORKFLOW.md`
+
+## Quality Gates
+
+- After code changes: run `npm run dev` in backend to verify no crashes
+- Before commit: `npm run lint` in frontend, manual API testing
+- For complex changes: use code-reviewer agent
+- Before feature complete: verify both artisan and user flows work
+
+## Token Reduction
+
+**Never scan:** `node_modules/`, `dist/`, `build/`, `.git/`, `package-lock.json`, `*.min.*`
+
+**Read only when needed:** `kalasetu-backend/docs/` (database docs), `docs/` root-level docs

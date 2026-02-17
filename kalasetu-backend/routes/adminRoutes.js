@@ -1,4 +1,5 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { login, getMe, logout, changePassword, updateProfile } from '../controllers/adminAuthController.js';
 import {
   getDashboardStats,
@@ -34,7 +35,16 @@ import { protectAdmin, checkPermission } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.post('/auth/login', login);
+// Strict rate limit on admin login to prevent brute-force
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many login attempts. Try again in 15 minutes.' },
+});
+
+router.post('/auth/login', adminLoginLimiter, login);
 router.get('/auth/me', protectAdmin, getMe);
 router.post('/auth/logout', protectAdmin, logout);
 router.put('/auth/change-password', protectAdmin, changePassword);

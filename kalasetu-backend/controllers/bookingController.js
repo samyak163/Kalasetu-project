@@ -14,7 +14,7 @@ const createBookingSchema = z.object({
   start: z.string().min(1, 'Start time is required'),
   end: z.string().optional(),
   notes: z.string().max(500).optional(),
-  price: z.number().min(0).max(500000).optional(),
+  // price intentionally omitted — always derived from service price server-side
 });
 
 export const createBooking = asyncHandler(async (req, res) => {
@@ -25,7 +25,7 @@ export const createBooking = asyncHandler(async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ success: false, message: parsed.error.issues.map(i => i.message).join(', ') });
   }
-  const { artisan: artisanId, serviceId, start, end, notes, price } = parsed.data;
+  const { artisan: artisanId, serviceId, start, end, notes } = parsed.data;
 
   // Validate artisan exists and is active
   const artisanDoc = await Artisan.findById(artisanId).select('isActive').lean();
@@ -80,7 +80,8 @@ export const createBooking = asyncHandler(async (req, res) => {
       return res.status(409).json({ success: false, message: 'This time slot is already booked' });
     }
 
-    const finalPrice = price ?? service?.price ?? 0;
+    // Server-authoritative pricing: always use service price, never trust client
+    const finalPrice = service?.price ?? 0;
 
     // .create() requires array syntax when using sessions
     const [booking] = await Booking.create([{

@@ -1,3 +1,4 @@
+/* eslint-env node */
 import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';

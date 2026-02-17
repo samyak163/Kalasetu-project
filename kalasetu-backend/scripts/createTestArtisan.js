@@ -1,6 +1,7 @@
 // Create or reset TEST ARTISAN account
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import bcrypt from 'bcryptjs';
 import Artisan from '../models/artisanModel.js';
 
 dotenv.config();
@@ -19,11 +20,15 @@ const createTestArtisan = async () => {
             console.log('🗑️  Deleted existing test artisan (including locked account)\n');
         }
 
+        // Hash password before saving (Artisan model has no pre-save hook)
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash('Test@123456', salt);
+
         // Create fresh artisan account - FULLY VERIFIED AND UNLOCKED
         const artisan = await Artisan.create({
             fullName: 'Test Artisan',
             email: email,
-            password: 'Test@123456',
+            password: hashedPassword,
             phoneNumber: '+919876543211',
             emailVerified: true,
             phoneVerified: true,

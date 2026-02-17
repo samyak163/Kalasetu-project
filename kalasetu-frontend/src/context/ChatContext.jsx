@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { Chat } from 'stream-chat-react';
 import { useAuth } from './AuthContext';
 import { initStreamChat, disconnectStreamChat, getChatToken } from '../lib/streamChat';
@@ -31,6 +31,8 @@ export const ChatProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUnavailable, setIsUnavailable] = useState(false);
+  // Ref tracks whether a client was initialized (avoids stale closure in cleanup)
+  const clientInitializedRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -39,6 +41,7 @@ export const ChatProvider = ({ children }) => {
       if (!isAuthenticated || !user) {
         setClient(null);
         setIsLoading(false);
+        clientInitializedRef.current = false;
         return;
       }
 
@@ -49,6 +52,7 @@ export const ChatProvider = ({ children }) => {
           setClient(null);
           setIsLoading(false);
           setError('Chat service is not configured');
+          clientInitializedRef.current = false;
         }
         return;
       }
@@ -66,15 +70,17 @@ export const ChatProvider = ({ children }) => {
 
         if (mounted && chatClient) {
           setClient(chatClient);
+          clientInitializedRef.current = true;
         } else if (mounted && !chatClient) {
-          // initStreamChat returned null - chat is unavailable
           setIsUnavailable(true);
           setError('Failed to connect to chat service');
+          clientInitializedRef.current = false;
         }
       } catch (err) {
         if (mounted) {
           setIsUnavailable(true);
           setError(err.message || 'Failed to initialize chat');
+          clientInitializedRef.current = false;
         }
       } finally {
         if (mounted) {
@@ -87,8 +93,9 @@ export const ChatProvider = ({ children }) => {
 
     return () => {
       mounted = false;
-      if (client) {
+      if (clientInitializedRef.current) {
         disconnectStreamChat();
+        clientInitializedRef.current = false;
       }
     };
   }, [isAuthenticated, user]);

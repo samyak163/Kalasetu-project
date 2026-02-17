@@ -9,13 +9,13 @@ import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 
-// Rate limit OTP requests - Increased limit
+// Rate limit OTP requests (prevent SMS/email quota abuse)
 const otpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20, // Increased from 5 to 20 per 15 minutes per IP
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: 'Too many OTP requests. Please try again later.',
+  message: { success: false, message: 'Too many OTP requests. Please try again later.' },
 });
 
 /**
@@ -48,11 +48,11 @@ router.post('/send', otpLimiter, asyncHandler(async (req, res) => {
   // Store OTP (works for both existing and new users)
   if (email) {
     // Check if user exists
-    let user = await User.findOne({ email }).select('_id email fullName otpCode otpExpires');
+    let user = await User.findOne({ email }).select('_id email fullName +otpCode +otpExpires');
     let userType = 'user';
     
     if (!user) {
-      user = await Artisan.findOne({ email }).select('_id email fullName otpCode otpExpires');
+      user = await Artisan.findOne({ email }).select('_id email fullName +otpCode +otpExpires');
       userType = 'artisan';
     }
 
@@ -140,9 +140,9 @@ router.post('/verify', asyncHandler(async (req, res) => {
   
   if (email) {
     // Check existing user first
-    user = await User.findOne({ email }).select('otpCode otpExpires otpAttempts');
+    user = await User.findOne({ email }).select('+otpCode +otpExpires +otpAttempts');
     if (!user) {
-      user = await Artisan.findOne({ email }).select('otpCode otpExpires otpAttempts');
+      user = await Artisan.findOne({ email }).select('+otpCode +otpExpires +otpAttempts');
     }
     
     // If no user, check temporary OTP collection
@@ -150,9 +150,9 @@ router.post('/verify', asyncHandler(async (req, res) => {
       otpRecord = await OTP.findOne({ identifier: email });
     }
   } else if (phoneNumber) {
-    user = await User.findOne({ phoneNumber }).select('otpCode otpExpires otpAttempts');
+    user = await User.findOne({ phoneNumber }).select('+otpCode +otpExpires +otpAttempts');
     if (!user) {
-      user = await Artisan.findOne({ phoneNumber }).select('otpCode otpExpires otpAttempts');
+      user = await Artisan.findOne({ phoneNumber }).select('+otpCode +otpExpires +otpAttempts');
     }
     
     if (!user) {

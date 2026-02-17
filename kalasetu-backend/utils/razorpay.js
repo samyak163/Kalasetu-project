@@ -79,8 +79,12 @@ export const verifyPaymentSignature = (data) => {
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
-    const isValid = generatedSignature === razorpay_signature;
-    console.log(`${isValid ? '✅' : '❌'} Payment signature verification: ${isValid}`);
+    // Timing-safe comparison to prevent timing attacks on signature verification
+    const isValid = generatedSignature.length === razorpay_signature.length &&
+      crypto.timingSafeEqual(
+        Buffer.from(generatedSignature, 'hex'),
+        Buffer.from(razorpay_signature, 'hex')
+      );
     return isValid;
   } catch (error) {
     console.error('❌ Failed to verify payment signature:', error.message);
@@ -174,8 +178,12 @@ export const verifyWebhookSignature = (body, signature) => {
       .update(body)
       .digest('hex');
 
-    const isValid = generatedSignature === signature;
-    console.log(`${isValid ? '✅' : '❌'} Webhook signature verification: ${isValid}`);
+    // Timing-safe comparison to prevent timing attacks on signature verification
+    const isValid = generatedSignature.length === signature.length &&
+      crypto.timingSafeEqual(
+        Buffer.from(generatedSignature, 'hex'),
+        Buffer.from(signature, 'hex')
+      );
     return isValid;
   } catch (error) {
     console.error('❌ Failed to verify webhook signature:', error.message);

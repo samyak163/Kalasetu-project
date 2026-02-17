@@ -20,7 +20,7 @@ const artisanSchema = new mongoose.Schema({
     fullName: { type: String, required: true },
     email: { type: String, unique: true, sparse: true }, // sparse: true allows multiple null values
     phoneNumber: { type: String, unique: true, sparse: true }, // sparse: true allows multiple null values
-    password: { type: String, required: true },
+    password: { type: String, required: true, select: false },
     craft: { type: String, default: '' },
   // Business/Profile Enhancements
   businessName: { type: String, default: '' },
@@ -171,26 +171,26 @@ const artisanSchema = new mongoose.Schema({
       default: undefined,
     },
 
-    // Security / Auth State
-    lockUntil: { type: Date },
-    loginAttempts: { type: Number, default: 0 },
-    resetPasswordToken: { type: String },
-    resetPasswordExpires: { type: Date },
+    // Security / Auth State (all select: false — only fetched when explicitly needed)
+    lockUntil: { type: Date, select: false },
+    loginAttempts: { type: Number, default: 0, select: false },
+    resetPasswordToken: { type: String, select: false },
+    resetPasswordExpires: { type: Date, select: false },
 
   // Email verification (initial account verification)
-  emailVerificationToken: { type: String },
-  emailVerificationExpires: { type: Date },
+  emailVerificationToken: { type: String, select: false },
+  emailVerificationExpires: { type: Date, select: false },
   emailVerified: { type: Boolean, default: false },
   // Contact change verification (OTP flows)
-  pendingEmail: { type: String, default: '' },
-  emailVerificationCode: { type: String, default: '' },
-  pendingPhoneNumber: { type: String, default: '' },
-  phoneVerificationCode: { type: String, default: '' },
-  phoneVerificationExpires: { type: Date },
+  pendingEmail: { type: String, default: '', select: false },
+  emailVerificationCode: { type: String, default: '', select: false },
+  pendingPhoneNumber: { type: String, default: '', select: false },
+  phoneVerificationCode: { type: String, default: '', select: false },
+  phoneVerificationExpires: { type: Date, select: false },
   // OTP fields for registration/login verification
-  otpCode: { type: String },
-  otpExpires: { type: Date },
-  otpAttempts: { type: Number, default: 0 },
+  otpCode: { type: String, select: false },
+  otpExpires: { type: Date, select: false },
+  otpAttempts: { type: Number, default: 0, select: false },
 }, { timestamps: true });
 
 // Add helpers to model for login lockout

@@ -26,38 +26,45 @@ import { initRazorpay } from './utils/razorpay.js';
 import { initResend } from './utils/email.js';
 import { protect } from './middleware/authMiddleware.js';
 
-// --- IMPORT ALL OUR ROUTES ---
-// Routes for general artisan data (profiles, search, etc.)
-import artisanRoutes from './routes/artisanRoutes.js'; 
-// Routes for ARTISAN authentication (login, register, me, logout)
+// --- ROUTE IMPORTS ---
+
+// Auth
 import authRoutes from './routes/authRoutes.js';
-// Routes for USER authentication (login, register, me, logout)
-import userAuthRoutes from './routes/userAuthRoutes.js'; 
-import uploadRoutes from './routes/uploadRoutes.js';
-import searchRoutes from './routes/searchRoutes.js';
-import seoRoutes from './routes/seoRoutes.js';
-import notificationRoutes from './routes/notificationRoutes.js';
+import userAuthRoutes from './routes/userAuthRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import authHelpersRoutes from './routes/authHelpersRoutes.js';
+import otpRoutes from './routes/otpRoutes.js';
+
+// Artisan
+import artisanRoutes from './routes/artisanRoutes.js';
+import artisanProfileRoutes from './routes/artisanProfileRoutes.js';
+import artisanDashboardRoutes from './routes/artisanDashboardRoutes.js';
+import artisanCustomerRoutes from './routes/artisanCustomerRoutes.js';
+import availabilityRoutes from './routes/availabilityRoutes.js';
+import portfolioRoutes from './routes/portfolioRoutes.js';
+
+// Marketplace
+import bookingRoutes from './routes/bookingRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import refundRoutes from './routes/refundRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
+import serviceRoutes from './routes/serviceRoutes.js';
+
+// Communication
 import chatRoutes from './routes/chatRoutes.js';
 import videoRoutes from './routes/videoRoutes.js';
 import callRoutes from './routes/callRoutes.js';
 import callHistoryRoutes from './routes/callHistoryRoutes.js';
-import bookingRoutes from './routes/bookingRoutes.js';
-import categoryRoutes from './routes/categoryRoutes.js';
-import serviceRoutes from './routes/serviceRoutes.js';
-import jobRoutes from './routes/jobRoutes.js';
-import paymentRoutes from './routes/paymentRoutes.js';
-import refundRoutes from './routes/refundRoutes.js';
-import supportRoutes from './routes/supportRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+
+// Utilities
+import searchRoutes from './routes/searchRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
+import seoRoutes from './routes/seoRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
-import artisanProfileRoutes from './routes/artisanProfileRoutes.js';
-import reviewRoutes from './routes/reviewRoutes.js';
-import availabilityRoutes from './routes/availabilityRoutes.js';
-import adminRoutes from './routes/adminRoutes.js';
-import authHelpersRoutes from './routes/authHelpersRoutes.js';
-import otpRoutes from './routes/otpRoutes.js';
-import portfolioRoutes from './routes/portfolioRoutes.js';
-import artisanDashboardRoutes from './routes/artisanDashboardRoutes.js';
-import artisanCustomerRoutes from './routes/artisanCustomerRoutes.js';
+import supportRoutes from './routes/supportRoutes.js';
+import jobRoutes from './routes/jobRoutes.js';
 
 
 // --- Load Environment Variables ---
@@ -112,8 +119,13 @@ if (process.env.NODE_ENV !== 'production') {
 app.use(sentryRequestHandler());
 app.use(sentryTracingHandler());
 
-// JSON body parsing
-app.use(express.json());
+// Capture raw body for webhook signature verification (MUST be before express.json())
+// Razorpay webhook signature is computed on the raw request body, so we need the
+// exact bytes that were sent, not a re-serialized JSON string.
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
+
+// JSON body parsing for all other routes
+app.use(express.json({ limit: '200kb' }));
 
 // Cookie parsing (for HTTP-only JWTs)
 app.use(cookieParser());
@@ -126,6 +138,11 @@ const apiLimiter = rateLimit({
     legacyHeaders: false,
 });
 app.use('/api', apiLimiter);
+
+// CSRF protection for state-changing requests (POST, PUT, PATCH, DELETE)
+// Safe methods (GET, HEAD, OPTIONS) pass through. Webhooks excluded.
+import { verifyCsrf } from './middleware/csrfMiddleware.js';
+app.use('/api', verifyCsrf);
 
 // Add analytics middleware (after auth middleware will be applied in routes)
 app.use('/api', trackApiRequest);

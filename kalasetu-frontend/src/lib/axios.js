@@ -1,6 +1,13 @@
 import axios from 'axios';
 import { API_CONFIG } from '../config/env.config.js';
 
+// --- CSRF token management ---
+// Stored in memory (not localStorage) — cleared on page close, resistant to XSS exfiltration
+let csrfToken = null;
+
+export const setCsrfToken = (token) => { csrfToken = token; };
+export const getCsrfToken = () => csrfToken;
+
 // Create axios instance with base URL and credentials
 const api = axios.create({
   baseURL: API_CONFIG.BASE_URL,
@@ -11,9 +18,15 @@ const api = axios.create({
   },
 });
 
-// Request interceptor (quiet in production)
+// State-changing methods that require CSRF protection
+const CSRF_METHODS = new Set(['post', 'put', 'patch', 'delete']);
+
+// Request interceptor: attach CSRF token on state-changing requests
 api.interceptors.request.use(
   (config) => {
+    if (csrfToken && CSRF_METHODS.has(config.method)) {
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
     if (import.meta.env.DEV) {
       console.log(`Making ${config.method?.toUpperCase()} request to ${config.baseURL}${config.url}`);
     }

@@ -1,5 +1,5 @@
 ﻿import React, { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Core Layout & Pages
 import Layout from './components/Layout';
@@ -13,7 +13,7 @@ const ArtisanAccountPage = lazy(() => import('./pages/ArtisanAccountPage'));
 const ArtisanProfileEditor = lazy(() => import('./pages/ArtisanProfileEditor'));
 
 // --- NEW USER PAGES ---
-import UserLoginPage from './pages/UserLoginPage';
+const UserLoginPage = lazy(() => import('./pages/UserLoginPage'));
 const UserRegisterPage = lazy(() => import('./pages/UserRegisterPage'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const PhoneOTPPage = lazy(() => import('./pages/PhoneOTPPage'));
@@ -27,11 +27,11 @@ const UserSupport = lazy(() => import('./pages/dashboard/user/Support'));
 const AuthSelector = lazy(() => import('./pages/AuthSelector'));
 const RegisterSelector = lazy(() => import('./pages/RegisterSelector'));
 
-// --- POLICY PAGES ---
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsConditions from './pages/TermsConditions';
-import ShippingPolicy from './pages/ShippingPolicy';
-import CancellationRefund from './pages/CancellationRefund';
+// --- POLICY PAGES --- (lazy — rarely accessed)
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsConditions = lazy(() => import('./pages/TermsConditions'));
+const ShippingPolicy = lazy(() => import('./pages/ShippingPolicy'));
+const CancellationRefund = lazy(() => import('./pages/CancellationRefund'));
 
 // --- MESSAGING PAGE --- (lazy)
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
@@ -45,17 +45,19 @@ const CallsHistory = lazy(() => import('./pages/dashboard/artisan/CallsHistory')
 import RequireAuth from './components/RequireAuth';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import AdminLayout from './components/admin/AdminLayout';
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminArtisans from './pages/admin/AdminArtisans';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminReviews from './pages/admin/AdminReviews';
-import AdminPayments from './pages/admin/AdminPayments';
-import AdminRefunds from './pages/admin/AdminRefunds';
-import AdminSupport from './pages/admin/AdminSupport';
-import AdminBookings from './pages/admin/AdminBookings';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminProfile from './pages/admin/AdminProfile';
+
+// Admin pages (lazy — only admins load these, keeps main bundle smaller)
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminArtisans = lazy(() => import('./pages/admin/AdminArtisans'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminReviews = lazy(() => import('./pages/admin/AdminReviews'));
+const AdminPayments = lazy(() => import('./pages/admin/AdminPayments'));
+const AdminRefunds = lazy(() => import('./pages/admin/AdminRefunds'));
+const AdminSupport = lazy(() => import('./pages/admin/AdminSupport'));
+const AdminBookings = lazy(() => import('./pages/admin/AdminBookings'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const AdminProfile = lazy(() => import('./pages/admin/AdminProfile'));
 
 function App() {
   return (
@@ -65,6 +67,7 @@ function App() {
         {/* Public Routes */}
         <Route index element={<HomePage />} />
         <Route path=":publicId" element={<ArtisanProfilePage />} />
+        <Route path="artisan/:publicId" element={<ArtisanProfilePage />} />
 
         {/* Unified Auth Selectors */}
         <Route path="login" element={<AuthSelector />} />
@@ -175,6 +178,7 @@ function App() {
         <AdminAuthProvider>
           <AdminLayout>
             <Routes>
+              <Route index element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="artisans" element={<AdminArtisans />} />
               <Route path="users" element={<AdminUsers />} />

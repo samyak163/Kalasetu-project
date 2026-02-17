@@ -18,14 +18,14 @@ function escapeRegex(str) {
 export const getDashboardStats = async (req, res) => {
   try {
     const { period = '30days' } = req.query;
-    const now = new Date();
+    // Create fresh Date for each case to avoid mutation bugs
     let startDate;
     switch (period) {
-      case '7days': startDate = new Date(now.setDate(now.getDate() - 7)); break;
-      case '30days': startDate = new Date(now.setDate(now.getDate() - 30)); break;
-      case '90days': startDate = new Date(now.setDate(now.getDate() - 90)); break;
-      case '1year': startDate = new Date(now.setFullYear(now.getFullYear() - 1)); break;
-      default: startDate = new Date(now.setDate(now.getDate() - 30));
+      case '7days': startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000); break;
+      case '30days': startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); break;
+      case '90days': startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); break;
+      case '1year': { const d = new Date(); d.setFullYear(d.getFullYear() - 1); startDate = d; break; }
+      default: startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     }
 
     const [
@@ -364,8 +364,8 @@ export const getAllPayments = async (req, res) => {
     }
 
     let payments = await Payment.find(query)
-      .populate('payerId')
-      .populate('recipientId')
+      .populate('payerId', 'fullName email phoneNumber publicId')
+      .populate('recipientId', 'fullName email phoneNumber publicId')
       .sort('-createdAt')
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -447,18 +447,29 @@ export const processRefund = async (req, res) => {
     const { id } = req.params;
     const payment = await Payment.findById(id);
     if (!payment) return res.status(404).json({ success: false, message: 'Payment not found' });
-    
+
     if (payment.status !== 'captured' && payment.status !== 'paid') {
       return res.status(400).json({ success: false, message: 'Only captured/paid payments can be refunded' });
     }
-    
-    // Update payment status to refunded
+
+    if (!payment.razorpayPaymentId) {
+      return res.status(400).json({ success: false, message: 'No Razorpay payment ID — cannot process refund' });
+    }
+
+    // Actually call Razorpay refund API before marking as refunded
+    const { refundPayment } = await import('../utils/razorpay.js');
+    const refund = await refundPayment(payment.razorpayPaymentId, payment.amount);
+    if (!refund) {
+      return res.status(502).json({ success: false, message: 'Razorpay refund failed — payment not modified' });
+    }
+
     payment.status = 'refunded';
+    payment.refundId = refund.id;
     payment.refundAmount = payment.amount;
     payment.refundedAt = new Date();
     await payment.save();
-    
-    await req.user.logActivity('process_refund', 'payment', id, { amount: payment.amount });
+
+    await req.user.logActivity('process_refund', 'payment', id, { amount: payment.amount, refundId: refund.id });
     res.status(200).json({ success: true, data: payment, message: 'Refund processed successfully' });
   } catch (error) {
     // Process refund error

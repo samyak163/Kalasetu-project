@@ -279,7 +279,7 @@ const AdminArtisans = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><div className="flex items-center gap-2"><Calendar className="w-4 h-4" />{new Date(artisan.createdAt).toLocaleDateString()}</div></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
-                          <button onClick={() => window.open(`/artisan/${artisan.publicId || artisan._id}`, '_blank')} className="text-brand-500 hover:text-brand-700" title="View Profile"><Eye className="w-5 h-5" /></button>
+                          <button onClick={() => window.open(`/${artisan.publicId || artisan._id}`, '_blank')} className="text-brand-500 hover:text-brand-700" title="View Profile"><Eye className="w-5 h-5" /></button>
                           <button onClick={() => handleVerify(artisan._id, !artisan.isVerified)} className={artisan.isVerified ? 'text-yellow-600 hover:text-yellow-900' : 'text-green-600 hover:text-green-900'} title={artisan.isVerified ? 'Unverify' : 'Verify'}><CheckCircle className="w-5 h-5" /></button>
                           <button onClick={() => handleStatusChange(artisan._id, !artisan.isActive)} className={artisan.isActive ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} title={artisan.isActive ? 'Suspend' : 'Activate'}><Ban className="w-5 h-5" /></button>
                           <button onClick={() => handleDelete(artisan._id)} className="text-red-600 hover:text-red-900" title="Delete (Super Admin Only)"><Trash2 className="w-5 h-5" /></button>

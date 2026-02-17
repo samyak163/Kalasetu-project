@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import api from '../lib/axios';
+import api, { setCsrfToken } from '../lib/axios';
 import { useNavigate } from 'react-router-dom';
 
 const AdminAuthContext = createContext();
@@ -26,12 +26,14 @@ export const AdminAuthProvider = ({ children }) => {
     try {
       const response = await api.get('/api/admin/auth/me');
       if (response.data.success) {
+        if (response.data.csrfToken) setCsrfToken(response.data.csrfToken);
         setAdmin(response.data.admin);
         setIsAuthenticated(true);
       }
     } catch {
       setAdmin(null);
       setIsAuthenticated(false);
+      setCsrfToken(null);
     } finally {
       setLoading(false);
     }
@@ -41,6 +43,7 @@ export const AdminAuthProvider = ({ children }) => {
     try {
       const response = await api.post('/api/admin/auth/login', { email, password });
       if (response.data.success) {
+        if (response.data.csrfToken) setCsrfToken(response.data.csrfToken);
         setAdmin(response.data.admin);
         setIsAuthenticated(true);
         navigate('/admin/dashboard');
@@ -67,6 +70,7 @@ export const AdminAuthProvider = ({ children }) => {
     } finally {
       setAdmin(null);
       setIsAuthenticated(false);
+      setCsrfToken(null);
       navigate('/admin/login');
     }
   };

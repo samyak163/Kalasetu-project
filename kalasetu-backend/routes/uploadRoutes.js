@@ -1,11 +1,13 @@
 import express from 'express';
 import cloudinary from '../config/cloudinary.js';
+import { protectAny } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 // Returns a signature for signed direct uploads to Cloudinary
+// Only authenticated users (artisan or customer) can get upload credentials
 // GET /api/uploads/signature?folder=artisan/profiles
-router.get('/signature', (req, res) => {
+router.get('/signature', protectAny, (req, res) => {
   const ALLOWED_FOLDERS = new Set([
     'kalasetu/artisan/profiles',
     'kalasetu/artisan/portfolio',

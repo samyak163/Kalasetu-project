@@ -2,6 +2,22 @@ import Artisan from '../models/artisanModel.js';
 import { trackEvent } from '../utils/posthog.js';
 import * as Sentry from '@sentry/node';
 
+// Fields safe for public consumption (excludes bank details, verification docs, auth tokens, OTP)
+const PUBLIC_FIELDS = [
+  'publicId', 'slug', 'fullName', 'email', 'phoneNumber', 'craft',
+  'businessName', 'tagline', 'location', 'bio',
+  'profileImageUrl', 'coverImageUrl', 'portfolioImageUrls',
+  'isActive', 'isVerified', 'emailVerified',
+  'yearsOfExperience', 'teamSize', 'languagesSpoken', 'certifications',
+  'businessPhone', 'whatsappNumber',
+  'workingHours', 'emergencyServices', 'serviceRadius', 'minimumBookingNotice',
+  'profileViews', 'totalBookings', 'completedBookings', 'averageRating', 'totalReviews',
+  'responseRate', 'acceptanceRate',
+  'autoAcceptBookings', 'bufferTimeBetweenBookings', 'maxBookingsPerDay',
+  'subscriptionPlan', 'isOnline', 'vacationMode',
+  'createdAt', 'updatedAt',
+].join(' ');
+
 // Helper function to calculate distance between two points
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Radius of Earth in km
@@ -21,7 +37,7 @@ function toRad(deg) {
 
 const getArtisanByPublicId = async (req, res) => {
     try {
-        const artisan = await Artisan.findOne({ publicId: req.params.publicId }).select('-password');
+        const artisan = await Artisan.findOne({ publicId: req.params.publicId }).select(PUBLIC_FIELDS);
         if (artisan) {
             res.json(artisan);
         } else {
@@ -29,23 +45,23 @@ const getArtisanByPublicId = async (req, res) => {
         }
     } catch (error) {
         console.error('Error fetching artisan by publicId:', error);
-        res.status(500).json({ message: 'Server Error', error: error.message });
+        res.status(500).json({ message: 'Server Error' });
     }
 };
 
 const getAllArtisans = async (req, res) => {
     try {
-        const artisans = await Artisan.find({}).select('-password');
+        const artisans = await Artisan.find({}).select(PUBLIC_FIELDS);
         res.json(artisans);
     } catch (error) {
         console.error('Error fetching all artisans:', error);
-        res.status(500).json({ message: 'Server Error', error: error.message });
+        res.status(500).json({ message: 'Server Error' });
     }
 };
 
 const getArtisanById = async (req, res) => {
     try {
-        const artisan = await Artisan.findById(req.params.id).select('-password');
+        const artisan = await Artisan.findById(req.params.id).select(PUBLIC_FIELDS);
         if (artisan) {
             res.json(artisan);
         } else {
@@ -53,7 +69,7 @@ const getArtisanById = async (req, res) => {
         }
     } catch (error) {
         console.error('Error fetching artisan by id:', error);
-        res.status(500).json({ message: 'Server Error', error: error.message });
+        res.status(500).json({ message: 'Server Error' });
     }
 };
 
@@ -97,7 +113,7 @@ const updateArtisanProfile = async (req, res) => {
         });
     } catch (error) {
         console.error('Error updating artisan profile:', error);
-        return res.status(500).json({ message: 'Server Error', error: error.message });
+        return res.status(500).json({ message: 'Server Error' });
     }
 };
 
@@ -159,7 +175,18 @@ const getNearbyArtisans = async (req, res) => {
 
             if (Object.keys(match).length) pipeline.push({ $match: match });
 
-            pipeline.push({ $project: { password: 0 } }, { $limit: maxResults });
+            pipeline.push({
+                $project: {
+                    password: 0, bankDetails: 0, verificationDocuments: 0,
+                    resetPasswordToken: 0, resetPasswordExpires: 0,
+                    emailVerificationToken: 0, emailVerificationExpires: 0,
+                    emailVerificationCode: 0, phoneVerificationCode: 0, phoneVerificationExpires: 0,
+                    pendingEmail: 0, pendingPhoneNumber: 0,
+                    otpCode: 0, otpExpires: 0, otpAttempts: 0,
+                    loginAttempts: 0, lockUntil: 0, firebaseUid: 0,
+                    gstNumber: 0, notifications: 0,
+                }
+            }, { $limit: maxResults });
 
             // Execute with timeout
             const queryPromise = Artisan.aggregate(pipeline);

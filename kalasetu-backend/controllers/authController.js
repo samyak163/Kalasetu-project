@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import Artisan from '../models/artisanModel.js';
 import { signJwt, setAuthCookie, clearAuthCookie } from '../utils/generateToken.js';
+import { generateCsrfToken } from '../middleware/csrfMiddleware.js';
 import crypto from 'crypto';
 import admin from '../config/firebaseAdmin.js';
 import { indexArtisan } from '../utils/algolia.js';
@@ -46,8 +47,8 @@ const resetPasswordSchema = z.object({
 
 export const register = async (req, res, next) => {
     try {
-        const { fullName, email, phoneNumber, password } = req.body;
-        
+        const { fullName, email, phoneNumber, password } = registerSchema.parse(req.body);
+
         // reCAPTCHA removed for demo - will be added back when going public with custom domain
         
         // Check for existing email/phone in parallel (optimize query)
@@ -145,6 +146,7 @@ export const register = async (req, res, next) => {
             success: true,
             message: 'Registration successful',
             artisan: artisanPublic,
+            csrfToken: generateCsrfToken(artisan._id.toString()),
             redirectTo: '/artisan/dashboard/account'
         });
     } catch (err) {
@@ -197,6 +199,7 @@ export const login = async (req, res, next) => {
             fullName: artisan.fullName,
             email: artisan.email,
             publicId: artisan.publicId,
+            csrfToken: generateCsrfToken(artisan._id.toString()),
         });
     } catch (err) {
         if (err instanceof z.ZodError) {
@@ -208,7 +211,9 @@ export const login = async (req, res, next) => {
 
 export const me = async (req, res, next) => {
     try {
-        res.json(req.user);
+        const userData = req.user.toObject ? req.user.toObject() : { ...req.user };
+        userData.csrfToken = generateCsrfToken(req.user._id.toString());
+        res.json(userData);
     } catch (err) {
         next(err);
     }

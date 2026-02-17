@@ -1,24 +1,65 @@
 import asyncHandler from '../utils/asyncHandler.js';
+import { z } from 'zod';
 import Payment from '../models/paymentModel.js';
+import Booking from '../models/bookingModel.js';
 import RefundRequest from '../models/refundRequestModel.js';
 import Notification from '../models/notificationModel.js';
 import { createOrder, verifyPaymentSignature, fetchPayment, refundPayment, verifyWebhookSignature } from '../utils/razorpay.js';
 import { sendEmail } from '../utils/email.js';
 import { RAZORPAY_CONFIG } from '../config/env.config.js';
 
+const createOrderSchema = z.object({
+  bookingId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid booking ID').optional(),
+  amount: z.number().positive('Amount must be positive').max(500000, 'Amount exceeds maximum').optional(),
+  purpose: z.enum(['consultation', 'product_purchase', 'service', 'subscription', 'other']),
+  recipientId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
+  description: z.string().max(500).optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
 /**
  * Create payment order
  * POST /api/payments/create-order
+ * When bookingId is provided, amount is derived server-side from booking price.
  */
 export const createPaymentOrder = asyncHandler(async (req, res) => {
-  const { amount, purpose, recipientId, description, metadata } = req.body;
-  const payerId = req.user.id || req.user._id.toString();
-
-  if (!amount || !purpose) {
+  const parsed = createOrderSchema.safeParse(req.body);
+  if (!parsed.success) {
     return res.status(400).json({
       success: false,
-      message: 'Amount and purpose are required',
+      message: parsed.error.issues.map(i => i.message).join(', '),
     });
+  }
+
+  const { bookingId, amount: clientAmount, purpose, recipientId, description, metadata } = parsed.data;
+  const payerId = req.user.id || req.user._id.toString();
+
+  let amount;
+  let resolvedRecipientId = recipientId || null;
+
+  if (bookingId) {
+    // Server-authoritative: derive amount from booking price
+    const booking = await Booking.findById(bookingId).lean();
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+    if (String(booking.user) !== payerId) {
+      return res.status(403).json({ success: false, message: 'You can only pay for your own bookings' });
+    }
+    if (!['pending', 'confirmed'].includes(booking.status)) {
+      return res.status(400).json({ success: false, message: 'Booking is not in a payable state' });
+    }
+    if (!booking.price || booking.price <= 0) {
+      return res.status(400).json({ success: false, message: 'Booking has no valid price' });
+    }
+    amount = booking.price;
+    resolvedRecipientId = resolvedRecipientId || booking.artisan;
+  } else {
+    // Fallback for non-booking payments — client amount with validation
+    if (!clientAmount) {
+      return res.status(400).json({ success: false, message: 'Either bookingId or amount is required' });
+    }
+    amount = clientAmount;
   }
 
   // Create Razorpay order
@@ -27,7 +68,8 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     notes: {
       purpose,
       payerId,
-      recipientId: recipientId || '',
+      recipientId: resolvedRecipientId ? String(resolvedRecipientId) : '',
+      ...(bookingId && { bookingId }),
     },
   });
 
@@ -47,11 +89,11 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     status: 'created',
     payerId,
     payerModel: req.accountType === 'artisan' ? 'Artisan' : 'User',
-    recipientId: recipientId || null,
-    recipientModel: recipientId ? 'Artisan' : null,
+    recipientId: resolvedRecipientId || null,
+    recipientModel: resolvedRecipientId ? 'Artisan' : null,
     purpose,
     description,
-    metadata,
+    metadata: { ...metadata, ...(bookingId && { bookingId }) },
   });
 
   res.status(201).json({
@@ -105,8 +147,17 @@ export const verifyPayment = asyncHandler(async (req, res) => {
     });
   }
 
+  // Verify the requesting user is the actual payer
+  const userId = req.user.id || req.user._id.toString();
+  if (payment.payerId.toString() !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Unauthorized: you are not the payer for this payment',
+    });
+  }
+
   payment.razorpayPaymentId = razorpay_payment_id;
-  payment.razorpaySignature = razorpay_signature;
+  // Don't store the signature — it's only needed for verification, not storage
   payment.status = 'captured';
   await payment.save();
 
@@ -317,19 +368,18 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if payment is captured
-  if (payment.status !== 'captured') {
-    return res.status(400).json({
-      success: false,
-      message: 'Only captured payments can be refunded',
-    });
-  }
-
-  // Check if already refunded
+  // Check payment status — refunded check first since it's more specific
   if (payment.status === 'refunded') {
     return res.status(400).json({
       success: false,
       message: 'Payment already refunded',
+    });
+  }
+
+  if (payment.status !== 'captured') {
+    return res.status(400).json({
+      success: false,
+      message: 'Only captured payments can be refunded',
     });
   }
 
@@ -342,7 +392,7 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
-  // Process refund
+  // Process refund via Razorpay
   const refund = await refundPayment(
     payment.razorpayPaymentId,
     refundAmount
@@ -355,23 +405,34 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update payment
-  payment.status = 'refunded';
-  payment.refundId = refund.id;
-  payment.refundAmount = refundAmount;
-  payment.refundedAt = new Date();
-  payment.metadata = {
-    ...payment.metadata,
-    refundReason: reason,
-  };
-  await payment.save();
+  // Atomic update to prevent race conditions
+  const updated = await Payment.findOneAndUpdate(
+    { _id: payment._id, status: 'captured' },
+    {
+      $set: {
+        status: 'refunded',
+        refundId: refund.id,
+        refundAmount,
+        refundedAt: new Date(),
+        'metadata.refundReason': reason,
+      },
+    },
+    { new: true }
+  );
+
+  if (!updated) {
+    return res.status(409).json({
+      success: false,
+      message: 'Payment status changed during refund processing',
+    });
+  }
 
   res.json({
     success: true,
     message: 'Refund processed successfully',
     data: {
       refundId: refund.id,
-      amount: payment.refundAmount,
+      amount: refundAmount,
     },
   });
 });
@@ -382,10 +443,13 @@ export const requestRefund = asyncHandler(async (req, res) => {
  */
 export const handleWebhook = asyncHandler(async (req, res) => {
   const signature = req.headers['x-razorpay-signature'];
-  const body = JSON.stringify(req.body);
 
-  // Verify webhook signature
-  const isValid = verifyWebhookSignature(body, signature);
+  // req.body is a raw Buffer from express.raw() middleware (set up in server.js)
+  // This ensures we verify the exact bytes Razorpay sent, not a re-serialized string
+  const rawBody = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : JSON.stringify(req.body);
+
+  // Verify webhook signature using raw body
+  const isValid = verifyWebhookSignature(rawBody, signature);
 
   if (!isValid) {
     return res.status(400).json({
@@ -394,21 +458,12 @@ export const handleWebhook = asyncHandler(async (req, res) => {
     });
   }
 
-  const eventId = req.body.event_id || req.body.payload?.payment?.entity?.id;
-  const event = req.body.event;
-  const paymentData = req.body.payload?.payment?.entity;
+  // Parse the raw body if it came as a Buffer
+  const parsedBody = Buffer.isBuffer(req.body) ? JSON.parse(rawBody) : req.body;
 
-  // Atomic idempotency check using findOneAndUpdate
-  if (eventId) {
-    const existing = await Payment.findOneAndUpdate(
-      { webhookEventId: eventId },
-      { $setOnInsert: { webhookEventId: eventId } },
-      { upsert: false }
-    );
-    if (existing) {
-      return res.json({ success: true, message: 'Already processed' });
-    }
-  }
+  const eventId = parsedBody.event_id || parsedBody.payload?.payment?.entity?.id;
+  const event = parsedBody.event;
+  const paymentData = parsedBody.payload?.payment?.entity;
 
   try {
     switch (event) {
@@ -421,11 +476,11 @@ export const handleWebhook = asyncHandler(async (req, res) => {
         break;
 
       case 'refund.created':
-        await handleRefundCreated(req.body.payload?.refund?.entity || paymentData);
+        await handleRefundCreated(parsedBody.payload?.refund?.entity || paymentData);
         break;
 
       case 'refund.failed':
-        await handleRefundFailed(req.body.payload?.refund?.entity || paymentData);
+        await handleRefundFailed(parsedBody.payload?.refund?.entity || paymentData);
         break;
 
       default:
@@ -442,40 +497,40 @@ export const handleWebhook = asyncHandler(async (req, res) => {
 });
 
 /**
- * Handle payment captured event
+ * Handle payment captured event (atomic + idempotent)
+ * Uses findOneAndUpdate with status precondition to prevent double-processing
  */
 async function handlePaymentCaptured(paymentData, eventId) {
-  const payment = await Payment.findOne({
-    razorpayOrderId: paymentData.order_id,
-  });
+  const update = {
+    $set: {
+      status: 'captured',
+      razorpayPaymentId: paymentData.id,
+      ...(eventId && { webhookEventId: eventId }),
+    },
+  };
 
-  if (payment && payment.status !== 'captured') {
-    payment.status = 'captured';
-    payment.razorpayPaymentId = paymentData.id;
-    if (eventId) payment.webhookEventId = eventId;
-    await payment.save();
-  }
+  await Payment.findOneAndUpdate(
+    { razorpayOrderId: paymentData.order_id, status: { $ne: 'captured' } },
+    update
+  );
 }
 
 /**
- * Handle payment failed event
+ * Handle payment failed event (atomic + idempotent)
  */
 async function handlePaymentFailed(paymentData, eventId) {
-  const payment = await Payment.findOne({
-    razorpayOrderId: paymentData.order_id,
-  });
+  const update = {
+    $set: {
+      status: 'failed',
+      'metadata.failureReason': paymentData.error_description,
+      ...(eventId && { webhookEventId: eventId }),
+    },
+  };
 
-  if (payment) {
-    payment.status = 'failed';
-    payment.metadata = {
-      ...payment.metadata,
-      failureReason: paymentData.error_description,
-    };
-    if (eventId) payment.webhookEventId = eventId;
-    await payment.save();
-
-    console.log(`❌ Payment failed: ${payment._id}`);
-  }
+  await Payment.findOneAndUpdate(
+    { razorpayOrderId: paymentData.order_id, status: { $nin: ['captured', 'failed', 'refunded'] } },
+    update
+  );
 }
 
 /**
@@ -580,9 +635,14 @@ async function handleRefundFailed(refundData) {
   }
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function buildRefundProcessedEmailHTML(userName, refundRequest) {
   const brandColor = '#A55233';
   const frontendUrl = process.env.FRONTEND_URL || 'https://kalasetu.com';
+  userName = escapeHtml(userName);
 
   return `
     <!DOCTYPE html>
@@ -633,6 +693,7 @@ function buildRefundProcessedEmailHTML(userName, refundRequest) {
 
 function buildRefundFailedEmailHTML(userName, refundRequest) {
   const frontendUrl = process.env.FRONTEND_URL || 'https://kalasetu.com';
+  userName = escapeHtml(userName);
 
   return `
     <!DOCTYPE html>

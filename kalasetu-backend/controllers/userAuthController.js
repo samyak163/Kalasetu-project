@@ -2,9 +2,9 @@
 import { z } from 'zod';
 import User from '../models/userModel.js';
 import { signJwt, setAuthCookie, clearAuthCookie } from '../utils/generateToken.js';
+import { generateCsrfToken } from '../middleware/csrfMiddleware.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer'; // Simulate sending for now
 import { sendPasswordResetEmail } from '../utils/email.js';
 import Review from '../models/reviewModel.js';
 import Artisan from '../models/artisanModel.js';
@@ -110,6 +110,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
       fullName: user.fullName,
       email: user.email,
       phoneNumber: user.phoneNumber,
+      csrfToken: generateCsrfToken(user._id.toString()),
     };
 
     try {
@@ -173,6 +174,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
     fullName: user.fullName,
     email: user.email,
     phoneNumber: user.phoneNumber,
+    csrfToken: generateCsrfToken(user._id.toString()),
   });
 });
 
@@ -191,8 +193,9 @@ export const logoutUser = asyncHandler(async (req, res, next) => {
 // @access  Private
 export const getMe = asyncHandler(async (req, res, next) => {
   // req.user is attached by the userProtectMiddleware
-  // We already found the user, so we just return it.
-  res.status(200).json(req.user);
+  const userData = req.user.toObject ? req.user.toObject() : { ...req.user };
+  userData.csrfToken = generateCsrfToken(req.user._id.toString());
+  res.status(200).json(userData);
 });
 
 // --- Forgot Password ---

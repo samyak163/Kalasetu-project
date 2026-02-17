@@ -35,18 +35,18 @@ const userSchema = new mongoose.Schema({
         minlength: [8, 'Password must be at least 8 characters long'],
         select: false // This will hide the password from default queries
     },
-    lockUntil: { type: Date },
-    loginAttempts: { type: Number, default: 0 },
-    resetPasswordToken: { type: String },
-    resetPasswordExpires: { type: Date },
+    lockUntil: { type: Date, select: false },
+    loginAttempts: { type: Number, default: 0, select: false },
+    resetPasswordToken: { type: String, select: false },
+    resetPasswordExpires: { type: Date, select: false },
     // Email verification
-    emailVerificationToken: { type: String },
-    emailVerificationExpires: { type: Date },
+    emailVerificationToken: { type: String, select: false },
+    emailVerificationExpires: { type: Date, select: false },
     emailVerified: { type: Boolean, default: false },
     // OTP fields for verification
-    otpCode: { type: String },
-    otpExpires: { type: Date },
-    otpAttempts: { type: Number, default: 0 },
+    otpCode: { type: String, select: false },
+    otpExpires: { type: Date, select: false },
+    otpAttempts: { type: Number, default: 0, select: false },
     bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artisan' }],
 }, { timestamps: true });
 

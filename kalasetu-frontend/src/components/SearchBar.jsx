@@ -112,7 +112,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
   const handleArtisanClick = (artisan) => {
     const targetId = artisan.publicId || artisan._id;
     if (targetId) {
-      navigate(`/artisan/${targetId}`);
+      navigate(`/${targetId}`);
     } else {
       navigate(`/search?q=${encodeURIComponent(artisan.fullName)}`);
     }

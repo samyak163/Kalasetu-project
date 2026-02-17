@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import {
   createRoom,
   getRoomDetails,
@@ -6,36 +6,19 @@ import {
   getToken,
   listRooms,
 } from '../controllers/videoController.js';
-import { protect } from '../middleware/authMiddleware.js';
-import { userProtect } from '../middleware/userProtectMiddleware.js';
+import { protectAny } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Apply either artisan OR USER authentication
-const authMiddleware = (req, res, next) => {
-  // Try artisan auth first
-  protect(req, res, (err) => {
-    if (!err && req.user) {
-      return next();
-    }
-    
-    // If artisan auth fails, try USER auth
-    userProtect(req, res, (userErr) => {
-      if (userErr || !req.user) {
-        return res.status(401).json({ message: 'Not authorized' });
-      }
-      next();
-    });
-  });
-};
+// protectAny authenticates both artisans and users, sets req.accountType
 
 // Rooms
-router.post('/rooms', authMiddleware, createRoom);
-router.get('/rooms', authMiddleware, listRooms);
-router.get('/rooms/:roomName', authMiddleware, getRoomDetails);
-router.delete('/rooms/:roomName', authMiddleware, deleteRoom);
+router.post('/rooms', protectAny, createRoom);
+router.get('/rooms', protectAny, listRooms);
+router.get('/rooms/:roomName', protectAny, getRoomDetails);
+router.delete('/rooms/:roomName', protectAny, deleteRoom);
 
 // Tokens
-router.post('/tokens', authMiddleware, getToken);
+router.post('/tokens', protectAny, getToken);
 
 export default router;
