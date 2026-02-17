@@ -6,6 +6,7 @@ import {
     getArtisanByPublicId,
     getNearbyArtisans,
     updateArtisanProfile,
+    getFeaturedArtisans,
 } from '../controllers/artisanController.js';
 import { getPublicPortfolio } from '../controllers/portfolioController.js';
 import Artisan from '../models/artisanModel.js';
@@ -20,6 +21,10 @@ router.get('/', cache('artisans:list', 300), getAllArtisans);
 // We keep the old ID route for internal use, but we give it a more specific URL
 // URL: GET /api/artisans/id/60d21b4...
 router.get('/id/:id', getArtisanById);
+
+// Featured artisans for homepage (top-rated active artisans)
+// URL: GET /api/artisans/featured
+router.get('/featured', cache('artisans:featured', 300), getFeaturedArtisans);
 
 // Nearby artisans using geospatial query
 // URL: GET /api/artisans/nearby?lat=..&lng=..&radiusKm=10&limit=20

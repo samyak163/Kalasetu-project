@@ -2,6 +2,8 @@ import asyncHandler from '../utils/asyncHandler.js';
 import Booking from '../models/bookingModel.js';
 import Review from '../models/reviewModel.js';
 import Artisan from '../models/artisanModel.js';
+import Payment from '../models/paymentModel.js';
+import ArtisanService from '../models/artisanServiceModel.js';
 
 /**
  * @desc    Get artisan dashboard statistics
@@ -109,6 +111,94 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
         }
       },
       recentBookings: formattedRecentBookings
+    }
+  });
+});
+
+/**
+ * @desc    Get artisan income report grouped by period
+ * @route   GET /api/artisan/dashboard/income-report?period=monthly|weekly
+ * @access  Private (Artisan only)
+ */
+export const getIncomeReport = asyncHandler(async (req, res) => {
+  const artisanId = req.user._id;
+  const period = req.query.period === 'weekly' ? 'weekly' : 'monthly';
+
+  const cutoff = new Date();
+  let groupFormat;
+
+  if (period === 'weekly') {
+    cutoff.setDate(cutoff.getDate() - 12 * 7); // last 12 weeks
+    groupFormat = { $dateToString: { format: '%G-W%V', date: '$createdAt' } };
+  } else {
+    cutoff.setMonth(cutoff.getMonth() - 12); // last 12 months
+    groupFormat = { $dateToString: { format: '%Y-%m', date: '$createdAt' } };
+  }
+  cutoff.setHours(0, 0, 0, 0);
+
+  const results = await Payment.aggregate([
+    {
+      $match: {
+        recipientId: artisanId,
+        status: 'captured',
+        createdAt: { $gte: cutoff }
+      }
+    },
+    {
+      $group: {
+        _id: groupFormat,
+        amount: { $sum: '$amount' }
+      }
+    },
+    { $sort: { _id: 1 } },
+    { $project: { _id: 0, label: '$_id', amount: 1 } }
+  ]);
+
+  const total = results.reduce((sum, r) => sum + r.amount, 0);
+
+  res.status(200).json({
+    success: true,
+    data: { periods: results, total }
+  });
+});
+
+/**
+ * @desc    Get artisan profile completeness / verification checklist
+ * @route   GET /api/artisan/dashboard/verification-status
+ * @access  Private (Artisan only)
+ */
+export const getProfileVerificationStatus = asyncHandler(async (req, res) => {
+  const artisanId = req.user._id;
+
+  const [artisan, serviceCount] = await Promise.all([
+    Artisan.findById(artisanId)
+      .select('profileImageUrl bio portfolioImageUrls emailVerified')
+      .lean(),
+    ArtisanService.countDocuments({ artisan: artisanId })
+  ]);
+
+  if (!artisan) {
+    return res.status(404).json({ success: false, message: 'Artisan not found' });
+  }
+
+  const defaultPhoto = 'https://placehold.co/100x100/A55233/FFFFFF?text=Profile';
+  const steps = [
+    { name: 'hasProfilePhoto', completed: !!artisan.profileImageUrl && artisan.profileImageUrl !== defaultPhoto },
+    { name: 'hasBio', completed: !!artisan.bio && artisan.bio.length > 10 },
+    { name: 'hasService', completed: serviceCount > 0 },
+    { name: 'hasPortfolio', completed: Array.isArray(artisan.portfolioImageUrls) && artisan.portfolioImageUrls.length > 0 },
+    { name: 'emailVerified', completed: !!artisan.emailVerified },
+  ];
+
+  const completedCount = steps.filter(s => s.completed).length;
+
+  res.status(200).json({
+    success: true,
+    data: {
+      steps,
+      completedCount,
+      totalCount: steps.length,
+      isFullyVerified: completedCount === steps.length
     }
   });
 });

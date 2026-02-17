@@ -4,6 +4,8 @@ import React from 'react';
 import HeroSearch from '../components/HeroSearch.jsx';
 import Categories from '../components/Categories.jsx';
 import HowItWorks from '../components/HowItWorks.jsx';
+import FeaturedArtisans from '../components/home/FeaturedArtisans.jsx';
+import CategoryBrowse from '../components/home/CategoryBrowse.jsx';
 import NearbyArtisans from '../components/Maps/NearbyArtisans.jsx';
 import { isGoogleMapsEnabled } from '../lib/googleMaps.js';
 import SEO from '../components/SEO.jsx';
@@ -19,7 +21,8 @@ const HomePage = () => {
             />
             <HeroSearch />
             <Categories />
-            {/* Featured Local Talent removed */}
+            <FeaturedArtisans />
+            <CategoryBrowse />
             
             {/* Nearby Artisans Section (only if Google Maps is enabled) */}
             {isGoogleMapsEnabled() && (

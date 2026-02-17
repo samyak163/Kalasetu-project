@@ -266,4 +266,20 @@ const getNearbyArtisans = async (req, res) => {
     }
 };
  
-export { getAllArtisans, getArtisanById, getArtisanByPublicId, getNearbyArtisans, updateArtisanProfile };
+// Featured artisans: top-rated active artisans for homepage display
+const getFeaturedArtisans = async (req, res) => {
+    try {
+        const artisans = await Artisan.find({ isActive: true })
+            .select(PUBLIC_FIELDS)
+            .sort({ averageRating: -1 })
+            .limit(8)
+            .lean();
+
+        res.json({ success: true, data: artisans });
+    } catch (error) {
+        console.error('Error fetching featured artisans:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch featured artisans' });
+    }
+};
+
+export { getAllArtisans, getArtisanById, getArtisanByPublicId, getNearbyArtisans, updateArtisanProfile, getFeaturedArtisans };

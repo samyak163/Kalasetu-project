@@ -15,7 +15,8 @@ import {
   Menu,
   X,
   Bell,
-  ChevronDown
+  ChevronDown,
+  BarChart3
 } from 'lucide-react';
 
 const AdminLayout = ({ children }) => {
@@ -49,6 +50,7 @@ const AdminLayout = ({ children }) => {
     { name: 'Payments', icon: DollarSign, path: '/admin/payments', permission: ['payments', 'view'] },
     { name: 'Refunds', icon: RefreshCcw, path: '/admin/refunds', permission: ['payments', 'refund'] },
     { name: 'Bookings', icon: MessageSquare, path: '/admin/bookings', permission: ['bookings', 'view'] },
+    { name: 'Analytics', icon: BarChart3, path: '/admin/analytics', permission: ['analytics', 'view'] },
     { name: 'Settings', icon: Settings, path: '/admin/settings', permission: ['settings', 'view'] }
   ];
 

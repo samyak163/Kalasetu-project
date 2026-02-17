@@ -29,7 +29,10 @@ import {
   getSupportTicketsStats,
   getTicketById,
   respondToTicket,
-  updateTicketStatus
+  updateTicketStatus,
+  getRevenueAnalytics,
+  getUserAnalytics,
+  getBookingAnalytics
 } from '../controllers/adminDashboardController.js';
 import { protectAdmin, checkPermission } from '../middleware/authMiddleware.js';
 
@@ -77,6 +80,10 @@ router.post('/refunds/:id/reject', protectAdmin, checkPermission('payments', 're
 router.get('/bookings', protectAdmin, checkPermission('bookings', 'view'), getAllBookings);
 router.get('/bookings/stats', protectAdmin, checkPermission('bookings', 'view'), getBookingsStats);
 router.patch('/bookings/:id/cancel', protectAdmin, checkPermission('bookings', 'cancel'), cancelBooking);
+
+router.get('/analytics/revenue', protectAdmin, checkPermission('analytics', 'view'), getRevenueAnalytics);
+router.get('/analytics/users', protectAdmin, checkPermission('analytics', 'view'), getUserAnalytics);
+router.get('/analytics/bookings', protectAdmin, checkPermission('analytics', 'view'), getBookingAnalytics);
 
 router.get('/settings', protectAdmin, checkPermission('settings', 'view'), getSettings);
 router.put('/settings', protectAdmin, checkPermission('settings', 'edit'), updateSettings);

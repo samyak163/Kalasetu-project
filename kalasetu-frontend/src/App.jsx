@@ -61,6 +61,10 @@ const AdminSupport = lazy(() => import('./pages/admin/AdminSupport'));
 const AdminBookings = lazy(() => import('./pages/admin/AdminBookings'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const AdminProfile = lazy(() => import('./pages/admin/AdminProfile'));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
+
+// Phase 3: Artisan onboarding wizard
+const ArtisanOnboarding = lazy(() => import('./pages/ArtisanOnboarding'));
 
 function App() {
   return (
@@ -111,6 +115,16 @@ function App() {
           element={
             <RequireAuth role="artisan">
               <ArtisanProfileEditor />
+            </RequireAuth>
+          }
+        />
+
+        {/* Artisan Onboarding Wizard (Protected) */}
+        <Route
+          path="artisan/onboarding"
+          element={
+            <RequireAuth role="artisan">
+              <ArtisanOnboarding />
             </RequireAuth>
           }
         />
@@ -195,6 +209,7 @@ function App() {
               <Route path="bookings" element={<AdminBookings />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="profile" element={<AdminProfile />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
             </Routes>
           </AdminLayout>
         </AdminAuthProvider>

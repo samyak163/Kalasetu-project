@@ -1057,6 +1057,159 @@ function buildRefundEmailHTML(userName, refundRequest, status) {
   `;
 }
 
+// ===== ANALYTICS ENDPOINTS =====
+
+export const getRevenueAnalytics = async (req, res) => {
+  try {
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    twelveMonthsAgo.setDate(1);
+    twelveMonthsAgo.setHours(0, 0, 0, 0);
+
+    const [totalAgg, monthlyAgg, byCategoryAgg] = await Promise.all([
+      // Total revenue from captured payments
+      Payment.aggregate([
+        { $match: { status: 'captured' } },
+        { $group: { _id: null, totalRevenue: { $sum: '$amount' } } }
+      ]),
+      // Monthly revenue for last 12 months
+      Payment.aggregate([
+        { $match: { status: 'captured', createdAt: { $gte: twelveMonthsAgo } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+            amount: { $sum: '$amount' }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $project: { _id: 0, month: '$_id', amount: 1 } }
+      ]),
+      // Revenue by purpose/category
+      Payment.aggregate([
+        { $match: { status: 'captured' } },
+        { $group: { _id: '$purpose', amount: { $sum: '$amount' } } },
+        { $project: { _id: 0, category: '$_id', amount: 1 } }
+      ])
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalRevenue: totalAgg[0]?.totalRevenue || 0,
+        monthlyRevenue: monthlyAgg,
+        byCategory: byCategoryAgg
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch revenue analytics' });
+  }
+};
+
+export const getUserAnalytics = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    twelveMonthsAgo.setDate(1);
+    twelveMonthsAgo.setHours(0, 0, 0, 0);
+
+    const [totalUsers, totalArtisans, newUsersThisMonth, newArtisansThisMonth, userGrowth, artisanGrowth] = await Promise.all([
+      User.countDocuments(),
+      Artisan.countDocuments(),
+      User.countDocuments({ createdAt: { $gte: startOfMonth } }),
+      Artisan.countDocuments({ createdAt: { $gte: startOfMonth } }),
+      User.aggregate([
+        { $match: { createdAt: { $gte: twelveMonthsAgo } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $project: { _id: 0, month: '$_id', count: 1 } }
+      ]),
+      Artisan.aggregate([
+        { $match: { createdAt: { $gte: twelveMonthsAgo } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $project: { _id: 0, month: '$_id', count: 1 } }
+      ])
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        totalArtisans,
+        newThisMonth: { users: newUsersThisMonth, artisans: newArtisansThisMonth },
+        monthlyGrowth: { users: userGrowth, artisans: artisanGrowth }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch user analytics' });
+  }
+};
+
+export const getBookingAnalytics = async (req, res) => {
+  try {
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+    twelveMonthsAgo.setDate(1);
+    twelveMonthsAgo.setHours(0, 0, 0, 0);
+
+    const [totalBookings, byStatusAgg, popularCategoriesAgg, monthlyTrendAgg] = await Promise.all([
+      Booking.countDocuments(),
+      Booking.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+        { $project: { _id: 0, status: '$_id', count: 1 } }
+      ]),
+      Booking.aggregate([
+        { $match: { categoryName: { $ne: '' } } },
+        { $group: { _id: '$categoryName', count: { $sum: 1 } } },
+        { $sort: { count: -1 } },
+        { $limit: 5 },
+        { $project: { _id: 0, category: '$_id', count: 1 } }
+      ]),
+      Booking.aggregate([
+        { $match: { createdAt: { $gte: twelveMonthsAgo } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $project: { _id: 0, month: '$_id', count: 1 } }
+      ])
+    ]);
+
+    const statusMap = Object.fromEntries(byStatusAgg.map(s => [s.status, s.count]));
+    const completed = statusMap.completed || 0;
+    const cancelled = statusMap.cancelled || 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalBookings,
+        byStatus: statusMap,
+        completionRate: totalBookings > 0 ? Math.round((completed / totalBookings) * 100 * 10) / 10 : 0,
+        cancellationRate: totalBookings > 0 ? Math.round((cancelled / totalBookings) * 100 * 10) / 10 : 0,
+        popularCategories: popularCategoriesAgg,
+        monthlyTrend: monthlyTrendAgg
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch booking analytics' });
+  }
+};
+
 // --- Support Ticket Management ---
 
 // @desc    Get all support tickets with pagination and filters
