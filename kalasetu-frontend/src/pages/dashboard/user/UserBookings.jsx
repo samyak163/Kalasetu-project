@@ -73,7 +73,7 @@ const UserBookings = () => {
         <h2 className="text-xl font-bold text-gray-900">My Bookings</h2>
         <Link
           to="/search"
-          className="text-sm text-[#A55233] hover:underline font-medium"
+          className="text-sm text-brand-500 hover:underline font-medium"
         >
           Book a new service
         </Link>
@@ -85,7 +85,7 @@ const UserBookings = () => {
         placeholder="Search by service or artisan name..."
         value={search}
         onChange={e => setSearch(e.target.value)}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233]/50 text-sm"
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm"
       />
 
       {/* Status Tabs */}
@@ -96,7 +96,7 @@ const UserBookings = () => {
             onClick={() => setActiveTab(tab)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium capitalize whitespace-nowrap transition-colors ${
               activeTab === tab
-                ? 'bg-[#A55233] text-white'
+                ? 'bg-brand-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
@@ -110,7 +110,7 @@ const UserBookings = () => {
         <div className="text-center py-12 text-gray-500">
           <p className="font-medium">No bookings found</p>
           {activeTab !== 'all' && (
-            <button onClick={() => setActiveTab('all')} className="text-sm text-[#A55233] hover:underline mt-1">
+            <button onClick={() => setActiveTab('all')} className="text-sm text-brand-500 hover:underline mt-1">
               View all bookings
             </button>
           )}

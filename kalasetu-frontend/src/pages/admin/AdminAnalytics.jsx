@@ -48,8 +48,8 @@ const SectionError = () => (
   </div>
 );
 
-const VerticalBars = ({ data, valueKey = 'amount', labelKey = 'month', color = 'bg-[#A55233]' }) => {
-  if (!data || data.length === 0) return <SectionError />;
+const VerticalBars = ({ data, valueKey = 'amount', labelKey = 'month', color = 'bg-brand-500' }) => {
+  if (!Array.isArray(data) || data.length === 0) return <SectionError />;
   const maxVal = Math.max(...data.map((d) => d[valueKey] || 0), 1);
   return (
     <div className="flex items-end gap-1 h-40">
@@ -157,20 +157,42 @@ const AdminAnalytics = () => {
 
   // ---------- Revenue helpers ----------
   const monthlyRevenue = revenue?.monthlyRevenue || [];
-  const revenueByCategory = revenue?.revenueByCategory || [];
+  // Backend sends "byCategory", not "revenueByCategory"
+  const revenueByCategory = revenue?.revenueByCategory || revenue?.byCategory || [];
   const totalRevenue = revenue?.totalRevenue ?? 0;
 
   // ---------- Users helpers ----------
   const totalUsers = users?.totalUsers ?? 0;
   const totalArtisans = users?.totalArtisans ?? 0;
-  const newThisMonth = users?.newThisMonth ?? 0;
-  const monthlyGrowth = users?.monthlyGrowth || [];
+  // Backend sends { users: N, artisans: N } — sum both for display
+  const rawNewThisMonth = users?.newThisMonth;
+  const newThisMonth = typeof rawNewThisMonth === 'object'
+    ? (rawNewThisMonth?.users ?? 0) + (rawNewThisMonth?.artisans ?? 0)
+    : rawNewThisMonth ?? 0;
+  // Backend sends { users: [...], artisans: [...] } — merge into single sorted array
+  const rawMonthlyGrowth = users?.monthlyGrowth;
+  const monthlyGrowth = Array.isArray(rawMonthlyGrowth)
+    ? rawMonthlyGrowth
+    : (() => {
+        const userArr = Array.isArray(rawMonthlyGrowth?.users) ? rawMonthlyGrowth.users : [];
+        const artisanArr = Array.isArray(rawMonthlyGrowth?.artisans) ? rawMonthlyGrowth.artisans : [];
+        const merged = {};
+        userArr.forEach(u => { merged[u.month] = (merged[u.month] || 0) + u.count; });
+        artisanArr.forEach(a => { merged[a.month] = (merged[a.month] || 0) + a.count; });
+        return Object.entries(merged).sort(([a], [b]) => a.localeCompare(b)).map(([month, count]) => ({ month, count }));
+      })();
 
   // ---------- Bookings helpers ----------
   const totalBookings = bookings?.totalBookings ?? 0;
   const completionRate = bookings?.completionRate ?? 0;
   const cancellationRate = bookings?.cancellationRate ?? 0;
-  const byStatus = bookings?.byStatus || [];
+  // byStatus may be an object { completed: 5, pending: 3 } or an array — normalize to array
+  const rawByStatus = bookings?.byStatus;
+  const byStatus = Array.isArray(rawByStatus)
+    ? rawByStatus
+    : rawByStatus && typeof rawByStatus === 'object'
+      ? Object.entries(rawByStatus).map(([status, count]) => ({ status, count }))
+      : [];
   const popularCategories = bookings?.popularCategories || [];
   const monthlyTrend = bookings?.monthlyTrend || [];
 

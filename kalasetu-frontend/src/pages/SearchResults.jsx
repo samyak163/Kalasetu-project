@@ -5,7 +5,6 @@ import SEO from '../components/SEO.jsx';
 import { optimizeImage } from '../utils/cloudinary.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ToastContext } from '../context/ToastContext.jsx';
-import AdvancedFilters from '../components/search/AdvancedFilters.jsx';
 import axios from 'axios';
 import { API_CONFIG } from '../config/env.config.js';
 
@@ -40,6 +39,7 @@ const SearchResults = () => {
   });
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(categoryParam || '');
+  const [selectedService, setSelectedService] = useState(serviceParam || '');
   const [minRatingFilter, setMinRatingFilter] = useState(0);
 
   // Fetch categories for filter
@@ -47,7 +47,8 @@ const SearchResults = () => {
     const fetchCategories = async () => {
       try {
         const res = await axios.get(`${API_CONFIG.BASE_URL}/api/categories`);
-        setCategories(Array.isArray(res.data) ? res.data : []);
+        const list = res.data?.data || res.data;
+        setCategories(Array.isArray(list) ? list : []);
       } catch (err) {
         console.error('Failed to load categories:', err);
       }
@@ -123,13 +124,33 @@ const SearchResults = () => {
     return 0;
   }, [results]);
 
+  // Services for the currently selected category
+  const categoryServices = useMemo(() => {
+    if (!selectedCategory) return [];
+    const cat = categories.find(c => (c.slug || c.name) === selectedCategory);
+    return cat?.suggestedServices || [];
+  }, [selectedCategory, categories]);
+
   const handleCategoryFilter = (categorySlug) => {
     setSelectedCategory(categorySlug);
+    setSelectedService(''); // reset service when category changes
     const newParams = new URLSearchParams(searchParams);
     if (categorySlug) {
       newParams.set('category', categorySlug);
     } else {
       newParams.delete('category');
+    }
+    newParams.delete('service');
+    setSearchParams(newParams);
+  };
+
+  const handleServiceFilter = (serviceName) => {
+    setSelectedService(serviceName);
+    const newParams = new URLSearchParams(searchParams);
+    if (serviceName) {
+      newParams.set('service', serviceName);
+    } else {
+      newParams.delete('service');
     }
     setSearchParams(newParams);
   };
@@ -206,6 +227,25 @@ const SearchResults = () => {
                 </select>
               </div>
 
+              {/* Search by Service (shows when category is selected) */}
+              {categoryServices.length > 0 && (
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Service</label>
+                  <select
+                    value={selectedService}
+                    onChange={(e) => handleServiceFilter(e.target.value)}
+                    className="w-full border rounded px-3 py-2 text-sm"
+                  >
+                    <option value="">All Services</option>
+                    {categoryServices.map((svc) => (
+                      <option key={svc.name} value={svc.name}>
+                        {svc.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Search by Rating */}
               <div>
                 <label className="block text-sm font-semibold mb-2">Search by Rating</label>
@@ -221,11 +261,6 @@ const SearchResults = () => {
                   <option value={2}>2+ Stars</option>
                   <option value={1}>1+ Star</option>
                 </select>
-              </div>
-
-              {/* Advanced Filters */}
-              <div className="pt-4 border-t">
-                <AdvancedFilters value={filters} onChange={setFilters} />
               </div>
             </div>
           </aside>
@@ -610,7 +645,7 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
               type="datetime-local"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#A55233] focus:border-[#A55233]"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
               required
             />
             {service && (
@@ -625,7 +660,7 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#A55233] focus:border-[#A55233]"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
               placeholder="Share any specifics, venue details, or questions."
             />
           </div>
@@ -640,7 +675,7 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors disabled:opacity-60"
+              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-60"
               disabled={submitting}
             >
               {submitting ? 'Sending...' : 'Confirm Booking'}

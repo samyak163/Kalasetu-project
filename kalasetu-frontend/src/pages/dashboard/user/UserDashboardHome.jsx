@@ -79,7 +79,7 @@ const UserDashboardHome = () => {
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="text-sm text-gray-600">Total Spent</div>
-          <div className="text-3xl font-bold text-[#A55233] mt-1">
+          <div className="text-3xl font-bold text-brand-500 mt-1">
             {'\u20B9'}{totalSpent.toLocaleString('en-IN')}
           </div>
         </div>
@@ -89,7 +89,7 @@ const UserDashboardHome = () => {
       <div className="flex flex-wrap gap-3">
         <Link
           to="/search"
-          className="px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors text-sm font-medium"
+          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors text-sm font-medium"
         >
           Find Artisans
         </Link>
@@ -115,7 +115,7 @@ const UserDashboardHome = () => {
         {upcomingBookings.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
             <p>No upcoming bookings.</p>
-            <Link to="/search" className="text-[#A55233] hover:underline text-sm mt-1 inline-block">
+            <Link to="/search" className="text-brand-500 hover:underline text-sm mt-1 inline-block">
               Browse artisans to book a service
             </Link>
           </div>

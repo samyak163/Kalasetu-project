@@ -25,11 +25,25 @@ const FeaturedArtisans = () => {
         const { data } = await api.get('/api/artisans/featured');
         if (!cancelled) {
           const list = data.data || data.artisans || data;
-          setArtisans(Array.isArray(list) ? list : []);
+          const resolved = Array.isArray(list) ? list : [];
+          if (resolved.length > 0) {
+            setArtisans(resolved);
+          } else {
+            // Fallback: fetch from general artisan list
+            const fallback = await api.get('/api/artisans', { params: { limit: 8 } });
+            const fallbackList = Array.isArray(fallback.data?.artisans) ? fallback.data.artisans : Array.isArray(fallback.data) ? fallback.data : [];
+            if (!cancelled) setArtisans(fallbackList.slice(0, 8));
+          }
         }
       } catch {
-        // On failure, render nothing
-        if (!cancelled) setArtisans([]);
+        // Fallback on error: try general artisan list
+        try {
+          const fallback = await api.get('/api/artisans', { params: { limit: 8 } });
+          const fallbackList = Array.isArray(fallback.data?.artisans) ? fallback.data.artisans : Array.isArray(fallback.data) ? fallback.data : [];
+          if (!cancelled) setArtisans(fallbackList.slice(0, 8));
+        } catch {
+          if (!cancelled) setArtisans([]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -140,7 +154,7 @@ const FeaturedArtisans = () => {
                   </p>
                 )}
 
-                <span className="inline-block mt-3 text-sm font-medium text-[#A55233] group-hover:underline">
+                <span className="inline-block mt-3 text-sm font-medium text-brand-500 group-hover:underline">
                   View Profile
                 </span>
               </div>
@@ -152,7 +166,7 @@ const FeaturedArtisans = () => {
       <div className="mt-8 text-center">
         <Link
           to="/search"
-          className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-[#A55233] border border-[#A55233] rounded-lg hover:bg-[#A55233] hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-brand-500 border border-brand-500 rounded-lg hover:bg-brand-500 hover:text-white transition-colors"
         >
           View All Artisans
           <svg

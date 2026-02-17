@@ -78,7 +78,7 @@ export const upsertStreamUser = async (user) => {
     const response = await client.upsertUser({
       id: user.id || user._id.toString(),
       name: user.fullName || user.username,
-      image: user.profileImage || user.avatar,
+      image: user.profileImageUrl || user.profileImage || user.avatar || null,
       role: user.role || 'user',
       // Custom fields
       email: user.email,

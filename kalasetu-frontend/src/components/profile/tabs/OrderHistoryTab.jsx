@@ -334,7 +334,7 @@ const OrderHistoryTab = ({ user }) => {
                 {order.status === 'completed' && !refundRequests[order._id] && (
                   <button
                     onClick={() => openRefundModal(order)}
-                    className="px-4 py-2 border border-amber-300 text-amber-700 rounded-lg hover:bg-amber-50 transition-colors text-sm"
+                    className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors text-sm"
                   >
                     Request Refund
                   </button>

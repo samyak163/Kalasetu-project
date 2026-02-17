@@ -1,23 +1,88 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
+import { createDMChannel } from '../lib/streamChat';
 import { Channel, ChannelList, MessageList, MessageInput, Window, Thread } from 'stream-chat-react';
 import 'stream-chat-react/dist/css/v2/index.css';
+
+/**
+ * Get the other member in a DM channel (not the current user).
+ * Returns { name, image } from the Stream member's user profile.
+ */
+const getOtherMember = (channel, currentUserId) => {
+  const members = channel.state?.members;
+  if (!members) return null;
+
+  const other = Object.values(members).find(
+    (m) => m.user_id !== currentUserId && m.user?.id !== currentUserId
+  );
+  return other?.user || null;
+};
+
+/** Initials avatar — colored circle with first letter of name */
+const InitialsAvatar = ({ name, size = 'w-12 h-12 text-lg' }) => {
+  const letter = name ? name.charAt(0).toUpperCase() : '?';
+  return (
+    <div
+      className={`${size} rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`}
+      style={{ background: 'linear-gradient(135deg, #A55233, #C97B5D)' }}
+    >
+      {letter}
+    </div>
+  );
+};
 
 const MessagesPage = () => {
   const { user, isAuthenticated } = useAuth();
   const { client, isLoading, error, isUnavailable } = useChat();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [activeChannel, setActiveChannel] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dmLoading, setDmLoading] = useState(false);
+  const dmInitRef = useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
+
+  // Auto-open DM channel when navigating from artisan profile (?artisan=<id>)
+  useEffect(() => {
+    const artisanId = searchParams.get('artisan');
+    if (!artisanId || !client || !user || dmInitRef.current) return;
+
+    dmInitRef.current = true;
+    setDmLoading(true);
+
+    (async () => {
+      try {
+        // Create/get the DM channel via backend
+        const res = await createDMChannel(artisanId);
+        const channelId = res.channelId || res.channel?.id;
+        const channelType = res.channelType || res.channel?.type || 'messaging';
+
+        if (channelId) {
+          // Initialize the channel on the client side and watch it
+          const channel = client.channel(channelType, channelId);
+          await channel.watch();
+          setActiveChannel(channel);
+        }
+
+        // Clear the artisan param from URL so refresh doesn't re-trigger
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('artisan');
+        setSearchParams(newParams, { replace: true });
+      } catch (err) {
+        console.error('Failed to open DM channel:', err);
+      } finally {
+        setDmLoading(false);
+      }
+    })();
+  }, [client, user, searchParams, setSearchParams]);
 
   if (!isAuthenticated || !user) {
     return (
@@ -46,12 +111,14 @@ const MessagesPage = () => {
     );
   }
 
-  if (isLoading || !client) {
+  if (isLoading || !client || dmLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-50 via-brand-50 to-brand-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-brand-500 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-lg text-gray-700 font-medium">Loading messages...</p>
+          <p className="text-lg text-gray-700 font-medium">
+            {dmLoading ? 'Opening conversation...' : 'Loading messages...'}
+          </p>
         </div>
       </div>
     );
@@ -69,6 +136,11 @@ const MessagesPage = () => {
     state: true,
     watch: true,
   };
+
+  // Resolve the other member for the active channel header
+  const otherUser = activeChannel ? getOtherMember(activeChannel, user._id) : null;
+  const headerName = otherUser?.name || activeChannel?.data?.name || 'Conversation';
+  const headerImage = otherUser?.image || activeChannel?.data?.image;
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-brand-50 via-brand-50 to-brand-100">
@@ -103,7 +175,9 @@ const MessagesPage = () => {
             sort={sort}
             options={options}
             showChannelSearch={false}
-            Preview={(previewProps) => <CustomChannelPreview {...previewProps} searchQuery={searchQuery} />}
+            Preview={(previewProps) => (
+              <CustomChannelPreview {...previewProps} searchQuery={searchQuery} currentUserId={user._id} />
+            )}
             onSelect={(channel) => setActiveChannel(channel)}
           />
         </div>
@@ -118,37 +192,33 @@ const MessagesPage = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="relative">
-                    <img
-                      src={activeChannel.data?.image || '/default-avatar.png'}
-                      alt={activeChannel.data?.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
+                    {headerImage ? (
+                      <img
+                        src={headerImage}
+                        alt={headerName}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <InitialsAvatar name={headerName} />
+                    )}
                     <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">
-                      {activeChannel.data?.name || 'Conversation'}
+                      {headerName}
                     </h2>
                     <p className="text-sm text-gray-600">
-                      {activeChannel.state.members
-                        ? Object.keys(activeChannel.state.members).length
-                        : 0}{' '}
-                      members
+                      {otherUser?.accountType === 'artisan' ? 'Artisan' : 'Customer'}
                     </p>
                   </div>
                 </div>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                  </svg>
-                </button>
               </div>
             </div>
 
-            {/* Message List */}
+            {/* Messages + Input */}
             <Window>
               <MessageList />
-              <MessageInput />
+              <MessageInput focus />
             </Window>
             <Thread />
           </Channel>
@@ -168,16 +238,21 @@ const MessagesPage = () => {
   );
 };
 
-// Custom Channel Preview Component
-const CustomChannelPreview = ({ channel, searchQuery, ...previewProps }) => {
+// Custom Channel Preview — shows the other member's name & avatar for DM channels
+const CustomChannelPreview = ({ channel, searchQuery, currentUserId, ...previewProps }) => {
   const { setActiveChannel, channel: activeChannel } = previewProps;
 
   const isActive = activeChannel?.id === channel.id;
   const lastMessage = channel.state.messages[channel.state.messages.length - 1];
   const unreadCount = channel.countUnread();
 
-  // Simple search filter
-  if (searchQuery && !channel.data?.name?.toLowerCase().includes(searchQuery.toLowerCase())) {
+  // Resolve the other member's info for display
+  const otherUser = getOtherMember(channel, currentUserId);
+  const displayName = otherUser?.name || channel.data?.name || 'Unnamed';
+  const displayImage = otherUser?.image || channel.data?.image;
+
+  // Search filter against the resolved display name
+  if (searchQuery && !displayName.toLowerCase().includes(searchQuery.toLowerCase())) {
     return null;
   }
 
@@ -190,11 +265,15 @@ const CustomChannelPreview = ({ channel, searchQuery, ...previewProps }) => {
     >
       <div className="flex items-start space-x-3">
         <div className="relative flex-shrink-0">
-          <img
-            src={channel.data?.image || '/default-avatar.png'}
-            alt={channel.data?.name}
-            className="w-12 h-12 rounded-full object-cover"
-          />
+          {displayImage ? (
+            <img
+              src={displayImage}
+              alt={displayName}
+              className="w-12 h-12 rounded-full object-cover"
+            />
+          ) : (
+            <InitialsAvatar name={displayName} />
+          )}
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
               {unreadCount}
@@ -203,11 +282,11 @@ const CustomChannelPreview = ({ channel, searchQuery, ...previewProps }) => {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline justify-between mb-1">
-            <h3 className="font-semibold text-gray-900 truncate">
-              {channel.data?.name || 'Unnamed Channel'}
+            <h3 className={`font-semibold truncate ${unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
+              {displayName}
             </h3>
             {lastMessage && (
-              <span className="text-xs text-gray-500 ml-2">
+              <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
                 {new Date(lastMessage.created_at).toLocaleTimeString([], {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -216,7 +295,7 @@ const CustomChannelPreview = ({ channel, searchQuery, ...previewProps }) => {
             )}
           </div>
           {lastMessage && (
-            <p className="text-sm text-gray-600 truncate">
+            <p className={`text-sm truncate ${unreadCount > 0 ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>
               {lastMessage.text || 'Attachment'}
             </p>
           )}
