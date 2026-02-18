@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../lib/axios.js';
-import ArtisanCard from '../ui/ArtisanCard.jsx';
+import { ArtisanCard } from '../ui/index.js';
 
 /**
  * Horizontal scrollable row of ArtisanCard components.
