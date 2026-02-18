@@ -44,3 +44,7 @@ kalasetu-backend/serviceAccountKey.json
 #GitHub Copilot
 
 .copilotignore
+
+#Git worktrees (isolated feature development)
+
+.worktrees/
