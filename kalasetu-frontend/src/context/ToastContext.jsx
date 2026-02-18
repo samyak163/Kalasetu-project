@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Toast from '../components/ui/Toast';
 
 const ToastContext = createContext(null);
@@ -30,7 +31,18 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ toast, showToast, removeToast }}>
       {children}
-      {toasts.map((t) => <Toast key={t.id} toast={t} onDismiss={dismiss} />)}
+      {toasts.length > 0 &&
+        createPortal(
+          <div
+            aria-live="polite"
+            className="fixed top-4 right-4 z-toast max-w-sm w-full flex flex-col gap-2"
+          >
+            {toasts.map((t) => (
+              <Toast key={t.id} toast={t} onDismiss={dismiss} />
+            ))}
+          </div>,
+          document.body
+        )}
     </ToastContext.Provider>
   );
 }

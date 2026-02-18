@@ -12,10 +12,18 @@ export default function Card({
     ? 'cursor-pointer hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200'
     : hover ? 'card-hover' : '';
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick?.(e);
+    }
+  };
+
   return (
     <div
       className={`bg-white rounded-card shadow-card ${hoverClass} ${padClass} ${className}`}
       onClick={onClick}
+      onKeyDown={interactive ? handleKeyDown : undefined}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
     >

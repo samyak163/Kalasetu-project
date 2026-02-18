@@ -45,6 +45,7 @@ export default function SlideToConfirm({ label = 'Slide to confirm', onConfirm, 
       onTouchStart={handleStart}
       onTouchMove={(e) => handleMove(e.touches[0].clientX)}
       onTouchEnd={handleEnd}
+      onTouchCancel={handleEnd}
     >
       {/* Fill track */}
       <div

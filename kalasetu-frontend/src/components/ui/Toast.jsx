@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 const icons = {
@@ -24,14 +23,16 @@ export default function Toast({ toast, onDismiss }) {
     return () => clearTimeout(timer);
   }, [id, duration, onDismiss]);
 
-  return createPortal(
-    <div className={`fixed top-4 right-4 z-toast max-w-sm w-full border rounded-card shadow-dropdown p-3 flex items-start gap-2 animate-slide-in ${styles[type] || styles.info}`}>
+  return (
+    <div
+      role="status"
+      className={`w-full border rounded-card shadow-dropdown p-3 flex items-start gap-2 animate-slide-in ${styles[type] || styles.info}`}
+    >
       <Icon className="h-5 w-5 shrink-0 mt-0.5" />
       <p className="text-sm flex-1">{message}</p>
       <button onClick={() => onDismiss(id)} className="p-0.5 hover:opacity-70" aria-label="Dismiss">
         <X className="h-4 w-4" />
       </button>
-    </div>,
-    document.body
+    </div>
   );
 }

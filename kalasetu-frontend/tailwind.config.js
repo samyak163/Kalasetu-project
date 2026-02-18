@@ -64,7 +64,7 @@ export default {
       zIndex: {
         sticky: '40',
         modal: '50',
-        toast: '60',
+        toast: '9999',
       },
       maxWidth: {
         container: '1280px',
