@@ -49,6 +49,8 @@ export default function LocationBar({ onCityChange }) {
         <div className="relative">
           <button
             onClick={() => setOpen(!open)}
+            aria-haspopup="listbox"
+            aria-expanded={open}
             className="flex items-center gap-1.5 text-sm text-gray-700 hover:text-brand-500 transition-colors"
           >
             <MapPin className="h-4 w-4" />
@@ -61,10 +63,12 @@ export default function LocationBar({ onCityChange }) {
               {/* Backdrop */}
               <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
               {/* Dropdown */}
-              <div className="absolute right-0 top-full mt-1 z-20 w-48 bg-white rounded-card shadow-dropdown border border-gray-100 py-1 max-h-64 overflow-y-auto">
+              <div role="listbox" aria-label="Select city" className="absolute right-0 top-full mt-1 z-20 w-48 bg-white rounded-card shadow-dropdown border border-gray-100 py-1 max-h-64 overflow-y-auto">
                 {CITIES.map((c) => (
                   <button
                     key={c}
+                    role="option"
+                    aria-selected={c === city}
                     onClick={() => select(c)}
                     className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                       c === city

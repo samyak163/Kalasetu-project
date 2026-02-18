@@ -135,7 +135,7 @@ export default function SearchOverlay({ open, onClose }) {
   const isTyping = query.trim().length >= 2;
 
   return (
-    <div className="fixed inset-0 z-toast bg-white flex flex-col animate-fade-in">
+    <div className="fixed inset-0 z-modal bg-white flex flex-col animate-fade-in">
       {/* Header with search input */}
       <form onSubmit={handleSubmit} className="flex items-center gap-2 px-4 py-3 border-b border-gray-200">
         <button type="button" onClick={onClose} className="p-1.5 -ml-1.5" aria-label="Close search">

@@ -75,7 +75,6 @@ const SearchResults = () => {
         if (query) params.set('q', query);
         if (categoryParam) params.set('category', categoryParam);
         if (serviceParam) params.set('service', serviceParam);
-        if (minRating > 0) params.set('minRating', minRating);
 
         const { data } = await api.get(`/api/search?${params.toString()}`, { signal: controller.signal });
         if (controller.signal.aborted) return;
@@ -99,7 +98,7 @@ const SearchResults = () => {
     };
     fetchResults();
     return () => controller.abort();
-  }, [query, categoryParam, serviceParam, minRating]);
+  }, [query, categoryParam, serviceParam]);
 
   // Heading
   const heading = useMemo(() => {
@@ -410,11 +409,16 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
       showToast?.('Please log in as a customer to book a service.', 'error');
       return;
     }
+    const artisanId = artisan?._id || artisan?.id;
+    if (!artisanId) {
+      showToast?.('Cannot identify this artisan. Try booking from their profile page.', 'error');
+      return;
+    }
     setSubmitting(true);
     try {
       const start = new Date(startTime);
       await api.post('/api/bookings', {
-        artisan: artisan._id || artisan.id,
+        artisan: artisanId,
         serviceId: service?.serviceId || service?._id,
         start,
         notes,

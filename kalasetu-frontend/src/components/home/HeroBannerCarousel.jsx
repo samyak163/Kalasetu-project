@@ -23,8 +23,8 @@ const BANNERS = [
 
 /**
  * Full-width auto-rotating hero banner carousel.
- * 3:1 aspect ratio on desktop, 2:1 on mobile.
- * Auto-advances every 5s, pauses on hover.
+ * 2:1 aspect ratio on mobile, 3:1 on desktop (md+).
+ * Auto-advances every 5s, pauses on hover/touch.
  */
 export default function HeroBannerCarousel() {
   const [current, setCurrent] = useState(0);
@@ -44,6 +44,8 @@ export default function HeroBannerCarousel() {
       className="relative overflow-hidden"
       onMouseEnter={() => { paused.current = true; }}
       onMouseLeave={() => { paused.current = false; }}
+      onTouchStart={() => { paused.current = true; }}
+      onTouchEnd={() => { paused.current = false; }}
     >
       {/* Slides */}
       <div
@@ -51,7 +53,7 @@ export default function HeroBannerCarousel() {
         style={{ transform: `translateX(-${current * 100}%)` }}
       >
         {BANNERS.map((banner, i) => (
-          <div key={i} className="relative w-full shrink-0" style={{ aspectRatio: '3/1' }}>
+          <div key={i} className="relative w-full shrink-0 aspect-[2/1] md:aspect-[3/1]">
             <img
               src={banner.src}
               alt={banner.alt}
@@ -76,7 +78,7 @@ export default function HeroBannerCarousel() {
           <button
             key={i}
             onClick={() => setCurrent(i)}
-            className={`w-2 h-2 rounded-full transition-all ${
+            className={`w-2 h-2 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1 focus-visible:ring-offset-black/30 ${
               i === current ? 'bg-white w-5' : 'bg-white/50'
             }`}
             aria-label={`Go to slide ${i + 1}`}

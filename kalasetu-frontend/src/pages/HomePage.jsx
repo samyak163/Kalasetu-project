@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Search } from 'lucide-react';
 import SEO from '../components/SEO.jsx';
 import LocationBar from '../components/home/LocationBar.jsx';
@@ -16,6 +16,11 @@ const HomePage = () => {
   const [city, setCity] = useState(() => localStorage.getItem('ks_city') || 'All Cities');
   const [searchOpen, setSearchOpen] = useState(false);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
+
+  const topArtisansParams = useMemo(
+    () => ({ limit: 12, ...(city !== 'All Cities' ? { city } : {}) }),
+    [city]
+  );
 
   return (
     <>
@@ -57,7 +62,7 @@ const HomePage = () => {
       <ArtisanCarousel
         title={city !== 'All Cities' ? `Top Artisans in ${city}` : 'Top Artisans Near You'}
         endpoint="/api/artisans"
-        params={{ limit: 12, ...(city !== 'All Cities' ? { city } : {}) }}
+        params={topArtisansParams}
       />
 
       <ArtisanCarousel

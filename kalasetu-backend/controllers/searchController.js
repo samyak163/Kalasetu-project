@@ -18,7 +18,6 @@
 
 import asyncHandler from '../utils/asyncHandler.js';
 import { trackEvent } from '../utils/posthog.js';
-import * as Sentry from '@sentry/node';
 import Artisan from '../models/artisanModel.js';
 import Category from '../models/categoryModel.js';
 import ArtisanService from '../models/artisanServiceModel.js';
@@ -57,11 +56,12 @@ const performSearch = async (req) => {
   if (!selectedCategory && category) {
     selectedCategory = await Category.findOne({
       $or: [{ slug: category }, { name: new RegExp(`^${escapeRegex(category)}$`, 'i') }],
+      active: true,
     }).lean();
   }
 
   if (!selectedCategory && trimmed) {
-    selectedCategory = await Category.findOne({ name: new RegExp(`^${escapeRegex(trimmed)}$`, 'i') }).lean();
+    selectedCategory = await Category.findOne({ name: new RegExp(`^${escapeRegex(trimmed)}$`, 'i'), active: true }).lean();
   }
 
   if (!selectedService && trimmed) {
@@ -80,17 +80,16 @@ const performSearch = async (req) => {
     mode = 'service';
     const regex = new RegExp(`^${escapeRegex(selectedService)}`, 'i');
     const serviceDocs = await ArtisanService.find({ name: regex, isActive: true })
-      .populate({ path: 'artisan', select: 'publicId fullName businessName profileImageUrl profileImage craft location averageRating totalReviews isVerified emailVerified bio portfolioImageUrls' })
+      .populate({ path: 'artisan', select: 'publicId fullName businessName profileImageUrl profileImage craft location averageRating totalReviews isVerified emailVerified bio portfolioImageUrls isActive' })
       .sort({ createdAt: -1 })
       .limit(limitInt * 4) // fetch more to dedupe
       .lean();
 
     const services = [];
-    const seenArtisans = new Set();
     for (const doc of serviceDocs) {
+      if (doc.artisan?.isActive === false) continue;
       const artisanInfo = formatArtisan(doc.artisan);
       if (!artisanInfo) continue;
-      if (doc.artisan?.isActive === false) continue;
       services.push({
         serviceId: doc._id,
         name: doc.name,
@@ -98,7 +97,6 @@ const performSearch = async (req) => {
         durationMinutes: doc.durationMinutes,
         artisan: artisanInfo,
       });
-      seenArtisans.add(String(doc.artisan?._id));
       if (services.length >= limitInt) break;
     }
 
@@ -115,15 +113,15 @@ const performSearch = async (req) => {
       category: selectedCategory._id,
       isActive: true,
     })
-      .populate({ path: 'artisan', select: 'publicId fullName businessName profileImageUrl profileImage craft location averageRating totalReviews isVerified emailVerified bio portfolioImageUrls' })
+      .populate({ path: 'artisan', select: 'publicId fullName businessName profileImageUrl profileImage craft location averageRating totalReviews isVerified emailVerified bio portfolioImageUrls isActive' })
       .sort({ createdAt: -1 })
       .lean();
 
     const grouped = new Map();
     for (const doc of serviceDocs) {
+      if (doc.artisan?.isActive === false) continue;
       const artisanInfo = formatArtisan(doc.artisan);
       if (!artisanInfo) continue;
-      if (doc.artisan?.isActive === false) continue;
       const key = doc.name;
       if (!grouped.has(key)) grouped.set(key, []);
       const entries = grouped.get(key);
@@ -168,15 +166,18 @@ const performSearch = async (req) => {
   // Fallback: artisan name search
   mode = 'artisan';
   const queryRegex = trimmed ? new RegExp(escapeRegex(trimmed), 'i') : null;
-  const artisanFilter = queryRegex
-    ? {
-        $or: [
-          { fullName: queryRegex },
-          { businessName: queryRegex },
-          { craft: queryRegex },
-        ],
-      }
-    : {};
+  const artisanFilter = {
+    isActive: { $ne: false },
+    ...(queryRegex
+      ? {
+          $or: [
+            { fullName: queryRegex },
+            { businessName: queryRegex },
+            { craft: queryRegex },
+          ],
+        }
+      : {}),
+  };
 
   const artisans = await Artisan.find(artisanFilter)
     .select('publicId fullName businessName profileImageUrl profileImage craft location averageRating totalReviews isVerified emailVerified bio portfolioImageUrls')
@@ -191,30 +192,20 @@ const performSearch = async (req) => {
 };
 
 export const searchArtisans = asyncHandler(async (req, res) => {
-  try {
-    const results = await performSearch(req);
+  const results = await performSearch(req);
 
-    trackEvent(
-      (req.user?.id || req.user?._id || 'anonymous').toString(),
-      'artisan_search',
-      {
-        mode: results.mode,
-        query: req.query.q || '',
-        category: results.category?.name || req.query.category || '',
-        service: results.service || req.query.service || '',
-      }
-    );
+  trackEvent(
+    (req.user?.id || req.user?._id || 'anonymous').toString(),
+    'artisan_search',
+    {
+      mode: results.mode,
+      query: req.query.q || '',
+      category: results.category?.name || req.query.category || '',
+      service: results.service || req.query.service || '',
+    }
+  );
 
-    res.json({ success: true, ...results });
-  } catch (error) {
-    console.error('Search error:', error);
-    if (Sentry) Sentry.captureException(error);
-    res.status(500).json({
-      success: false,
-      message: 'Search failed',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
-  }
+  res.json({ success: true, ...results });
 });
 
 // Get search suggestions (autocomplete)
@@ -223,34 +214,29 @@ export const getSearchSuggestions = asyncHandler(async (req, res) => {
   if (!q || q.length < 2) {
     return res.json({ success: true, suggestions: { categories: [], services: [], artisans: [] } });
   }
-  try {
-    const limit = 5;
-    // Categories by prefix
-    const categories = await Category.find({ name: { $regex: `^${escapeRegex(q)}`, $options: 'i' }, active: true })
-      .select('name slug')
+  const limit = 5;
+  // Categories by prefix
+  const categories = await Category.find({ name: { $regex: `^${escapeRegex(q)}`, $options: 'i' }, active: true })
+    .select('name slug')
+    .limit(limit)
+    .lean();
+  // Services by prefix
+  const services = await ArtisanService.aggregate([
+    { $match: { name: { $regex: `^${escapeRegex(q)}`, $options: 'i' }, isActive: true } },
+    { $group: { _id: { name: '$name', categoryName: '$categoryName' }, count: { $sum: 1 } } },
+    { $project: { name: '$_id.name', categoryName: '$_id.categoryName', count: 1, _id: 0 } },
+    { $limit: limit }
+  ]);
+  // Only show artisans if the query looks like a person name (2+ words) or explicit
+  const isLikelyName = q.trim().includes(' ');
+  let artisans = [];
+  if (isLikelyName) {
+    artisans = await Artisan.find({ fullName: { $regex: escapeRegex(q), $options: 'i' } })
+      .select('publicId fullName profileImageUrl profileImage')
       .limit(limit)
       .lean();
-    // Services by prefix
-    const services = await ArtisanService.aggregate([
-      { $match: { name: { $regex: `^${escapeRegex(q)}`, $options: 'i' }, isActive: true } },
-      { $group: { _id: { name: '$name', categoryName: '$categoryName' }, count: { $sum: 1 } } },
-      { $project: { name: '$_id.name', categoryName: '$_id.categoryName', count: 1, _id: 0 } },
-      { $limit: limit }
-    ]);
-    // Only show artisans if the query looks like a person name (2+ words) or explicit
-    const isLikelyName = q.trim().includes(' ');
-    let artisans = [];
-    if (isLikelyName) {
-      artisans = await Artisan.find({ fullName: { $regex: escapeRegex(q), $options: 'i' } })
-        .select('publicId fullName profileImageUrl profileImage')
-        .limit(limit)
-        .lean();
-    }
-    res.json({ success: true, suggestions: { categories, services, artisans } });
-  } catch (error) {
-    console.error('Suggestions error:', error);
-    res.status(500).json({ success: false, message: 'Failed to get suggestions' });
   }
+  res.json({ success: true, suggestions: { categories, services, artisans } });
 });
 
 /**
@@ -258,27 +244,20 @@ export const getSearchSuggestions = asyncHandler(async (req, res) => {
  * GET /api/search/facets
  */
 export const getSearchFacets = asyncHandler(async (req, res) => {
-  try {
-    const [crafts, cities, states] = await Promise.all([
-      Artisan.distinct('craft'),
-      Artisan.distinct('location.city'),
-      Artisan.distinct('location.state'),
-    ]);
+  const [crafts, cities, states] = await Promise.all([
+    Artisan.distinct('craft'),
+    Artisan.distinct('location.city'),
+    Artisan.distinct('location.state'),
+  ]);
 
-    res.json({
-      success: true,
-      data: {
-        craft: crafts.filter(Boolean),
-        'location.city': cities.filter(Boolean),
-        'location.state': states.filter(Boolean),
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get facets',
-    });
-  }
+  res.json({
+    success: true,
+    data: {
+      craft: crafts.filter(Boolean),
+      'location.city': cities.filter(Boolean),
+      'location.state': states.filter(Boolean),
+    },
+  });
 });
 
 /**

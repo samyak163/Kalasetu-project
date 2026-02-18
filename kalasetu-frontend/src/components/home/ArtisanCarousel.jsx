@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../lib/axios.js';
@@ -23,11 +23,15 @@ export default function ArtisanCarousel({
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
 
+  // Stable serialization of params to avoid re-fetching on every render
+  const paramsKey = useMemo(() => JSON.stringify(params), [params]);
+
   useEffect(() => {
     let cancelled = false;
-    const fetch = async () => {
+    const parsedParams = JSON.parse(paramsKey);
+    const fetchData = async () => {
       try {
-        const { data } = await api.get(endpoint, { params });
+        const { data } = await api.get(endpoint, { params: parsedParams });
         if (cancelled) return;
         const list = data.data || data.artisans || data;
         setArtisans(Array.isArray(list) ? list.slice(0, 12) : []);
@@ -45,9 +49,9 @@ export default function ArtisanCarousel({
         if (!cancelled) setLoading(false);
       }
     };
-    fetch();
+    fetchData();
     return () => { cancelled = true; };
-  }, [endpoint, JSON.stringify(params)]);
+  }, [endpoint, paramsKey]);
 
   const scroll = (dir) => {
     scrollRef.current?.scrollBy({ left: dir * 280, behavior: 'smooth' });
