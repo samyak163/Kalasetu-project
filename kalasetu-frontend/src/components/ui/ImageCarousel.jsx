@@ -20,7 +20,7 @@ export default function ImageCarousel({ images = [], aspectRatio = '16/9', class
     if (!scrollRef.current) return;
     const { scrollLeft, clientWidth } = scrollRef.current;
     const idx = Math.round(scrollLeft / clientWidth);
-    setCurrent(idx);
+    setCurrent((prev) => (prev === idx ? prev : idx));
   };
 
   return (
@@ -34,7 +34,7 @@ export default function ImageCarousel({ images = [], aspectRatio = '16/9', class
       >
         {images.map((src, i) => (
           <img
-            key={i}
+            key={`${src}-${i}`}
             src={src}
             alt={`Image ${i + 1}`}
             className="w-full shrink-0 snap-start object-cover"

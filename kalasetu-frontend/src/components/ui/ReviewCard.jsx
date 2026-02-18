@@ -43,7 +43,7 @@ export default function ReviewCard({
       {images.length > 0 && (
         <div className="flex gap-2 mt-2 overflow-x-auto scrollbar-hide">
           {images.map((img, i) => (
-            <img key={i} src={img} alt={`Review photo ${i + 1}`} className="w-20 h-20 rounded-lg object-cover shrink-0" loading="lazy" />
+            <img key={`${img}-${i}`} src={img} alt={`Review photo ${i + 1}`} className="w-20 h-20 rounded-lg object-cover shrink-0" loading="lazy" />
           ))}
         </div>
       )}

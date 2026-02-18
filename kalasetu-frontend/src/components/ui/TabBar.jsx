@@ -9,10 +9,12 @@
 export default function TabBar({ tabs = [], activeTab, onTabChange, className = '' }) {
   return (
     <div className={`sticky top-0 z-sticky bg-white border-b border-gray-200 ${className}`}>
-      <div className="flex overflow-x-auto scrollbar-hide">
+      <div role="tablist" className="flex overflow-x-auto scrollbar-hide">
         {tabs.map(({ key, label, count }) => (
           <button
             key={key}
+            role="tab"
+            aria-selected={activeTab === key}
             onClick={() => onTabChange(key)}
             className={`relative px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
               activeTab === key

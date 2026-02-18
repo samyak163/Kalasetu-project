@@ -20,7 +20,7 @@ export default function Input({
         id={inputId}
         className={`${baseClass} resize-y min-h-[80px]`}
         aria-invalid={!!error}
-        aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
+        aria-describedby={inputId ? (error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined) : undefined}
         {...props}
       />
     );
@@ -30,7 +30,7 @@ export default function Input({
         id={inputId}
         className={`${baseClass} appearance-none bg-white`}
         aria-invalid={!!error}
-        aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
+        aria-describedby={inputId ? (error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined) : undefined}
         {...props}
       >
         {options.map((opt) => (
@@ -44,7 +44,7 @@ export default function Input({
         id={inputId}
         className={baseClass}
         aria-invalid={!!error}
-        aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
+        aria-describedby={inputId ? (error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined) : undefined}
         {...props}
       />
     );

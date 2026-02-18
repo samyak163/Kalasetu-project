@@ -6,11 +6,12 @@
  */
 export default function FilterChips({ chips = [], className = '' }) {
   return (
-    <div className={`flex gap-2 overflow-x-auto pb-2 scrollbar-hide ${className}`}>
+    <div role="group" aria-label="Filters" className={`flex gap-2 overflow-x-auto pb-2 scrollbar-hide ${className}`}>
       {chips.map(({ key, label, active, onClick }) => (
         <button
           key={key}
           onClick={onClick}
+          aria-pressed={active}
           className={`whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium border transition-colors shrink-0 ${
             active
               ? 'bg-brand-500 text-white border-brand-500'

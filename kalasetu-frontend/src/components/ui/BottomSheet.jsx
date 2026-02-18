@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -7,6 +7,7 @@ import { X } from 'lucide-react';
  * On desktop (md+), renders as a centered modal. On mobile, slides up from bottom.
  */
 export default function BottomSheet({ open, onClose, title, children, className = '' }) {
+  const titleId = useId();
   const overlayRef = useRef(null);
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function BottomSheet({ open, onClose, title, children, className 
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="bottomsheet-title"
+      aria-labelledby={titleId}
     >
       <div className={`w-full md:max-w-lg bg-white rounded-t-2xl md:rounded-card shadow-dropdown max-h-[90vh] flex flex-col animate-slide-up md:animate-scale-in ${className}`}>
         {/* Handle bar (mobile) */}
@@ -38,7 +39,7 @@ export default function BottomSheet({ open, onClose, title, children, className 
         </div>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-          <h3 id="bottomsheet-title" className="text-lg font-semibold font-display">{title}</h3>
+          <h3 id={titleId} className="text-lg font-semibold font-display">{title}</h3>
           <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
