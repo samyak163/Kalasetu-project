@@ -19,7 +19,9 @@
  * @see controllers/searchController.js — Handler implementations
  */
 import express from 'express';
+import { z } from 'zod';
 import { searchArtisans, getSearchFacets, getSearchSuggestions, getTrendingSearches, search } from '../controllers/searchController.js';
+import { validateRequest } from '../middleware/validateRequest.js';
 import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
@@ -31,13 +33,25 @@ const searchLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Zod schemas for query parameter validation
+const searchQuerySchema = z.object({
+  q: z.string().max(200).optional().default(''),
+  category: z.string().max(100).optional(),
+  service: z.string().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+});
+
+const suggestionsQuerySchema = z.object({
+  q: z.string().max(200).optional().default(''),
+});
+
 // Specific routes first (more specific before less specific)
-router.get('/artisans', searchLimiter, searchArtisans);
-router.get('/suggestions', searchLimiter, getSearchSuggestions);
+router.get('/artisans', searchLimiter, validateRequest({ query: searchQuerySchema }), searchArtisans);
+router.get('/suggestions', searchLimiter, validateRequest({ query: suggestionsQuerySchema }), getSearchSuggestions);
 router.get('/facets', searchLimiter, getSearchFacets);
 router.get('/trending', searchLimiter, getTrendingSearches);
 // Main search endpoint (returns artisans + categories) - must be last
-router.get('/', searchLimiter, search);
+router.get('/', searchLimiter, validateRequest({ query: searchQuerySchema }), search);
 
 export default router;
 

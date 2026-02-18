@@ -47,6 +47,7 @@ const formatArtisan = (artisan) => {
 };
 
 const performSearch = async (req) => {
+  // req.query is pre-validated and coerced by Zod via validateRequest middleware
   const { q = '', category, service, limit = 20 } = req.query;
   const trimmed = q.trim();
   let mode = 'artisan';
@@ -74,7 +75,8 @@ const performSearch = async (req) => {
     }
   }
 
-  const limitInt = Math.min(50, Math.max(1, parseInt(limit)));
+  // limit is already coerced to int and clamped 1-50 by Zod schema
+  const limitInt = limit;
 
   if (selectedService) {
     mode = 'service';
