@@ -1,3 +1,21 @@
+/**
+ * @file searchController.js — Search & Discovery
+ *
+ * Server-side search fallback for artisan and service discovery.
+ * The primary search experience uses Algolia on the frontend (InstantSearch);
+ * this controller provides a backend fallback and additional search endpoints.
+ *
+ * Endpoints:
+ *  GET /api/search/artisans   — Search artisans by name, craft, location
+ *  GET /api/search/services   — Search services by name, category
+ *  GET /api/search/categories — Search/list categories
+ *
+ * Tracks search events in PostHog for analytics.
+ *
+ * @see utils/algolia.js — Algolia indexing (artisan profiles)
+ * @see kalasetu-frontend/src/components/ArtisanSearch.jsx — Frontend Algolia UI
+ */
+
 import asyncHandler from '../utils/asyncHandler.js';
 import { trackEvent } from '../utils/posthog.js';
 import * as Sentry from '@sentry/node';
@@ -261,6 +279,27 @@ export const getSearchFacets = asyncHandler(async (req, res) => {
       message: 'Failed to get facets',
     });
   }
+});
+
+/**
+ * Get trending search terms
+ * GET /api/search/trending
+ * Returns hardcoded array initially; can later be driven by analytics.
+ */
+export const getTrendingSearches = asyncHandler(async (_req, res) => {
+  const trending = [
+    'Mehndi Artist',
+    'Pottery',
+    'Block Printing',
+    'Carpenter',
+    'Tailor',
+    'Home Cleaning',
+    'Electrician',
+    'Plumber',
+    'Painter',
+    'Embroidery',
+  ];
+  res.json({ success: true, trending });
 });
 
 // Alias for searchArtisans (same handler, used by GET /api/search)
