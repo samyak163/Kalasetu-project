@@ -5,6 +5,7 @@ import api from '../../../lib/axios.js';
 import { TabBar, Skeleton, EmptyState, Alert } from '../../../components/ui';
 import BookingCard from '../../../components/booking/BookingCard.jsx';
 import CancellationSheet from '../../../components/booking/CancellationSheet.jsx';
+import ReviewSheet from '../../../components/booking/ReviewSheet.jsx';
 import { CalendarDays, Star, MessageCircle, RotateCcw, XCircle } from 'lucide-react';
 
 const TAB_CONFIG = [
@@ -22,6 +23,8 @@ export default function UserBookings() {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [expandedId, setExpandedId] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null); // { id, status }
+  const [reviewTarget, setReviewTarget] = useState(null); // booking object or null
+  const [reviewedIds, setReviewedIds] = useState(new Set()); // track reviewed bookings locally
 
   const fetchBookings = async ({ silent = false } = {}) => {
     try {
@@ -40,6 +43,23 @@ export default function UserBookings() {
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  // Deep link: ?review=bookingId opens ReviewSheet automatically
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const reviewBookingId = params.get('review');
+    if (reviewBookingId && bookings.length > 0) {
+      const target = bookings.find(b => b._id === reviewBookingId && b.status === 'completed');
+      if (target) {
+        setActiveTab('completed');
+        setReviewTarget(target);
+      }
+      // Clear the query param
+      const url = new URL(window.location);
+      url.searchParams.delete('review');
+      window.history.replaceState({}, '', url);
+    }
+  }, [bookings]);
 
   // Count bookings per tab for badge display
   const tabs = useMemo(() =>
@@ -68,11 +88,14 @@ export default function UserBookings() {
           { label: 'Message Artisan', variant: 'outline', icon: MessageCircle, onClick: () => navigate(`/messages?artisan=${artisan?._id}`) },
           { label: 'Cancel Booking', variant: 'danger', icon: XCircle, onClick: () => setCancelTarget({ id: booking._id, status }) },
         ];
-      case 'completed':
-        return [
-          { label: 'Leave Review', variant: 'primary', icon: Star, onClick: () => showToast('Review feature coming soon', 'info') },
-          { label: 'Book Again', variant: 'secondary', icon: RotateCcw, onClick: () => navigate(artisanUrl) },
-        ];
+      case 'completed': {
+        const actions = [];
+        if (!reviewedIds.has(booking._id)) {
+          actions.push({ label: 'Leave Review', variant: 'primary', icon: Star, onClick: () => setReviewTarget(booking) });
+        }
+        actions.push({ label: 'Book Again', variant: 'secondary', icon: RotateCcw, onClick: () => navigate(artisanUrl) });
+        return actions;
+      }
       case 'cancelled':
       case 'rejected':
         return [
@@ -86,6 +109,11 @@ export default function UserBookings() {
   const handleCancelSuccess = () => {
     setCancelTarget(null);
     fetchBookings({ silent: true });
+  };
+
+  const handleReviewSuccess = () => {
+    setReviewedIds(prev => new Set(prev).add(reviewTarget?._id));
+    setReviewTarget(null);
   };
 
   if (initialLoading) {
@@ -165,6 +193,15 @@ export default function UserBookings() {
         bookingId={cancelTarget?.id}
         bookingStatus={cancelTarget?.status}
         onCancel={handleCancelSuccess}
+      />
+
+      {/* Review sheet */}
+      <ReviewSheet
+        open={!!reviewTarget}
+        onClose={() => setReviewTarget(null)}
+        onSuccess={handleReviewSuccess}
+        booking={reviewTarget}
+        artisanName={reviewTarget?.artisan?.fullName || 'Artisan'}
       />
     </div>
   );
