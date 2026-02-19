@@ -1,4 +1,24 @@
-﻿import mongoose from 'mongoose';
+﻿/**
+ * @file chatController.js — Stream Chat Integration
+ *
+ * Manages real-time messaging between artisans and users via Stream Chat SDK.
+ * All endpoints require `protectAny` (both user types can chat).
+ *
+ * Endpoints:
+ *  POST /api/chat/token        — Generate Stream Chat client token for current user
+ *  POST /api/chat/channel      — Create/get a DM channel between two participants
+ *  GET  /api/chat/channels     — List channels for current user
+ *  POST /api/chat/channel/:id/members — Add members to a channel
+ *  DELETE /api/chat/channel/:id/members — Remove members from a channel
+ *
+ * Stream Chat user IDs are mapped to KalaSetu MongoDB ObjectIds.
+ * Users are upserted in Stream when they first request a token.
+ *
+ * @see utils/streamChat.js — Stream Chat SDK helpers
+ * @see kalasetu-frontend/src/context/ChatContext.jsx — Frontend chat state
+ */
+
+import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import {
   createStreamUserToken,
@@ -139,10 +159,23 @@ export const getUserChannels = asyncHandler(async (req, res) => {
 export const addMembers = asyncHandler(async (req, res) => {
   const { channelType, channelId } = req.params;
   const { memberIds } = req.body;
+  const userId = req.user._id.toString();
 
   if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
     res.status(400);
     throw new Error('Member IDs array is required');
+  }
+
+  // Verify the requesting user is already a member of this channel
+  // (server-side SDK bypasses Stream's client auth, so we must validate here)
+  const channels = await queryChannels(
+    { type: channelType, id: channelId, members: { $in: [userId] } },
+    {},
+    { limit: 1 }
+  );
+  if (!channels || channels.length === 0) {
+    res.status(403);
+    throw new Error('Not authorized — you must be a channel member to add others');
   }
 
   const response = await addChannelMembers(channelType, channelId, memberIds);
@@ -167,10 +200,22 @@ export const addMembers = asyncHandler(async (req, res) => {
 export const removeMembers = asyncHandler(async (req, res) => {
   const { channelType, channelId } = req.params;
   const { memberIds } = req.body;
+  const userId = req.user._id.toString();
 
   if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
     res.status(400);
     throw new Error('Member IDs array is required');
+  }
+
+  // Verify the requesting user is already a member of this channel
+  const channels = await queryChannels(
+    { type: channelType, id: channelId, members: { $in: [userId] } },
+    {},
+    { limit: 1 }
+  );
+  if (!channels || channels.length === 0) {
+    res.status(403);
+    throw new Error('Not authorized — you must be a channel member to remove others');
   }
 
   const response = await removeChannelMembers(channelType, channelId, memberIds);

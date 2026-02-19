@@ -1,5 +1,22 @@
+/**
+ * @file callHistoryController.js — Call History Retrieval
+ *
+ * Provides paginated call history for the current user.
+ * Queries both artisan and user fields to find calls regardless of role.
+ * Requires `protectAny`.
+ *
+ * Endpoints:
+ *  GET /api/calls/history — Paginated call history with participant details
+ *
+ * @see models/callHistoryModel.js — Call log schema
+ * @see callController.js — Call initiation (creates history entries)
+ */
+
+import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import CallHistory from '../models/callHistoryModel.js';
+import Artisan from '../models/artisanModel.js';
+import User from '../models/userModel.js';
 
 // @desc    Get call history for logged-in user
 // @route   GET /api/calls/history
@@ -34,13 +51,35 @@ export const getCallHistory = asyncHandler(async (req, res) => {
 // @route   POST /api/calls/history
 // @access  Private
 export const createCallHistory = asyncHandler(async (req, res) => {
-  const { roomName, artisanId, userId, startedAt } = req.body;
+  const { roomName, artisanId } = req.body;
+  const callerId = req.user._id;
+
+  if (!roomName) {
+    res.status(400);
+    throw new Error('Room name is required');
+  }
+
+  if (!artisanId || !mongoose.Types.ObjectId.isValid(artisanId)) {
+    res.status(400);
+    throw new Error('Valid artisan ID is required');
+  }
+
+  // Verify the artisan exists (prevents spoofed call records)
+  const artisanExists = await Artisan.exists({ _id: artisanId });
+  if (!artisanExists) {
+    res.status(404);
+    throw new Error('Artisan not found');
+  }
+
+  // Determine user vs artisan based on req.accountType (set by protectAny)
+  // If the caller is an artisan, they are the artisan field; otherwise they are the user field
+  const isCallerArtisan = req.accountType === 'artisan' || callerId.toString() === artisanId;
 
   const call = await CallHistory.create({
     roomName,
-    user: userId || req.user._id,
-    artisan: artisanId,
-    startedAt: startedAt || new Date(),
+    user: isCallerArtisan ? undefined : callerId,
+    artisan: isCallerArtisan ? callerId : artisanId,
+    startedAt: new Date(),
     status: 'active',
   });
 

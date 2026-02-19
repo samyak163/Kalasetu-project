@@ -1,3 +1,23 @@
+/**
+ * @file videoController.js — Daily.co Video Call Management
+ *
+ * Creates and manages Daily.co video rooms for artisan-user consultations.
+ * All endpoints require `protectAny` (both user types can join calls).
+ *
+ * Endpoints:
+ *  POST   /api/video/room         — Create a new Daily.co room
+ *  GET    /api/video/room/:name   — Get room details by name
+ *  DELETE /api/video/room/:name   — Delete a room
+ *  POST   /api/video/token        — Generate a meeting token for a participant
+ *  GET    /api/video/rooms        — List all active rooms (admin/debug)
+ *
+ * Rooms are created per-booking and named with booking IDs for traceability.
+ *
+ * @see utils/dailyco.js — Daily.co REST API helpers
+ * @see models/bookingModel.js — videoRoomName and videoRoomUrl fields
+ * @see kalasetu-frontend/src/pages/VideoCallPage.jsx — Frontend video UI
+ */
+
 import asyncHandler from '../utils/asyncHandler.js';
 import {
   createDailyRoom,
@@ -99,6 +119,13 @@ export const getRoomDetails = asyncHandler(async (req, res) => {
  */
 export const deleteRoom = asyncHandler(async (req, res) => {
   const { roomName } = req.params;
+  const userId = req.user._id.toString();
+
+  // Only the room creator can delete it (room names follow room-{userId}-{timestamp})
+  if (!roomName.startsWith(`room-${userId}-`)) {
+    res.status(403);
+    throw new Error('Not authorized to delete this room');
+  }
 
   const success = await deleteDailyRoom(roomName);
 
@@ -119,26 +146,37 @@ export const deleteRoom = asyncHandler(async (req, res) => {
  * @access  Protected
  */
 export const getToken = asyncHandler(async (req, res) => {
-  const { roomName, isOwner, expiresIn } = req.body;
+  const { roomName, expiresIn } = req.body;
 
   if (!roomName) {
     res.status(400);
     throw new Error('Room name is required');
   }
 
+  // Verify the room exists before issuing a token
+  const room = await getDailyRoom(roomName);
+  if (!room) {
+    res.status(404);
+    throw new Error('Room not found');
+  }
+
   const user = req.user;
   const userId = user._id.toString();
   const userName = user.fullName || user.username;
 
+  // isOwner determined server-side: only the room creator gets owner privileges
+  // Room names follow pattern room-{userId}-{timestamp}
+  const isOwner = roomName.startsWith(`room-${userId}-`);
+
   // Calculate expiration timestamp
-  const expiresAt = expiresIn 
-    ? Math.floor(Date.now() / 1000) + expiresIn 
+  const expiresAt = expiresIn
+    ? Math.floor(Date.now() / 1000) + Math.min(expiresIn, 7200) // Cap at 2 hours
     : Math.floor(Date.now() / 1000) + 3600; // Default 1 hour
 
   const token = await createMeetingToken(roomName, {
     userId,
     userName,
-    isOwner: isOwner || false,
+    isOwner,
     expiresAt,
   });
 
