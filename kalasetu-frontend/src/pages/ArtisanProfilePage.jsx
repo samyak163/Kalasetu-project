@@ -17,7 +17,11 @@ import ProfileHeader from '../components/artisan/ProfileHeader.jsx';
 import ServicesTab from '../components/artisan/ServicesTab.jsx';
 import ReviewsTab from '../components/artisan/ReviewsTab.jsx';
 import AboutTab from '../components/artisan/AboutTab.jsx';
-import BookingBottomSheet from '../components/artisan/BookingBottomSheet.jsx';
+
+// Booking flow components (Phase 5 — Swiggy/UC BottomSheet checkout)
+import ServiceSummarySheet from '../components/booking/ServiceSummarySheet.jsx';
+import PaymentSheet from '../components/booking/PaymentSheet.jsx';
+import BookingConfirmation from '../components/booking/BookingConfirmation.jsx';
 
 /**
  * Rebuilt ArtisanProfilePage — UC/Zomato/Swiggy inspired.
@@ -29,7 +33,10 @@ import BookingBottomSheet from '../components/artisan/BookingBottomSheet.jsx';
  *     — Products and Custom tabs will be added by the offering redesign plan
  *  4. Tab content area
  *  5. StickyBottomCTA (mobile "Book Now" bar)
- *  6. BookingBottomSheet (replaces old modal)
+ *  6. Multi-step booking flow:
+ *     Step 1: ServiceSummarySheet (date/time, notes)
+ *     Step 2: PaymentSheet (price breakdown, SlideToConfirm, Razorpay)
+ *     Step 3: BookingConfirmation (full-screen celebration)
  */
 const ArtisanProfilePage = () => {
   const { publicId } = useParams();
@@ -43,7 +50,13 @@ const ArtisanProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('services');
-  const [bookingService, setBookingService] = useState(null); // null = closed, object = open BottomSheet
+
+  // Multi-step booking flow state
+  // step: null | 'summary' | 'payment' | 'confirmation'
+  const [bookingStep, setBookingStep] = useState(null);
+  const [bookingService, setBookingService] = useState(null);
+  const [bookingData, setBookingData] = useState(null); // { date, time, notes }
+  const [bookingResult, setBookingResult] = useState(null); // { bookingId, paymentId, bookingStatus }
 
   // Fetch all data in parallel
   useEffect(() => {
@@ -110,18 +123,45 @@ const ArtisanProfilePage = () => {
     }
   }, [loading, tabs]); // activeTab intentionally excluded to avoid extra render cycle
 
-  // Action handlers
+  // ---------- Action handlers ----------
+
   const handleChat = useCallback(() => {
     if (!user) { showToast('Please log in to chat with artisans', 'error'); navigate('/login'); return; }
     if (userType !== 'user') { showToast('Please log in as a customer to chat', 'error'); return; }
     navigate(`/messages?artisan=${artisan._id}`);
   }, [user, userType, artisan, navigate, showToast]);
 
+  // Opens Step 1 of the booking flow
   const handleBook = useCallback((service = null) => {
     if (!user) { showToast('Please log in to book services', 'error'); navigate('/login'); return; }
     if (userType !== 'user') { showToast('Please log in as a customer to book', 'error'); return; }
-    setBookingService(service || services[0] || null);
+    const selectedService = service || services[0] || null;
+    if (!selectedService) { showToast('No services available to book', 'error'); return; }
+    setBookingService(selectedService);
+    setBookingData(null);
+    setBookingResult(null);
+    setBookingStep('summary');
   }, [user, userType, services, navigate, showToast]);
+
+  // Step 1 → Step 2: ServiceSummarySheet "Continue" pressed
+  const handleSummaryContinue = useCallback((data) => {
+    setBookingData(data);
+    setBookingStep('payment');
+  }, []);
+
+  // Step 2 → Step 3: Payment verified, booking created
+  const handlePaymentSuccess = useCallback((result) => {
+    setBookingResult(result);
+    setBookingStep('confirmation');
+  }, []);
+
+  // Reset booking flow
+  const handleBookingClose = useCallback(() => {
+    setBookingStep(null);
+    setBookingService(null);
+    setBookingData(null);
+    setBookingResult(null);
+  }, []);
 
   // ---------- Loading state ----------
   if (loading) {
@@ -228,13 +268,39 @@ const ArtisanProfilePage = () => {
           </StickyBottomCTA>
         )}
 
-        {/* 6. Booking BottomSheet */}
-        <BookingBottomSheet
+        {/* 6. Multi-step Booking Flow */}
+
+        {/* Step 1: Service Summary + Date/Time */}
+        <ServiceSummarySheet
           service={bookingService}
           artisan={artisan}
-          onClose={() => setBookingService(null)}
-          showToast={showToast}
+          open={bookingStep === 'summary'}
+          onClose={handleBookingClose}
+          onContinue={handleSummaryContinue}
         />
+
+        {/* Step 2: Payment Confirmation */}
+        <PaymentSheet
+          service={bookingService}
+          artisan={artisan}
+          bookingData={bookingData}
+          open={bookingStep === 'payment'}
+          onClose={() => setBookingStep('summary')} // back to Step 1
+          onSuccess={handlePaymentSuccess}
+          onError={(msg) => showToast(msg, 'error')}
+        />
+
+        {/* Step 3: Booking Confirmation (full-screen) */}
+        {bookingStep === 'confirmation' && (
+          <BookingConfirmation
+            service={bookingService}
+            artisan={artisan}
+            bookingData={bookingData}
+            bookingId={bookingResult?.bookingId}
+            bookingStatus={bookingResult?.bookingStatus}
+            onClose={handleBookingClose}
+          />
+        )}
       </div>
     </>
   );
