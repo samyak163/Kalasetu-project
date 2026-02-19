@@ -22,6 +22,7 @@ export default function PaymentSheet({ service, artisan, bookingData, open, onCl
   const { user } = useAuth();
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [slideKey, setSlideKey] = useState(0); // Increment to force SlideToConfirm reset
 
   const servicePrice = service?.price || 0;
   // Platform fee (transparent even if Rs.0 — design doc requirement)
@@ -81,8 +82,9 @@ export default function PaymentSheet({ service, artisan, bookingData, open, onCl
     } catch (err) {
       const message = err.response?.data?.message || err.message || 'Payment failed. Please try again.';
 
-      // Razorpay cancellation is not a real error
+      // Razorpay cancellation — reset slider so user can retry
       if (message === 'Payment cancelled by user') {
+        setSlideKey(k => k + 1);
         setProcessing(false);
         return;
       }
@@ -181,6 +183,7 @@ export default function PaymentSheet({ service, artisan, bookingData, open, onCl
         ) : (
           <div className={processing ? 'opacity-50 pointer-events-none' : ''}>
             <SlideToConfirm
+              key={slideKey}
               label={`Slide to pay \u20B9${totalAmount.toLocaleString('en-IN')}`}
               onConfirm={handleConfirm}
               disabled={processing}
