@@ -78,10 +78,12 @@ export const createReview = asyncHandler(async (req, res) => {
   }
 
   // Create review with verified booking (mark as verified since booking exists)
+  // Auto-populate service from booking for per-service rating aggregation
   const review = await Review.create({
     artisan: artisanId,
     user: userId,
     booking: bookingId || validBooking._id,
+    service: validBooking.service || undefined,
     rating,
     comment,
     images,
