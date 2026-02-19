@@ -1,10 +1,34 @@
+/**
+ * @file artisanController.js — Public Artisan Browsing
+ *
+ * Handles PUBLIC (unauthenticated) artisan discovery — listing, searching,
+ * filtering, and viewing artisan profiles. No auth middleware required.
+ *
+ * Endpoints:
+ *  GET /api/artisans              — Paginated list of active artisans (sorted by rating)
+ *  GET /api/artisans/:id          — Get artisan by MongoDB ObjectId
+ *  GET /api/artisans/p/:publicId  — Get artisan by public nanoid (URL-friendly)
+ *  GET /api/artisans/nearby       — Geospatial search with distance (2dsphere)
+ *  GET /api/artisans/featured     — Top 8 artisans for homepage display
+ *  PUT /api/artisans/profile      — Update profile (legacy, prefer artisanProfileController)
+ *
+ * Security: PUBLIC_FIELDS whitelist ensures sensitive data (bank details,
+ * verification documents, auth tokens, OTP codes) is never exposed.
+ *
+ * Geospatial: getNearbyArtisans uses MongoDB $geoNear aggregation with
+ * fallback to top-rated artisans if the geo query fails or times out.
+ *
+ * @see artisanProfileController.js — Authenticated profile management
+ * @see routes/artisanRoutes.js — Route definitions for /api/artisans/*
+ */
+
 import Artisan from '../models/artisanModel.js';
 import { trackEvent } from '../utils/posthog.js';
 import * as Sentry from '@sentry/node';
 
 // Fields safe for public consumption (excludes bank details, verification docs, auth tokens, OTP)
 const PUBLIC_FIELDS = [
-  'publicId', 'slug', 'fullName', 'email', 'phoneNumber', 'craft',
+  'publicId', 'slug', 'fullName', 'craft',
   'businessName', 'tagline', 'location', 'bio',
   'profileImageUrl', 'coverImageUrl', 'portfolioImageUrls',
   'isActive', 'isVerified', 'emailVerified',
@@ -173,6 +197,7 @@ const getNearbyArtisans = async (req, res) => {
                         maxDistance: radiusInMeters,
                         spherical: true,
                         key: 'location',
+                        query: { isActive: true },
                     },
                 },
                 { $addFields: { distanceKm: { $round: [{ $divide: ['$distance', 1000] }, 1] } } },
@@ -186,8 +211,6 @@ const getNearbyArtisans = async (req, res) => {
             if (parseFloat(minRating) > 0) {
                 match.averageRating = { $gte: parseFloat(minRating) };
             }
-            // Note: isActive field may not exist in all schemas
-
             if (Object.keys(match).length) pipeline.push({ $match: match });
 
             pipeline.push({
@@ -234,8 +257,8 @@ const getNearbyArtisans = async (req, res) => {
         } catch (geoError) {
             console.warn('Geospatial query failed or timed out, using fallback:', geoError.message);
             
-            // Fallback: return top-rated artisans
-            const fallbackArtisans = await Artisan.find({})
+            // Fallback: return top-rated active artisans
+            const fallbackArtisans = await Artisan.find({ isActive: true })
                 .select('fullName businessName profileImageUrl craft location address averageRating totalReviews publicId')
                 .sort({ averageRating: -1 })
                 .limit(maxResults)

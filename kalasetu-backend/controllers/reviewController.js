@@ -1,3 +1,22 @@
+/**
+ * @file reviewController.js — Service Reviews & Ratings
+ *
+ * Handles review creation, listing, and artisan responses.
+ * Only CUSTOMERS (Users) can create reviews; artisans can respond.
+ *
+ * Endpoints:
+ *  POST /api/reviews              — Create a review (userProtect — customers only)
+ *  GET  /api/reviews/artisan/:id  — Get reviews for an artisan (public)
+ *  POST /api/reviews/:id/respond  — Artisan responds to a review (protect)
+ *  POST /api/reviews/:id/helpful  — Vote a review as helpful (userProtect)
+ *
+ * On review creation, the artisan's averageRating and totalReviews are
+ * recalculated via aggregation and denormalized onto the Artisan document.
+ *
+ * @see models/reviewModel.js — Review schema with partial unique index
+ * @see models/artisanModel.js — averageRating, totalReviews (denormalized)
+ */
+
 import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import { z } from 'zod';
@@ -10,7 +29,7 @@ const createReviewSchema = z.object({
   artisanId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid artisan ID'),
   bookingId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid booking ID').optional(),
   rating: z.number().int().min(1, 'Rating must be at least 1').max(5, 'Rating must be at most 5'),
-  comment: z.string().max(2000, 'Comment must be under 2000 characters').optional(),
+  comment: z.string().min(1, 'Comment is required').max(1000, 'Comment must be under 1000 characters'),
   images: z.array(z.string().url()).max(10).optional(),
 });
 

@@ -1,3 +1,23 @@
+/**
+ * @file artisanServiceController.js — Artisan Service CRUD
+ *
+ * Manages the services an artisan offers (e.g., "Bridal Mehndi — Rs 5000").
+ * Artisans create/update/delete their own services; public users can list services.
+ *
+ * Endpoints:
+ *  GET    /api/services              — List services (filter by category, artisan, search)
+ *  GET    /api/services/artisan/:publicId — Get services by artisan publicId
+ *  POST   /api/artisan/services      — Create a new service (requires `protect`)
+ *  PUT    /api/artisan/services/:id  — Update a service (owner only)
+ *  DELETE /api/artisan/services/:id  — Delete a service (owner only)
+ *
+ * Ownership: createService/updateService/deleteService verify that the authenticated
+ * artisan owns the service document before allowing modifications.
+ *
+ * @see models/artisanServiceModel.js — Service schema
+ * @see models/categoryModel.js — Category lookup for denormalized categoryName
+ */
+
 import asyncHandler from '../utils/asyncHandler.js';
 import ArtisanService from '../models/artisanServiceModel.js';
 import Category from '../models/categoryModel.js';
@@ -22,6 +42,10 @@ export const createService = asyncHandler(async (req, res) => {
   if (!artisanId) return res.status(401).json({ success: false, message: 'Unauthorized' });
   const { categoryId, name, description, price = 0, durationMinutes = 60, images = [] } = req.body || {};
   if (!categoryId || !name) return res.status(400).json({ success: false, message: 'categoryId and name are required' });
+  const parsedPrice = Number(price);
+  const parsedDuration = Number(durationMinutes);
+  if (isNaN(parsedPrice) || parsedPrice < 0) return res.status(400).json({ success: false, message: 'Price must be a non-negative number' });
+  if (isNaN(parsedDuration) || parsedDuration < 1 || parsedDuration > 1440) return res.status(400).json({ success: false, message: 'Duration must be between 1 and 1440 minutes' });
   const category = await Category.findById(categoryId).lean();
   if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
   const doc = await ArtisanService.create({
@@ -64,7 +88,6 @@ export const deleteService = asyncHandler(async (req, res) => {
 
 export const getServicesByArtisanPublicId = asyncHandler(async (req, res) => {
   const { publicId } = req.params;
-  const Artisan = (await import('../models/artisanModel.js')).default;
   const artisan = await Artisan.findOne({ publicId }).select('_id');
   if (!artisan) {
     return res.status(404).json({ success: false, message: 'Artisan not found' });

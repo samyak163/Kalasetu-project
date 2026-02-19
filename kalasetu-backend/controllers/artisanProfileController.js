@@ -1,3 +1,36 @@
+/**
+ * @file artisanProfileController.js — Authenticated Artisan Profile Management
+ *
+ * Handles all AUTHENTICATED profile operations for artisans — updating profile info,
+ * uploading photos, managing verification documents, bank details, slug, and email/phone
+ * change verification. Requires `protect` middleware (artisan-only).
+ *
+ * Endpoints:
+ *  GET    /api/artisan/profile            — Get own full profile (with decrypted bank details)
+ *  PUT    /api/artisan/profile            — Update profile fields (Zod validated)
+ *  POST   /api/artisan/profile/photo      — Upload profile photo to Cloudinary
+ *  DELETE /api/artisan/profile/photo      — Reset to placeholder photo
+ *  PUT    /api/artisan/profile/documents  — Update verification document URLs
+ *  POST   /api/artisan/profile/documents/upload — Upload verification doc file
+ *  GET    /api/artisan/profile/verification — Get verification status
+ *  PUT    /api/artisan/profile/bank       — Update bank details (encrypted)
+ *  PUT    /api/artisan/profile/slug       — Set vanity URL slug (edit-once)
+ *  POST   /api/artisan/profile/verify-email/init    — Start email change OTP
+ *  POST   /api/artisan/profile/verify-email/confirm — Confirm email change OTP
+ *  POST   /api/artisan/profile/verify-phone/init    — Start phone change (501 — no SMS provider)
+ *  POST   /api/artisan/profile/verify-phone/confirm — Confirm phone change (501)
+ *
+ * Security:
+ *  - Bank account numbers are encrypted at rest (utils/crypto.js)
+ *  - Input sanitization strips script tags and control characters
+ *  - Immutable fields (publicId, password) are explicitly blocked from updates
+ *  - Email verification uses timing-safe comparison to prevent timing attacks
+ *  - All mutations are audit-logged (utils/audit.js)
+ *
+ * @see artisanController.js — Public browsing (no auth required)
+ * @see routes/artisanProfileRoutes.js — Route definitions
+ */
+
 import Artisan from '../models/artisanModel.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { z } from 'zod';
@@ -61,9 +94,8 @@ const profileUpdateSchema = z.object({
   tagline: z.string().max(160).optional(),
   bio: z.string().max(500).optional(),
   craft: z.string().max(120).optional(),
-  phoneNumber: z.string().max(20).optional(),
+  // email and phoneNumber intentionally excluded — changes require OTP verification flow
   businessPhone: z.string().max(20).optional(),
-  email: z.string().email().optional(),
   whatsappNumber: z.string().max(20).optional(),
   yearsOfExperience: z.string().optional(),
   teamSize: z.string().optional(),
