@@ -217,19 +217,45 @@ export const getSearchSuggestions = asyncHandler(async (req, res) => {
     return res.json({ success: true, suggestions: { categories: [], services: [], artisans: [] } });
   }
   const limit = 5;
+  const prefixRegex = `^${escapeRegex(q)}`;
+
   // Categories by prefix
-  const categories = await Category.find({ name: { $regex: `^${escapeRegex(q)}`, $options: 'i' }, active: true })
+  const categories = await Category.find({ name: { $regex: prefixRegex, $options: 'i' }, active: true })
     .select('name slug')
     .limit(limit)
     .lean();
-  // Services by prefix
+
+  // Actual ArtisanService offerings by prefix
   const services = await ArtisanService.aggregate([
-    { $match: { name: { $regex: `^${escapeRegex(q)}`, $options: 'i' }, isActive: true } },
+    { $match: { name: { $regex: prefixRegex, $options: 'i' }, isActive: true } },
     { $group: { _id: { name: '$name', categoryName: '$categoryName' }, count: { $sum: 1 } } },
     { $project: { name: '$_id.name', categoryName: '$_id.categoryName', count: 1, _id: 0 } },
     { $limit: limit }
   ]);
-  // Only show artisans if the query looks like a person name (2+ words) or explicit
+
+  // Suggested service templates from categories (e.g., "Pottery", "Tailor")
+  // These fill remaining slots after real ArtisanService results
+  if (services.length < limit) {
+    const categoryMatches = await Category.find({
+      'suggestedServices.name': { $regex: prefixRegex, $options: 'i' },
+      active: true,
+    }).select('name suggestedServices').lean();
+
+    const existingNames = new Set(services.map(s => s.name.toLowerCase()));
+    const prefixRe = new RegExp(prefixRegex, 'i');
+    for (const cat of categoryMatches) {
+      for (const svc of cat.suggestedServices) {
+        if (prefixRe.test(svc.name) && !existingNames.has(svc.name.toLowerCase())) {
+          services.push({ name: svc.name, categoryName: cat.name });
+          existingNames.add(svc.name.toLowerCase());
+          if (services.length >= limit) break;
+        }
+      }
+      if (services.length >= limit) break;
+    }
+  }
+
+  // Only show artisans if the query looks like a person name (2+ words)
   const isLikelyName = q.trim().includes(' ');
   let artisans = [];
   if (isLikelyName) {
@@ -238,6 +264,7 @@ export const getSearchSuggestions = asyncHandler(async (req, res) => {
       .limit(limit)
       .lean();
   }
+
   res.json({ success: true, suggestions: { categories, services, artisans } });
 });
 

@@ -12,7 +12,6 @@ import { optimizeImage } from '../../utils/cloudinary.js';
  */
 export default function ProfileHeader({ artisan, serviceCount = 0, onChat, onBook, className = '' }) {
   const hasLocation = artisan.location?.city && artisan.location?.state;
-  const minPrice = artisan._minPrice; // computed by parent from services
   const isNewArtisan = !artisan.averageRating && !artisan.totalReviews;
 
   return (
@@ -86,9 +85,7 @@ export default function ProfileHeader({ artisan, serviceCount = 0, onChat, onBoo
           {serviceCount > 0 && (
             <Button variant="primary" size="sm" onClick={onBook} className="flex-1 sm:flex-none">
               <Calendar className="h-4 w-4" />
-              <span className="sm:hidden md:inline">
-                {minPrice ? `Book \u2014 \u20B9${minPrice.toLocaleString('en-IN')}` : 'Book Now'}
-              </span>
+              <span className="sm:hidden md:inline">Book Now</span>
             </Button>
           )}
         </div>

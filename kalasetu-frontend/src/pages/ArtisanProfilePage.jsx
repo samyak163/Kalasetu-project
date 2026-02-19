@@ -19,6 +19,7 @@ import ReviewsTab from '../components/artisan/ReviewsTab.jsx';
 import AboutTab from '../components/artisan/AboutTab.jsx';
 
 // Booking flow components (Phase 5 — Swiggy/UC BottomSheet checkout)
+import ServicePickerSheet from '../components/booking/ServicePickerSheet.jsx';
 import ServiceSummarySheet from '../components/booking/ServiceSummarySheet.jsx';
 import PaymentSheet from '../components/booking/PaymentSheet.jsx';
 import BookingConfirmation from '../components/booking/BookingConfirmation.jsx';
@@ -52,7 +53,7 @@ const ArtisanProfilePage = () => {
   const [activeTab, setActiveTab] = useState('services');
 
   // Multi-step booking flow state
-  // step: null | 'summary' | 'payment' | 'confirmation'
+  // step: null | 'picker' | 'summary' | 'payment' | 'confirmation'
   const [bookingStep, setBookingStep] = useState(null);
   const [bookingService, setBookingService] = useState(null);
   const [bookingData, setBookingData] = useState(null); // { date, time, notes }
@@ -91,12 +92,6 @@ const ArtisanProfilePage = () => {
     return () => { cancelled = true; };
   }, [publicId]);
 
-  // Compute min price across services for StickyBottomCTA
-  const minPrice = useMemo(() => {
-    const prices = services.filter(s => s.price > 0).map(s => s.price);
-    return prices.length > 0 ? Math.min(...prices) : null;
-  }, [services]);
-
   // Build portfolio hero images (cover + best portfolio images)
   const heroImages = useMemo(() => {
     if (!artisan) return [];
@@ -134,17 +129,38 @@ const ArtisanProfilePage = () => {
     navigate(`/messages?artisan=${artisan._id}`);
   }, [user, userType, artisan, navigate, showToast]);
 
-  // Opens Step 1 of the booking flow
+  // Opens the booking flow — picker if multiple services, summary if single or specific
   const handleBook = useCallback((service = null) => {
     if (!user) { showToast('Please log in to book services', 'error'); navigate('/login'); return; }
     if (userType !== 'user') { showToast('Please log in as a customer to book', 'error'); return; }
-    const selectedService = service || services[0] || null;
-    if (!selectedService) { showToast('No services available to book', 'error'); return; }
-    setBookingService(selectedService);
+    if (!services.length) { showToast('No services available to book', 'error'); return; }
+
     setBookingData(null);
     setBookingResult(null);
-    setBookingStep('summary');
+
+    // Specific service passed (from ServicesTab card) → skip picker
+    if (service) {
+      setBookingService(service);
+      setBookingStep('summary');
+      return;
+    }
+
+    // Single service → go directly to summary
+    if (services.length === 1) {
+      setBookingService(services[0]);
+      setBookingStep('summary');
+      return;
+    }
+
+    // Multiple services, none chosen → open picker
+    setBookingStep('picker');
   }, [user, userType, services, navigate, showToast]);
+
+  // ServicePickerSheet → user selected a service
+  const handlePickerSelect = useCallback((service) => {
+    setBookingService(service);
+    setBookingStep('summary');
+  }, []);
 
   // Step 1 → Step 2: ServiceSummarySheet "Continue" pressed
   const handleSummaryContinue = useCallback((data) => {
@@ -196,8 +212,6 @@ const ArtisanProfilePage = () => {
     );
   }
 
-  // Augment artisan with computed min price for ProfileHeader
-  const artisanWithMeta = { ...artisan, _minPrice: minPrice };
 
   return (
     <>
@@ -228,7 +242,7 @@ const ArtisanProfilePage = () => {
         <div className="max-w-container mx-auto px-4 -mt-6 relative z-10 space-y-4">
           {/* 2. Profile Header */}
           <ProfileHeader
-            artisan={artisanWithMeta}
+            artisan={artisan}
             serviceCount={services.length}
             onChat={handleChat}
             onBook={() => handleBook()}
@@ -264,14 +278,20 @@ const ArtisanProfilePage = () => {
         {services.length > 0 && (
           <StickyBottomCTA>
             <Button variant="primary" className="w-full" onClick={() => handleBook()}>
-              {minPrice
-                ? `Book Now \u2014 From \u20B9${minPrice.toLocaleString('en-IN')}`
-                : 'Book Now'}
+              Book Now
             </Button>
           </StickyBottomCTA>
         )}
 
         {/* 6. Multi-step Booking Flow */}
+
+        {/* Step 0: Service Picker (when artisan has 2+ services and no specific one was chosen) */}
+        <ServicePickerSheet
+          services={services}
+          open={bookingStep === 'picker'}
+          onClose={handleBookingClose}
+          onSelect={handlePickerSelect}
+        />
 
         {/* Step 1: Service Summary + Date/Time
             key forces remount when service changes, resetting local date/time state */}
