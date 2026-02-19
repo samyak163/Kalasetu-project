@@ -1,15 +1,22 @@
+import { useState } from 'react';
 import { Clock, IndianRupee } from 'lucide-react';
 import { Card, Button, EmptyState } from '../ui/index.js';
 import { optimizeImage } from '../../utils/cloudinary.js';
+import ServiceDetailSheet from './ServiceDetailSheet.jsx';
 
 /**
  * Services tab content for the artisan profile page.
  * UC-inspired service cards with image, name, description, price, duration, and Book CTA.
  *
+ * Tapping a card opens the ServiceDetailSheet with full images, stats, and description.
+ * The "Book This Service" button on the card still goes directly to booking (power user shortcut).
+ *
  * When the offering redesign adds ServiceCard to the design system,
  * this component should adopt it. For now, uses Card + custom layout.
  */
-export default function ServicesTab({ services = [], onBook, className = '' }) {
+export default function ServicesTab({ services = [], artisan, onBook, className = '' }) {
+  const [detailService, setDetailService] = useState(null);
+
   if (services.length === 0) {
     return (
       <EmptyState
@@ -21,19 +28,40 @@ export default function ServicesTab({ services = [], onBook, className = '' }) {
   }
 
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${className}`}>
-      {services.map((service) => (
-        <ServiceItem key={service._id} service={service} onBook={onBook} />
-      ))}
-    </div>
+    <>
+      <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${className}`}>
+        {services.map((service) => (
+          <ServiceItem
+            key={service._id}
+            service={service}
+            onBook={onBook}
+            onDetail={() => setDetailService(service)}
+          />
+        ))}
+      </div>
+
+      <ServiceDetailSheet
+        service={detailService}
+        artisan={artisan}
+        open={!!detailService}
+        onClose={() => setDetailService(null)}
+        onBook={onBook}
+      />
+    </>
   );
 }
 
-function ServiceItem({ service, onBook }) {
+function ServiceItem({ service, onBook, onDetail }) {
   const hasImage = service.images?.length > 0;
 
   return (
-    <div className="bg-white rounded-card shadow-card overflow-hidden hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col">
+    <div
+      className="bg-white rounded-card shadow-card overflow-hidden hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col"
+      role="button"
+      tabIndex={0}
+      onClick={onDetail}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onDetail(); } }}
+    >
       {/* Service image — outside padding area for edge-to-edge display */}
       {hasImage && (
         <img
@@ -65,12 +93,12 @@ function ServiceItem({ service, onBook }) {
           )}
         </div>
 
-        {/* Book CTA */}
+        {/* Book CTA — stopPropagation so card tap handler doesn't fire */}
         <Button
           variant="primary"
           size="sm"
           className="mt-3 w-full"
-          onClick={() => onBook(service)}
+          onClick={(e) => { e.stopPropagation(); onBook(service); }}
         >
           Book This Service
         </Button>

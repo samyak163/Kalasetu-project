@@ -245,7 +245,7 @@ const ArtisanProfilePage = () => {
           {/* 4. Tab Content */}
           <div className="min-h-[300px]">
             {activeTab === 'services' && (
-              <ServicesTab services={services} onBook={handleBook} />
+              <ServicesTab services={services} artisan={artisan} onBook={handleBook} />
             )}
             {activeTab === 'reviews' && (
               <ReviewsTab
