@@ -21,11 +21,6 @@ const OrderHistoryTab = ({ user }) => {
   const [refundLoading, setRefundLoading] = useState(false);
   const [refundRequests, setRefundRequests] = useState({});
 
-  useEffect(() => {
-    fetchOrders();
-    fetchRefundRequests();
-  }, []);
-
   const fetchOrders = async () => {
     try {
       const res = await api.get('/api/bookings/me');
@@ -60,9 +55,11 @@ const OrderHistoryTab = ({ user }) => {
     }
   };
 
+  // Single mount effect — filtering is client-side so no need to re-fetch on statusFilter change
   useEffect(() => {
     fetchOrders();
-  }, [statusFilter]);
+    fetchRefundRequests();
+  }, []);
 
   const filteredOrders = orders
     .filter(order => {

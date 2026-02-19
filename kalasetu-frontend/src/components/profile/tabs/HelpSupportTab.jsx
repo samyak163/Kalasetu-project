@@ -114,8 +114,8 @@ const HelpSupportTab = () => {
       setTicketsLoading(true);
       const response = await api.get('/api/support');
       setTickets(response.data.data || []);
-    } catch {
-      // Silent fail - tickets section will show empty state
+    } catch (error) {
+      console.error('Failed to load support tickets:', error);
       setTickets([]);
     } finally {
       setTicketsLoading(false);
@@ -149,6 +149,7 @@ const HelpSupportTab = () => {
         subject: supportForm.subject,
         message: supportForm.message,
         priority: 'medium',
+        category: selectedCategory?.key || 'other',
       });
 
       const ticketNumber = response.data?.data?.ticketNumber || response.data?.ticketNumber;

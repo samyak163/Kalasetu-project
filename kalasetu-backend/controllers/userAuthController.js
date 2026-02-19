@@ -380,15 +380,16 @@ export const getOrders = asyncHandler(async (req, res) => {
 // --- Support ---
 // @route POST /api/users/support/contact
 export const contactSupport = asyncHandler(async (req, res) => {
-  const { subject, message, priority } = req.body;
+  const { subject, message, priority, category } = req.body;
   if (!subject || !message) {
     return res.status(400).json({ success: false, message: 'Subject and message are required' });
   }
+  const validCategories = ['booking', 'payment', 'refund', 'technical', 'account', 'other'];
   const SupportTicket = (await import('../models/supportTicketModel.js')).default;
   const ticket = await SupportTicket.create({
     subject,
     description: message,
-    category: 'other',
+    category: validCategories.includes(category) ? category : 'other',
     priority: priority || 'medium',
     createdBy: {
       userId: req.user._id,
