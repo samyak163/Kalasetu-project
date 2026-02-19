@@ -112,10 +112,11 @@ export default function UserBookings() {
     fetchBookings({ silent: true });
   };
 
-  const handleReviewSuccess = () => {
-    // Mark booking as reviewed in local state and re-fetch for server truth
+  const handleReviewSuccess = (review) => {
+    // Use review.booking from callback (avoids stale closure on reviewTarget)
+    const bookingId = review?.booking || reviewTarget?._id;
     setBookings(prev => prev.map(b =>
-      b._id === reviewTarget?._id ? { ...b, hasReview: true } : b
+      b._id === bookingId ? { ...b, hasReview: true } : b
     ));
     setReviewTarget(null);
     fetchBookings({ silent: true });

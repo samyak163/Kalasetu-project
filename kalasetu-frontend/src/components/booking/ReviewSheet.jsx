@@ -181,6 +181,7 @@ export default function ReviewSheet({ open, onClose, onSuccess, booking, artisan
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(tag)}
+                      aria-pressed={active}
                       className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                         active
                           ? 'bg-brand-500 text-white border-brand-500'
