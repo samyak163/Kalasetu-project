@@ -37,7 +37,7 @@ const ServicesTab = () => {
     if (authLoading) return;
     if (userType !== 'artisan') { setLoading(false); return; }
     fetchAll();
-  }, [userType, authLoading]);
+  }, [userType, authLoading, artisanId]);
 
   const fetchAll = async () => {
     if (!artisanId) return;

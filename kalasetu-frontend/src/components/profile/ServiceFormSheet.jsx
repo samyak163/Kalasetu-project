@@ -45,7 +45,7 @@ export default function ServiceFormSheet({ open, onClose, service, categories = 
         images: service.images || [],
       });
     } else {
-      setForm(initialForm);
+      setForm({ ...initialForm, images: [] });
     }
   }, [open, service]);
 
@@ -91,7 +91,7 @@ export default function ServiceFormSheet({ open, onClose, service, categories = 
         showToast('Service created successfully', 'success');
       }
 
-      onSave(saved);
+      if (saved) onSave(saved);
       onClose();
     } catch (err) {
       const message = err.response?.data?.message || 'Failed to save service';

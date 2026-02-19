@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X, Plus, Loader2 } from 'lucide-react';
 import api from '../../lib/axios.js';
 
@@ -21,6 +21,10 @@ export default function MultiImageUpload({
 }) {
   const [uploadingPreviews, setUploadingPreviews] = useState([]);
   const fileInputRef = useRef(null);
+
+  // Keep a ref to the latest images to avoid stale closures in async handlers
+  const imagesRef = useRef(images);
+  useEffect(() => { imagesRef.current = images; }, [images]);
 
   // Upload a single file to Cloudinary via signed upload
   const uploadFile = async (file) => {
@@ -51,7 +55,7 @@ export default function MultiImageUpload({
       return true;
     });
 
-    const remaining = maxImages - images.length - uploadingPreviews.length;
+    const remaining = maxImages - imagesRef.current.length - uploadingPreviews.length;
     const batch = validFiles.slice(0, Math.max(0, remaining));
     if (batch.length === 0) return;
 
@@ -59,30 +63,33 @@ export default function MultiImageUpload({
     const previews = batch.map((f) => URL.createObjectURL(f));
     setUploadingPreviews((prev) => [...prev, ...previews]);
 
-    // Upload all files in parallel
-    const results = await Promise.allSettled(
-      batch.map(async (file, i) => {
-        const url = await uploadFile(file);
-        return { preview: previews[i], url };
-      }),
-    );
+    try {
+      // Upload all files in parallel
+      const results = await Promise.allSettled(
+        batch.map(async (file, i) => {
+          const url = await uploadFile(file);
+          return { preview: previews[i], url };
+        }),
+      );
 
-    // Collect successful uploads
-    const newUrls = [];
-    results.forEach((result) => {
-      if (result.status === 'fulfilled') {
-        newUrls.push(result.value.url);
-      } else {
-        console.error('Image upload failed:', result.reason);
+      // Collect successful uploads
+      const newUrls = [];
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          newUrls.push(result.value.url);
+        } else {
+          console.error('Image upload failed:', result.reason);
+        }
+      });
+
+      if (newUrls.length > 0) {
+        // Use ref for latest images to avoid stale closure on rapid uploads
+        onImagesChange([...imagesRef.current, ...newUrls]);
       }
-    });
-
-    // Clean up blob previews
-    previews.forEach((p) => URL.revokeObjectURL(p));
-    setUploadingPreviews((prev) => prev.filter((p) => !previews.includes(p)));
-
-    if (newUrls.length > 0) {
-      onImagesChange([...images, ...newUrls]);
+    } finally {
+      // Always clean up blob previews, even on unexpected errors
+      previews.forEach((p) => URL.revokeObjectURL(p));
+      setUploadingPreviews((prev) => prev.filter((p) => !previews.includes(p)));
     }
   };
 
