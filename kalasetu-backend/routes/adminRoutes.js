@@ -1,3 +1,74 @@
+/**
+ * @file adminRoutes.js — Admin Panel Routes
+ *
+ * The largest route file — maps all admin dashboard, moderation, and
+ * analytics endpoints. Every route requires protectAdmin (reads admin_token
+ * cookie) plus a permission check via checkPermission(resource, action).
+ *
+ * Mounted at: /api/admin
+ *
+ * Auth routes (protectAdmin only):
+ *  POST /auth/login           — Admin login (10/15min rate limit)
+ *  GET  /auth/me              — Get admin profile
+ *  POST /auth/logout          — Clear admin_token cookie
+ *  PUT  /auth/change-password — Change admin password
+ *  PUT  /auth/profile         — Update admin profile
+ *
+ * Dashboard:
+ *  GET /dashboard/stats — Platform-wide statistics (analytics:view)
+ *
+ * Artisan management (artisans:*):
+ *  GET    /artisans          — List all artisans with filters
+ *  PUT    /artisans/:id/verify — Verify artisan identity
+ *  PUT    /artisans/:id/status — Suspend/activate artisan
+ *  DELETE /artisans/:id       — Delete artisan account
+ *
+ * User management:
+ *  GET /users — List all users (users:view)
+ *
+ * Review moderation (reviews:*):
+ *  GET    /reviews             — List all reviews
+ *  GET    /reviews/stats       — Review statistics
+ *  PUT    /reviews/:id/moderate — Flag/unflag review
+ *  DELETE /reviews/:id          — Soft-delete review
+ *  PATCH  /reviews/:id/restore  — Restore deleted review
+ *
+ * Payment management (payments:*):
+ *  GET  /payments          — List all payments
+ *  GET  /payments/stats    — Payment statistics
+ *  POST /payments/:id/refund — Process admin-initiated refund
+ *
+ * Refund management (payments:*):
+ *  GET  /refunds          — List refund requests
+ *  GET  /refunds/stats    — Refund statistics
+ *  POST /refunds/:id/approve — Approve refund request
+ *  POST /refunds/:id/reject  — Reject refund request
+ *
+ * Booking management (bookings:*):
+ *  GET   /bookings          — List all bookings
+ *  GET   /bookings/stats    — Booking statistics
+ *  PATCH /bookings/:id/cancel — Admin-cancel a booking
+ *
+ * Analytics (analytics:view):
+ *  GET /analytics/revenue  — Revenue over time
+ *  GET /analytics/users    — User growth analytics
+ *  GET /analytics/bookings — Booking volume analytics
+ *
+ * Settings (settings:*):
+ *  GET /settings — Get platform settings
+ *  PUT /settings — Update platform settings
+ *
+ * Support (users:view):
+ *  GET  /support/tickets          — List all tickets
+ *  GET  /support/tickets/stats    — Ticket statistics
+ *  GET  /support/tickets/:id      — Get ticket detail
+ *  POST /support/tickets/:id/respond — Add admin response
+ *  PATCH /support/tickets/:id/status — Change ticket status
+ *
+ * @see controllers/adminAuthController.js — Auth handlers
+ * @see controllers/adminDashboardController.js — Dashboard handlers
+ * @see middleware/authMiddleware.js — protectAdmin, checkPermission
+ */
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { login, getMe, logout, changePassword, updateProfile } from '../controllers/adminAuthController.js';
@@ -91,8 +162,9 @@ router.put('/settings', protectAdmin, checkPermission('settings', 'edit'), updat
 router.get('/support/tickets', protectAdmin, checkPermission('users', 'view'), getAllSupportTickets);
 router.get('/support/tickets/stats', protectAdmin, checkPermission('users', 'view'), getSupportTicketsStats);
 router.get('/support/tickets/:id', protectAdmin, checkPermission('users', 'view'), getTicketById);
-router.post('/support/tickets/:id/respond', protectAdmin, checkPermission('users', 'view'), respondToTicket);
-router.patch('/support/tickets/:id/status', protectAdmin, checkPermission('users', 'view'), updateTicketStatus);
+// Write operations on tickets require 'edit' permission, not just 'view'
+router.post('/support/tickets/:id/respond', protectAdmin, checkPermission('users', 'edit'), respondToTicket);
+router.patch('/support/tickets/:id/status', protectAdmin, checkPermission('users', 'edit'), updateTicketStatus);
 
 export default router;
 

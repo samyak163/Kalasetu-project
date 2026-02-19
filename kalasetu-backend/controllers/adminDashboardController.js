@@ -43,6 +43,12 @@ function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/** Escape a value for CSV output to prevent formula injection (=, +, -, @) */
+function csvEscape(val) {
+  const s = String(val ?? '').replace(/"/g, '""');
+  return `"${s}"`;
+}
+
 // Sanitize sort param: only allow field names with optional - prefix, space-separated
 // Prevents NoSQL injection via sort (e.g. {$where: "sleep(5000)"})
 function sanitizeSort(sort, fallback = '-createdAt') {
@@ -431,7 +437,7 @@ export const getAllPayments = async (req, res) => {
       // Simple CSV implementation
       let csv = 'ID,User,Artisan,Amount,Status,Date,Payment ID\n';
       payments.forEach(p => {
-        csv += `${p._id},${p.user?.fullName || ''},${p.artisan?.fullName || ''},${p.amount},${p.status},${p.createdAt},${p.razorpayPaymentId || ''}\n`;
+        csv += `${csvEscape(p._id)},${csvEscape(p.user?.fullName)},${csvEscape(p.artisan?.fullName)},${p.amount},${csvEscape(p.status)},${csvEscape(p.createdAt)},${csvEscape(p.razorpayPaymentId)}\n`;
       });
       return res.send(csv);
     }
@@ -494,8 +500,7 @@ export const processRefund = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No Razorpay payment ID — cannot process refund' });
     }
 
-    // Actually call Razorpay refund API before marking as refunded
-    const { refundPayment } = await import('../utils/razorpay.js');
+    // Call Razorpay refund API before marking as refunded (uses static import from top of file)
     const refund = await refundPayment(payment.razorpayPaymentId, payment.amount);
     if (!refund) {
       return res.status(502).json({ success: false, message: 'Razorpay refund failed — payment not modified' });
@@ -577,7 +582,7 @@ export const getAllBookings = async (req, res) => {
       bookings.forEach(b => {
         const start = new Date(b.start);
         const duration = b.end ? Math.round((new Date(b.end) - start) / 60000) : 0;
-        csv += `${b._id},${b.user?.fullName || ''},${b.artisan?.fullName || ''},${start.toLocaleDateString()},${start.toLocaleTimeString()},${duration}min,${b.price},${b.status}\n`;
+        csv += `${csvEscape(b._id)},${csvEscape(b.user?.fullName)},${csvEscape(b.artisan?.fullName)},${csvEscape(start.toLocaleDateString())},${csvEscape(start.toLocaleTimeString())},${duration},${b.price},${csvEscape(b.status)}\n`;
       });
       return res.send(csv);
     }
@@ -623,8 +628,13 @@ export const getBookingsStats = async (req, res) => {
 export const cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const booking = await Booking.findByIdAndUpdate(id, { status: 'cancelled' }, { new: true });
+    const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    if (booking.status === 'cancelled' || booking.status === 'completed') {
+      return res.status(400).json({ success: false, message: `Cannot cancel a ${booking.status} booking` });
+    }
+    booking.status = 'cancelled';
+    await booking.save();
     await req.user.logActivity('cancel_booking', 'booking', id);
     res.status(200).json({ success: true, data: booking, message: 'Booking cancelled successfully' });
   } catch (error) {
@@ -890,10 +900,10 @@ export const approveRefundRequest = async (req, res) => {
       refundRequest.failureReason = razorpayError.message;
       await refundRequest.save();
 
+      console.error('Razorpay refund failed:', razorpayError.message);
       res.status(500).json({
         success: false,
         message: 'Failed to process refund with payment gateway',
-        error: razorpayError.message
       });
     }
   } catch (error) {
@@ -1334,7 +1344,8 @@ export const getAllSupportTickets = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Admin support error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to process support request' });
   }
 };
 
@@ -1382,7 +1393,8 @@ export const getSupportTicketsStats = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Admin support error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to process support request' });
   }
 };
 
@@ -1495,7 +1507,8 @@ export const respondToTicket = async (req, res) => {
       data: ticket
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Admin support error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to process support request' });
   }
 };
 
@@ -1592,7 +1605,8 @@ export const updateTicketStatus = async (req, res) => {
       data: ticket
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Admin support error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to process support request' });
   }
 };
 
