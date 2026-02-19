@@ -46,7 +46,7 @@ export default function AboutTab({ artisan, className = '' }) {
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Bio */}
-      {artisan.bio && artisan.bio !== 'A passionate local artisan.' && (
+      {artisan.bio && (
         <Card>
           <h3 className="text-base font-semibold text-gray-900 mb-2">About</h3>
           <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{artisan.bio}</p>
@@ -130,8 +130,8 @@ export default function AboutTab({ artisan, className = '' }) {
             Certifications
           </h3>
           <div className="space-y-2">
-            {artisan.certifications.map((cert, i) => (
-              <div key={i} className="flex items-start gap-2 text-sm">
+            {artisan.certifications.map((cert) => (
+              <div key={`${cert.name}-${cert.issuingAuthority || ''}`} className="flex items-start gap-2 text-sm">
                 <Award className="h-4 w-4 text-brand-500 mt-0.5 shrink-0" />
                 <div>
                   <p className="font-medium text-gray-800">{cert.name}</p>

@@ -8,8 +8,8 @@ import { ToastContext } from '../context/ToastContext.jsx';
 
 // Design system components
 import {
-  ImageCarousel, TabBar, StickyBottomCTA, BottomSheet,
-  Skeleton, Button, Input, Alert,
+  ImageCarousel, TabBar, StickyBottomCTA,
+  Skeleton, Button, Alert,
 } from '../components/ui/index.js';
 
 // Profile sub-components
@@ -17,6 +17,7 @@ import ProfileHeader from '../components/artisan/ProfileHeader.jsx';
 import ServicesTab from '../components/artisan/ServicesTab.jsx';
 import ReviewsTab from '../components/artisan/ReviewsTab.jsx';
 import AboutTab from '../components/artisan/AboutTab.jsx';
+import BookingBottomSheet from '../components/artisan/BookingBottomSheet.jsx';
 
 /**
  * Rebuilt ArtisanProfilePage — UC/Zomato/Swiggy inspired.
@@ -25,6 +26,7 @@ import AboutTab from '../components/artisan/AboutTab.jsx';
  *  1. Portfolio Hero Carousel (full-width ImageCarousel)
  *  2. ProfileHeader (avatar, name, stats, actions)
  *  3. Sticky TabBar (Services / Reviews / About)
+ *     — Products and Custom tabs will be added by the offering redesign plan
  *  4. Tab content area
  *  5. StickyBottomCTA (mobile "Book Now" bar)
  *  6. BookingBottomSheet (replaces old modal)
@@ -86,12 +88,12 @@ const ArtisanProfilePage = () => {
     if (artisan.coverImageUrl) imgs.push(optimizeImage(artisan.coverImageUrl, { width: 1200, height: 500, crop: 'fill' }));
     const portfolio = artisan.portfolioImageUrls || [];
     portfolio.slice(0, 5).forEach(url => imgs.push(optimizeImage(url, { width: 1200, height: 500, crop: 'fill' })));
-    // If only cover or no images, add a placeholder
-    if (imgs.length === 0) imgs.push('https://placehold.co/1200x500/A55233/FFFFFF?text=KalaSetu');
     return imgs;
   }, [artisan]);
 
   // Build dynamic tabs based on available content
+  // Products and Custom tabs will be added by the offering redesign plan
+  // (see docs/plans/2026-02-18-artisan-offering-redesign-plan.md)
   const tabs = useMemo(() => {
     const t = [];
     if (services.length > 0) t.push({ key: 'services', label: 'Services', count: services.length });
@@ -100,12 +102,13 @@ const ArtisanProfilePage = () => {
     return t;
   }, [services, artisan?.totalReviews]);
 
-  // Default to first tab with content
+  // Default to first tab with content when tab list changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- activeTab read inside but shouldn't trigger re-run
   useEffect(() => {
     if (!loading && tabs.length > 0 && !tabs.find(t => t.key === activeTab)) {
       setActiveTab(tabs[0].key);
     }
-  }, [loading, tabs, activeTab]);
+  }, [loading, tabs]); // activeTab intentionally excluded to avoid extra render cycle
 
   // Action handlers
   const handleChat = useCallback(() => {
@@ -168,8 +171,16 @@ const ArtisanProfilePage = () => {
       )}
 
       <div className="min-h-screen bg-surface-muted pb-20 md:pb-8">
-        {/* 1. Portfolio Hero Carousel */}
-        <ImageCarousel images={heroImages} aspectRatio="12/5" className="w-full" />
+        {/* 1. Portfolio Hero Carousel — or brand-colored fallback if no images */}
+        {heroImages.length > 0 ? (
+          <ImageCarousel images={heroImages} aspectRatio="12/5" className="w-full" />
+        ) : (
+          <div className="w-full bg-brand-500" style={{ aspectRatio: '12/5' }}>
+            <div className="h-full flex items-center justify-center">
+              <span className="text-white/60 text-lg font-display">KalaSetu</span>
+            </div>
+          </div>
+        )}
 
         <div className="max-w-container mx-auto px-4 -mt-6 relative z-10 space-y-4">
           {/* 2. Profile Header */}
@@ -228,92 +239,5 @@ const ArtisanProfilePage = () => {
     </>
   );
 };
-
-// ---------- Booking BottomSheet ----------
-
-function BookingBottomSheet({ service, artisan, onClose, showToast }) {
-  const [startTime, setStartTime] = useState('');
-  const [notes, setNotes] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  // Reset form when sheet opens/closes
-  useEffect(() => {
-    if (service) { setStartTime(''); setNotes(''); }
-  }, [service]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!startTime) { showToast('Please pick a date and time', 'error'); return; }
-
-    setSubmitting(true);
-    try {
-      await api.post('/api/bookings', {
-        artisan: artisan._id || artisan.id,
-        serviceId: service?._id || service?.serviceId,
-        start: new Date(startTime),
-        notes,
-        price: service?.price || 0,
-      });
-      showToast('Booking request sent!', 'success');
-      onClose();
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Booking failed. Please try again.', 'error');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <BottomSheet
-      open={!!service}
-      onClose={onClose}
-      title={service ? `Book ${service.name}` : 'Book Service'}
-    >
-      {service && (
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Service summary */}
-          <div className="bg-surface-muted rounded-lg p-3 text-sm">
-            <p className="font-medium text-gray-900">{service.name}</p>
-            <p className="text-gray-500 mt-0.5">
-              With {artisan.fullName}
-              {service.price > 0 && ` \u2022 \u20B9${service.price.toLocaleString('en-IN')}`}
-              {service.durationMinutes > 0 && ` \u2022 ${service.durationMinutes} min`}
-            </p>
-          </div>
-
-          {/* Date/time picker */}
-          <Input
-            label="Preferred date & time"
-            type="datetime-local"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            helperText="End time will be calculated based on service duration"
-            required
-          />
-
-          {/* Notes */}
-          <Input
-            as="textarea"
-            label="Notes for the artisan (optional)"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Any specifics, venue details, or questions..."
-            rows={3}
-          />
-
-          {/* CTA */}
-          <Button
-            type="submit"
-            variant="primary"
-            className="w-full"
-            loading={submitting}
-          >
-            {submitting ? 'Sending...' : 'Confirm Booking'}
-          </Button>
-        </form>
-      )}
-    </BottomSheet>
-  );
-}
 
 export default ArtisanProfilePage;

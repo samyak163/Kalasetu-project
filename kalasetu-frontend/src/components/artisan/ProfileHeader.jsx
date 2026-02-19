@@ -1,4 +1,4 @@
-import { MapPin, CheckCircle, MessageCircle, Phone, Calendar, Clock, Briefcase, Users } from 'lucide-react';
+import { MapPin, CheckCircle, MessageCircle, Calendar, Clock, Briefcase, Users, Star, BarChart3 } from 'lucide-react';
 import { Avatar, Badge, Button } from '../ui/index.js';
 import { optimizeImage } from '../../utils/cloudinary.js';
 
@@ -13,6 +13,7 @@ import { optimizeImage } from '../../utils/cloudinary.js';
 export default function ProfileHeader({ artisan, serviceCount = 0, onChat, onBook, className = '' }) {
   const hasLocation = artisan.location?.city && artisan.location?.state;
   const minPrice = artisan._minPrice; // computed by parent from services
+  const isNewArtisan = !artisan.averageRating && !artisan.totalReviews;
 
   return (
     <div className={`bg-white rounded-card shadow-card p-4 md:p-6 ${className}`}>
@@ -56,17 +57,19 @@ export default function ProfileHeader({ artisan, serviceCount = 0, onChat, onBoo
 
           {/* Quick stats row */}
           <div className="flex flex-wrap items-center gap-3 mt-3">
-            {artisan.averageRating > 0 && (
+            {artisan.averageRating > 0 ? (
               <Badge variant="rating" rating={artisan.averageRating} count={artisan.totalReviews} />
-            )}
+            ) : isNewArtisan ? (
+              <StatChip icon={Star} value="New artisan" />
+            ) : null}
             {artisan.totalBookings > 0 && (
               <StatChip icon={Calendar} value={`${artisan.totalBookings} bookings`} />
             )}
             {artisan.yearsOfExperience && (
-              <StatChip icon={Briefcase} value={artisan.yearsOfExperience} />
+              <StatChip icon={Briefcase} value={`${artisan.yearsOfExperience} exp`} />
             )}
             {artisan.responseRate > 0 && (
-              <StatChip icon={Clock} value={`${artisan.responseRate}% response`} />
+              <StatChip icon={BarChart3} value={`${artisan.responseRate}% response rate`} />
             )}
             {artisan.teamSize && (
               <StatChip icon={Users} value={artisan.teamSize} />
@@ -82,9 +85,9 @@ export default function ProfileHeader({ artisan, serviceCount = 0, onChat, onBoo
           </Button>
           {serviceCount > 0 && (
             <Button variant="primary" size="sm" onClick={onBook} className="flex-1 sm:flex-none">
-              <Phone className="h-4 w-4" />
+              <Calendar className="h-4 w-4" />
               <span className="sm:hidden md:inline">
-                {minPrice ? `Book - From \u20B9${minPrice.toLocaleString('en-IN')}` : 'Book Now'}
+                {minPrice ? `Book \u2014 \u20B9${minPrice.toLocaleString('en-IN')}` : 'Book Now'}
               </span>
             </Button>
           )}

@@ -33,20 +33,19 @@ function ServiceItem({ service, onBook }) {
   const hasImage = service.images?.length > 0;
 
   return (
-    <Card interactive compact className="flex flex-col overflow-hidden">
-      {/* Service image */}
+    <div className="bg-white rounded-card shadow-card overflow-hidden hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col">
+      {/* Service image — outside padding area for edge-to-edge display */}
       {hasImage && (
         <img
           src={optimizeImage(service.images[0], { width: 400, height: 220, crop: 'fill' })}
           alt={service.name}
-          className="w-full h-44 object-cover -mx-3 -mt-3 mb-3"
-          style={{ width: 'calc(100% + 1.5rem)' }}
+          className="w-full h-44 object-cover"
           loading="lazy"
         />
       )}
 
-      {/* Content */}
-      <div className="flex-1 flex flex-col">
+      {/* Content — padded area */}
+      <div className="flex-1 flex flex-col p-3">
         <h3 className="text-base font-semibold text-gray-900 line-clamp-1">{service.name}</h3>
         {service.description && (
           <p className="text-sm text-gray-500 mt-1 line-clamp-2">{service.description}</p>
@@ -76,7 +75,7 @@ function ServiceItem({ service, onBook }) {
           Book This Service
         </Button>
       </div>
-    </Card>
+    </div>
   );
 }
 
