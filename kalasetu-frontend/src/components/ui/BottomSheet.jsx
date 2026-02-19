@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
  * Slide-up panel for mobile interactions (Swiggy/UC pattern).
  * On desktop (md+), renders as a centered modal. On mobile, slides up from bottom.
  */
-export default function BottomSheet({ open, onClose, title, children, className = '' }) {
+export default function BottomSheet({ open, onClose, title, children, className = '', maxWidth = 'md:max-w-lg' }) {
   const titleId = useId();
   const overlayRef = useRef(null);
 
@@ -32,7 +32,7 @@ export default function BottomSheet({ open, onClose, title, children, className 
       aria-modal="true"
       aria-labelledby={titleId}
     >
-      <div className={`w-full md:max-w-lg bg-white rounded-t-2xl md:rounded-card shadow-dropdown max-h-[90vh] flex flex-col animate-slide-up md:animate-scale-in ${className}`}>
+      <div className={`w-full ${maxWidth} bg-white rounded-t-2xl md:rounded-card shadow-dropdown max-h-[90vh] flex flex-col animate-slide-up md:animate-scale-in ${className}`}>
         {/* Handle bar (mobile) */}
         <div className="md:hidden flex justify-center pt-2">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
