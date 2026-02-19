@@ -25,12 +25,29 @@ import Artisan from '../models/artisanModel.js';
 import Booking from '../models/bookingModel.js';
 import { sendEmail } from '../utils/email.js';
 
+// --- Review tag constants (must match frontend constants/reviewTags.js) ---
+const POSITIVE_TAGS = [
+  'Excellent Craftsmanship', 'On Time', 'True to Photos',
+  'Great Communication', 'Exceeded Expectations', 'Patient & Helpful', 'Clean Workshop',
+];
+const NEGATIVE_TAGS = [
+  'Delayed', 'Different from Photos', 'Poor Packaging', 'Unresponsive', 'Overpriced',
+];
+const ALL_TAGS = [...POSITIVE_TAGS, ...NEGATIVE_TAGS];
+
+function getAllowedTags(rating) {
+  if (rating >= 4) return POSITIVE_TAGS;
+  if (rating <= 2) return NEGATIVE_TAGS;
+  return ALL_TAGS;
+}
+
 const createReviewSchema = z.object({
   artisanId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid artisan ID'),
   bookingId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid booking ID').optional(),
   rating: z.number().int().min(1, 'Rating must be at least 1').max(5, 'Rating must be at most 5'),
-  comment: z.string().min(1, 'Comment is required').max(1000, 'Comment must be under 1000 characters'),
-  images: z.array(z.string().url()).max(10).optional(),
+  comment: z.string().max(1000, 'Comment must be under 1000 characters').optional().default(''),
+  images: z.array(z.string().url()).max(3).optional(),
+  tags: z.array(z.string()).min(1, 'Select at least 1 tag').max(5, 'Maximum 5 tags'),
 });
 
 export const createReview = asyncHandler(async (req, res) => {
@@ -40,7 +57,17 @@ export const createReview = asyncHandler(async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ success: false, message: parsed.error.issues.map(i => i.message).join(', ') });
   }
-  const { artisanId, bookingId, rating, comment, images = [] } = parsed.data;
+  const { artisanId, bookingId, rating, comment, images = [], tags } = parsed.data;
+
+  // Validate tags against rating-dependent allowed list
+  const allowed = getAllowedTags(rating);
+  const invalidTags = tags.filter(t => !allowed.includes(t));
+  if (invalidTags.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: `Invalid tags for ${rating}-star rating: ${invalidTags.join(', ')}`,
+    });
+  }
 
   // Check if user has a completed booking with this artisan (required for review)
   const bookingQuery = {
@@ -87,6 +114,7 @@ export const createReview = asyncHandler(async (req, res) => {
     rating,
     comment,
     images,
+    tags,
     isVerified: true, // Verified purchase - user has completed booking
   });
 
