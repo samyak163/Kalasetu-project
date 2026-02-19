@@ -31,15 +31,25 @@ export default function ReviewSheet({ open, onClose, onSuccess, booking, artisan
 
   const fileRef = useRef(null);
 
-  // Reset form when sheet opens
+  // Reset form when sheet opens — revoke blob URLs to prevent memory leaks
   useEffect(() => {
     if (open) {
       setRating(0);
       setSelectedTags([]);
       setComment('');
-      setPhotos([]);
+      setPhotos(prev => {
+        prev.forEach(p => URL.revokeObjectURL(p.preview));
+        return [];
+      });
       setSubmitting(false);
     }
+    // Cleanup on unmount
+    return () => {
+      setPhotos(prev => {
+        prev.forEach(p => URL.revokeObjectURL(p.preview));
+        return [];
+      });
+    };
   }, [open]);
 
   // When rating changes, reset tags (available tags depend on rating)
