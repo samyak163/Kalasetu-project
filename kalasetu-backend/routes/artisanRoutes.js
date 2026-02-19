@@ -12,9 +12,10 @@
  *  GET /id/:id              — Get artisan by MongoDB _id
  *  GET /featured            — Top-rated active artisans (cached 5min)
  *  GET /nearby              — Geospatial search (cached 1min)
- *  GET /:publicId/portfolio — Public portfolio for an artisan (cached 5min)
- *  GET /:publicId           — Get artisan by vanity publicId (cached 5min)
- *  GET /slug/:slug          — Get artisan by URL slug (cached 5min)
+ *  GET /:publicId/portfolio     — Public portfolio for an artisan (cached 5min)
+ *  GET /:publicId/availability  — Available time slots for a date (cached 1min)
+ *  GET /:publicId               — Get artisan by vanity publicId (cached 5min)
+ *  GET /slug/:slug              — Get artisan by URL slug (cached 5min)
  *
  * Protected routes:
  *  PUT /profile — Update own profile (artisan protect, invalidates cache)
@@ -38,6 +39,7 @@ import {
     PUBLIC_FIELDS,
 } from '../controllers/artisanController.js';
 import { getPublicPortfolio } from '../controllers/portfolioController.js';
+import { getAvailability } from '../controllers/availabilityController.js';
 import Artisan from '../models/artisanModel.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { cache, invalidateCache } from '../middleware/cacheMiddleware.js';
@@ -66,6 +68,11 @@ router.put('/profile', protect, invalidateCache(['cache:artisans:list*', 'cache:
 // Public portfolio endpoint (must be before :publicId route)
 // URL: GET /api/artisans/:publicId/portfolio
 router.get('/:publicId/portfolio', cache('artisans:portfolio', 300), getPublicPortfolio);
+
+// Public availability endpoint — returns time slots for a date
+// Short cache (60s) since availability changes with bookings
+// URL: GET /api/artisans/:publicId/availability?date=2026-02-20
+router.get('/:publicId/availability', cache('artisans:availability', 60), getAvailability);
 
 // Slug-based lookup — MUST be before /:publicId to avoid 'slug' matching as a publicId
 // URL: GET /api/artisans/slug/ravi-kumar-pottery
