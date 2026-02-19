@@ -7,8 +7,9 @@
  *
  * Key fields:
  *  - rating (1-5)      — Numeric star rating (required)
- *  - comment           — Review text (required, max 1000 chars)
+ *  - comment           — Review text (optional, max 1000 chars, default '')
  *  - images            — Optional photo evidence
+ *  - tags              — Up to 5 short descriptor tags (e.g. "on-time", "skilled")
  *  - response          — Artisan's reply (text + timestamp)
  *  - helpfulVotes      — Array of User IDs who found this review helpful
  *  - isVerified        — Whether the review is from a verified purchase/booking
@@ -35,8 +36,16 @@ const reviewSchema = new mongoose.Schema({
   // Enables per-service rating aggregation without joining through bookings.
   service: { type: mongoose.Schema.Types.ObjectId, ref: 'ArtisanService' },
   rating: { type: Number, min: 1, max: 5, required: true },
-  comment: { type: String, required: true, maxLength: 1000, trim: true },
+  comment: { type: String, maxLength: 1000, trim: true, default: '' },
   images: [{ type: String }],
+  tags: {
+    type: [String],
+    default: [],
+    validate: {
+      validator: arr => arr.length <= 5,
+      message: 'Maximum 5 tags allowed',
+    },
+  },
   response: {
     text: { type: String, maxLength: 500 },
     createdAt: Date
