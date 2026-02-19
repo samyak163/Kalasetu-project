@@ -1,4 +1,19 @@
-﻿import Artisan from '../models/artisanModel.js';
+﻿/**
+ * @file seoController.js — SEO Meta Tag Generation
+ *
+ * Provides dynamic Open Graph and meta tag data for artisan profile pages.
+ * Used by the frontend's SEO component to generate proper social sharing previews.
+ *
+ * Endpoints:
+ *  GET /api/seo/artisan/:publicId — Get meta tags for an artisan profile page
+ *
+ * Returns: title, description, image, rating, location — optimized for
+ * social media sharing (Facebook, Twitter, WhatsApp link previews).
+ *
+ * @see kalasetu-frontend/src/components/SEO.jsx — Frontend meta tag renderer
+ */
+
+import Artisan from '../models/artisanModel.js';
 
 export const getArtisanSEO = async (req, res) => {
   try {
@@ -68,7 +83,8 @@ export const getArtisanSEO = async (req, res) => {
 
 export const getSitemapData = async (req, res) => {
   try {
-    const artisans = await Artisan.find().select('publicId updatedAt').lean();
+    // Limit to active artisans, cap at 50,000 (Google sitemap limit per file)
+    const artisans = await Artisan.find({ isActive: true }).select('publicId updatedAt').limit(50000).lean();
     const sitemapData = {
       static: [
         { url: '/', priority: 1.0, changefreq: 'daily' },
@@ -94,7 +110,8 @@ export const getSitemapData = async (req, res) => {
 export const getSitemapXml = async (req, res) => {
   try {
     const baseUrl = process.env.FRONTEND_BASE_URL || process.env.FRONTEND_URL || 'https://kalasetu.com';
-    const artisans = await Artisan.find().select('publicId updatedAt').lean();
+    // Limit to active artisans, cap at 50,000 (Google sitemap limit per file)
+    const artisans = await Artisan.find({ isActive: true }).select('publicId updatedAt').limit(50000).lean();
 
     let xml = '';
     xml += '<?xml version="1.0" encoding="UTF-8"?>\n';

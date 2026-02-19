@@ -1,3 +1,25 @@
+/**
+ * @file adminAuthController.js — Admin Authentication & Profile
+ *
+ * Handles admin login, session management, password change, and profile updates.
+ * Admins have a separate auth system from artisans and users:
+ *  - Separate cookie: `admin_token` (not `ks_auth`)
+ *  - Separate model: Admin (not User or Artisan)
+ *  - JWT payload includes role + granular permissions
+ *
+ * Endpoints:
+ *  POST /api/admin/auth/login       — Admin login (email + password)
+ *  GET  /api/admin/auth/me          — Get current admin profile (requires `protectAdmin`)
+ *  POST /api/admin/auth/logout      — Clear admin cookie
+ *  POST /api/admin/auth/change-password — Change admin password
+ *  PUT  /api/admin/auth/profile     — Update admin profile (name, image)
+ *
+ * Tracks login history (IP, user agent, timestamp) capped at 20 entries.
+ *
+ * @see middleware/authMiddleware.js — `protectAdmin` reads admin_token cookie
+ * @see models/adminModel.js — Admin schema with role-based permissions
+ */
+
 import Admin from '../models/adminModel.js';
 import { generateCsrfToken } from '../middleware/csrfMiddleware.js';
 
@@ -93,6 +115,19 @@ export const logout = async (req, res) => {
 export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Current and new passwords are required' });
+    }
+
+    // Admin passwords must be strong: min 8 chars, uppercase, lowercase, number
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+    }
+    if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+      return res.status(400).json({ success: false, message: 'Password must contain uppercase, lowercase, and a number' });
+    }
+
     const admin = await Admin.findById(req.user._id).select('+password');
     const isMatch = await admin.matchPassword(currentPassword);
     if (!isMatch) {

@@ -1,3 +1,31 @@
+/**
+ * @file adminDashboardController.js — Admin Panel Operations
+ *
+ * Comprehensive admin panel — dashboard analytics, user/artisan management,
+ * booking oversight, payment management, review moderation, refund processing,
+ * and support ticket management. All endpoints require `protectAdmin`.
+ *
+ * Dashboard Endpoints:
+ *  GET /api/admin/dashboard/stats      — Platform-wide counts and revenue
+ *  GET /api/admin/dashboard/analytics  — Time-series data for charts
+ *
+ * Management Endpoints:
+ *  GET/PUT/DELETE /api/admin/artisans/*  — Artisan management (verify, suspend)
+ *  GET/PUT/DELETE /api/admin/users/*     — User management
+ *  GET/PUT        /api/admin/bookings/*  — Booking oversight
+ *  GET            /api/admin/payments/*  — Payment history
+ *  GET/PUT        /api/admin/reviews/*   — Review moderation (flag, remove)
+ *  GET/PUT        /api/admin/refunds/*   — Process refund requests
+ *  GET/PUT        /api/admin/support/*   — Support ticket management
+ *
+ * This is the largest controller file — it consolidates all admin operations
+ * to keep the admin routing simple (single controller for the admin panel).
+ *
+ * @see routes/adminRoutes.js — All admin route definitions
+ * @see middleware/authMiddleware.js — `protectAdmin` + `checkPermission`
+ * @see kalasetu-frontend/src/pages/admin/ — Admin panel frontend
+ */
+
 import Admin from '../models/adminModel.js';
 import Artisan from '../models/artisanModel.js';
 import User from '../models/userModel.js';
@@ -13,6 +41,16 @@ import Notification from '../models/notificationModel.js';
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Sanitize sort param: only allow field names with optional - prefix, space-separated
+// Prevents NoSQL injection via sort (e.g. {$where: "sleep(5000)"})
+function sanitizeSort(sort, fallback = '-createdAt') {
+  if (typeof sort !== 'string') return fallback;
+  // Each token must be an optional - followed by alphanumeric/underscores/dots
+  const tokens = sort.trim().split(/\s+/);
+  const safe = tokens.every(t => /^-?[a-zA-Z_][\w.]*$/.test(t));
+  return safe ? sort : fallback;
 }
 
 export const getDashboardStats = async (req, res) => {
@@ -132,7 +170,7 @@ export const getAllArtisans = async (req, res) => {
     }
     if (status !== 'all') query.isActive = status === 'active';
     if (verified !== 'all') query.isVerified = verified === 'verified';
-    const artisans = await Artisan.find(query).select('-password').sort(sort).limit(limit * 1).skip((page - 1) * limit).lean();
+    const artisans = await Artisan.find(query).select('-password').sort(sanitizeSort(sort)).limit(limit * 1).skip((page - 1) * limit).lean();
     const count = await Artisan.countDocuments(query);
     res.status(200).json({ success: true, data: artisans, pagination: { total: count, page: parseInt(page), pages: Math.ceil(count / limit) } });
   } catch (error) {
@@ -152,7 +190,7 @@ export const getAllUsers = async (req, res) => {
         { email: { $regex: escaped, $options: 'i' } }
       ];
     }
-    const users = await User.find(query).select('-password').sort(sort).limit(limit * 1).skip((page - 1) * limit).lean();
+    const users = await User.find(query).select('-password').sort(sanitizeSort(sort)).limit(limit * 1).skip((page - 1) * limit).lean();
     const count = await User.countDocuments(query);
     res.status(200).json({ success: true, data: users, pagination: { total: count, page: parseInt(page), pages: Math.ceil(count / limit) } });
   } catch (error) {
@@ -251,7 +289,7 @@ export const getAllReviews = async (req, res) => {
     const reviews = await Review.find(query)
       .populate('artisan', 'fullName email')
       .populate('user', 'fullName email')
-      .sort(sort)
+      .sort(sanitizeSort(sort))
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .lean();
@@ -640,11 +678,32 @@ export const getSettings = async (req, res) => {
   }
 };
 
+// Whitelist of allowed settings keys to prevent mass assignment
+const ALLOWED_SETTINGS_KEYS = new Set([
+  'platformName', 'supportEmail', 'supportPhone',
+  'platformCommissionRate', 'currency', 'timezone',
+  'minimumBookingNotice', 'maximumAdvanceBooking', 'defaultBookingDuration',
+  'allowSameDayBookings', 'autoConfirmBookings', 'cancellationPolicy',
+  'paymentGateway', 'testMode', 'autoPayoutToArtisans', 'payoutSchedule', 'minimumPayoutAmount',
+  'emailProvider', 'fromName', 'fromEmail',
+  'enableReviews', 'enableVideoCalls', 'enableChat', 'enableLocationSearch',
+  'maintenanceMode',
+]);
+
 export const updateSettings = async (req, res) => {
   try {
-    const newSettings = req.body;
-    // In a real app, save to database
-    // For now, update cache
+    // Only allow whitelisted keys through
+    const newSettings = {};
+    for (const [key, value] of Object.entries(req.body)) {
+      if (ALLOWED_SETTINGS_KEYS.has(key)) {
+        newSettings[key] = value;
+      }
+    }
+
+    if (Object.keys(newSettings).length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid settings provided' });
+    }
+
     settingsCache = { ...settingsCache, ...newSettings };
     await req.user.logActivity('update_settings', 'settings', null, { settings: Object.keys(newSettings) });
     res.status(200).json({
