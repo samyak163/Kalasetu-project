@@ -357,6 +357,7 @@ async function seedReviews(artisan, user) {
       user: reviewers[0]._id,
       rating: 5,
       comment: 'Priya did my bridal mehndi and it was absolutely stunning! The designs were intricate and exactly what I wanted. She was patient with all my requests and the stain came out beautifully dark. Everyone at the wedding was asking who did my mehndi. Highly recommended!',
+      tags: ['Excellent Craftsmanship', 'Exceeded Expectations', 'Patient & Helpful'],
       isVerified: true,
       response: {
         text: 'Thank you so much Anita! It was a joy decorating your hands for your special day. Wishing you a lifetime of happiness!',
@@ -367,12 +368,14 @@ async function seedReviews(artisan, user) {
       user: reviewers[1]._id,
       rating: 5,
       comment: 'Booked Priya for my sister\'s baby shower and she was amazing. The baby-themed designs were so cute! She also did simple designs for all the guests. Very professional and on time.',
+      tags: ['On Time', 'Great Communication', 'Excellent Craftsmanship'],
       isVerified: true,
     },
     {
       user: reviewers[2]._id,
       rating: 4,
       comment: 'Great Arabic mehndi design. Clean lines and beautiful patterns. Took a bit longer than expected but the result was worth the wait. The color lasted for almost two weeks!',
+      tags: ['Excellent Craftsmanship', 'True to Photos'],
       isVerified: true,
       response: {
         text: 'Thanks for your patience, Meera! Arabic designs need extra time for precision. Glad you loved the result!',
@@ -383,12 +386,14 @@ async function seedReviews(artisan, user) {
       user: reviewers[3]._id,
       rating: 5,
       comment: 'Attended the mehndi workshop with friends and we had so much fun! Priya is a wonderful teacher. She broke down complex patterns into simple steps. We went home with our own henna cones and a design booklet. Great experience!',
+      tags: ['Patient & Helpful', 'Exceeded Expectations'],
       isVerified: true,
     },
     {
       user: reviewers[4]._id,
       rating: 4,
       comment: 'Good party mehndi. Quick and beautiful. The organic henna smell was so nice compared to chemical ones. Would book again for the next festival.',
+      tags: ['On Time', 'Clean Workshop'],
       isVerified: true,
     },
   ];

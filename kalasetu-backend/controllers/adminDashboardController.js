@@ -311,7 +311,7 @@ export const moderateReview = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, reason } = req.body;
-    const review = await Review.findByIdAndUpdate(id, { status }, { new: true });
+    const review = await Review.findByIdAndUpdate(id, { status }, { new: true, runValidators: true });
     if (!review) return res.status(404).json({ success: false, message: 'Review not found' });
     await req.user.logActivity('moderate_review', 'review', id, { status, reason });
     res.status(200).json({ success: true, data: review, message: 'Review moderated successfully' });
@@ -325,7 +325,7 @@ export const deleteReview = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body || {};
-    const review = await Review.findByIdAndUpdate(id, { status: 'removed' }, { new: true });
+    const review = await Review.findByIdAndUpdate(id, { status: 'removed' }, { new: true, runValidators: true });
     if (!review) return res.status(404).json({ success: false, message: 'Review not found' });
     await req.user.logActivity('delete_review', 'review', id, { reason });
     res.status(200).json({ success: true, message: 'Review removed successfully' });
@@ -363,7 +363,7 @@ export const getReviewsStats = async (req, res) => {
 export const restoreReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const review = await Review.findByIdAndUpdate(id, { status: 'active' }, { new: true });
+    const review = await Review.findByIdAndUpdate(id, { status: 'active' }, { new: true, runValidators: true });
     if (!review) return res.status(404).json({ success: false, message: 'Review not found' });
     await req.user.logActivity('restore_review', 'review', id);
     res.status(200).json({ success: true, data: review, message: 'Review restored successfully' });
