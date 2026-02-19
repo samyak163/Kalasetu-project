@@ -1,188 +1,171 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState, useContext, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 import api from '../../../lib/axios.js';
+import { TabBar, Skeleton, EmptyState, Alert } from '../../../components/ui';
+import BookingCard from '../../../components/booking/BookingCard.jsx';
+import CancellationSheet from '../../../components/booking/CancellationSheet.jsx';
+import { CalendarDays, Star, MessageCircle, RotateCcw, XCircle } from 'lucide-react';
 
-const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  confirmed: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800',
-  rejected: 'bg-gray-100 text-gray-800',
-};
+const TAB_CONFIG = [
+  { key: 'upcoming', label: 'Upcoming', statuses: ['pending', 'confirmed'] },
+  { key: 'completed', label: 'Completed', statuses: ['completed'] },
+  { key: 'cancelled', label: 'Cancelled', statuses: ['cancelled', 'rejected'] },
+];
 
-const TABS = ['all', 'pending', 'confirmed', 'completed', 'cancelled'];
-
-const UserBookings = () => {
+export default function UserBookings() {
   const { showToast } = useContext(ToastContext);
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('all');
-  const [search, setSearch] = useState('');
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('upcoming');
+  const [expandedId, setExpandedId] = useState(null);
+  const [cancelTarget, setCancelTarget] = useState(null); // { id, status }
+
+  const fetchBookings = async ({ silent = false } = {}) => {
+    try {
+      if (!silent) setInitialLoading(true);
+      setError(null);
+      const res = await api.get('/api/bookings/me');
+      setBookings(res.data.data || []);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load bookings');
+      showToast(err.response?.data?.message || 'Failed to load bookings', 'error');
+    } finally {
+      if (!silent) setInitialLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchBookings();
   }, []);
 
-  const fetchBookings = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/api/bookings/me');
-      setBookings(res.data.data || []);
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to load bookings', 'error');
-    } finally {
-      setLoading(false);
+  // Count bookings per tab for badge display
+  const tabs = useMemo(() =>
+    TAB_CONFIG.map(({ key, label, statuses }) => ({
+      key,
+      label,
+      count: bookings.filter(b => statuses.includes(b.status)).length,
+    })),
+    [bookings]
+  );
+
+  const activeStatuses = TAB_CONFIG.find(t => t.key === activeTab)?.statuses || [];
+  const filtered = bookings.filter(b => activeStatuses.includes(b.status));
+
+  const getActionsForBooking = (booking) => {
+    const { status, artisan } = booking;
+    const artisanUrl = artisan?.publicId ? `/artisans/${artisan.publicId}` : '/search';
+
+    switch (status) {
+      case 'pending':
+        return [
+          { label: 'Cancel Booking', variant: 'danger', icon: XCircle, onClick: () => setCancelTarget({ id: booking._id, status }) },
+        ];
+      case 'confirmed':
+        return [
+          { label: 'Message Artisan', variant: 'outline', icon: MessageCircle, onClick: () => navigate(`/messages?artisan=${artisan?._id}`) },
+          { label: 'Cancel Booking', variant: 'danger', icon: XCircle, onClick: () => setCancelTarget({ id: booking._id, status }) },
+        ];
+      case 'completed':
+        return [
+          { label: 'Leave Review', variant: 'primary', icon: Star, onClick: () => showToast('Review feature coming soon', 'info') },
+          { label: 'Book Again', variant: 'secondary', icon: RotateCcw, onClick: () => navigate(artisanUrl) },
+        ];
+      case 'cancelled':
+      case 'rejected':
+        return [
+          { label: 'Book Again', variant: 'secondary', icon: RotateCcw, onClick: () => navigate(artisanUrl) },
+        ];
+      default:
+        return [];
     }
   };
 
-  const handleCancel = async (bookingId) => {
-    if (!window.confirm('Are you sure you want to cancel this booking?')) return;
-    try {
-      await api.post(`/api/bookings/${bookingId}/cancel`, { reason: 'Cancelled by user' });
-      showToast('Booking cancelled', 'success');
-      fetchBookings();
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to cancel', 'error');
-    }
+  const handleCancelSuccess = () => {
+    setCancelTarget(null);
+    fetchBookings({ silent: true });
   };
 
-  const filtered = bookings
-    .filter(b => activeTab === 'all' || b.status === activeTab)
-    .filter(b => {
-      if (!search) return true;
-      const q = search.toLowerCase();
-      return (
-        (b.serviceName || '').toLowerCase().includes(q) ||
-        (b.artisan?.fullName || '').toLowerCase().includes(q)
-      );
-    });
-
-  if (loading) {
+  if (initialLoading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-1/3" />
-        {[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-200 rounded-lg" />)}
+      <div className="space-y-4">
+        <Skeleton variant="rect" width="200px" height="28px" />
+        <Skeleton variant="rect" height="40px" />
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} variant="rect" height="88px" />
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">My Bookings</h2>
-        <Link
-          to="/search"
-          className="text-sm text-brand-500 hover:underline font-medium"
-        >
+        <h2 className="text-xl font-bold font-display text-gray-900">My Bookings</h2>
+        <Link to="/search" className="text-sm text-brand-500 hover:underline font-medium">
           Book a new service
         </Link>
       </div>
 
-      {/* Search */}
-      <input
-        type="text"
-        placeholder="Search by service or artisan name..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm"
-      />
+      {/* Error */}
+      {error && (
+        <Alert variant="error" onDismiss={() => setError(null)}>
+          <p className="text-sm">{error}</p>
+          <button onClick={fetchBookings} className="mt-1 text-sm underline hover:no-underline">Try again</button>
+        </Alert>
+      )}
 
-      {/* Status Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {TABS.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium capitalize whitespace-nowrap transition-colors ${
-              activeTab === tab
-                ? 'bg-brand-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {tab} {tab !== 'all' ? `(${bookings.filter(b => b.status === tab).length})` : `(${bookings.length})`}
-          </button>
-        ))}
-      </div>
+      {/* Tabs */}
+      <TabBar tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Booking Cards */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <p className="font-medium">No bookings found</p>
-          {activeTab !== 'all' && (
-            <button onClick={() => setActiveTab('all')} className="text-sm text-brand-500 hover:underline mt-1">
-              View all bookings
-            </button>
-          )}
-        </div>
-      ) : (
+      {/* Booking list */}
+      {filtered.length > 0 ? (
         <div className="space-y-3">
           {filtered.map(booking => (
-            <div key={booking._id} className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium text-gray-900">
-                    {booking.serviceName || 'Service Booking'}
-                  </div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    {booking.artisan?.fullName || 'Artisan'}
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                    <span>
-                      {new Date(booking.start).toLocaleDateString('en-IN', {
-                        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
-                      })}
-                    </span>
-                    <span>
-                      {new Date(booking.start).toLocaleTimeString('en-IN', {
-                        hour: '2-digit', minute: '2-digit',
-                      })}
-                      {' - '}
-                      {new Date(booking.end).toLocaleTimeString('en-IN', {
-                        hour: '2-digit', minute: '2-digit',
-                      })}
-                    </span>
-                    {booking.price > 0 && (
-                      <span className="font-medium text-gray-700">
-                        {'\u20B9'}{booking.price.toLocaleString('en-IN')}
-                      </span>
-                    )}
-                  </div>
-                  {booking.notes && (
-                    <div className="text-sm text-gray-500 mt-1 italic">"{booking.notes}"</div>
-                  )}
-                  {booking.rejectionReason && (
-                    <div className="text-sm text-red-600 mt-1">Reason: {booking.rejectionReason}</div>
-                  )}
-                  {booking.cancellationReason && (
-                    <div className="text-sm text-red-600 mt-1">Cancellation reason: {booking.cancellationReason}</div>
-                  )}
-                  {booking.modificationRequest?.status === 'pending' && (
-                    <div className="text-sm text-amber-600 mt-1 font-medium">
-                      Modification requested — awaiting response
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[booking.status] || 'bg-gray-100 text-gray-800'}`}>
-                    {booking.status}
-                  </span>
-                  {['pending', 'confirmed'].includes(booking.status) && (
-                    <button
-                      onClick={() => handleCancel(booking._id)}
-                      className="text-xs text-red-600 hover:underline"
-                    >
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+            <BookingCard
+              key={booking._id}
+              booking={booking}
+              perspective="user"
+              expanded={expandedId === booking._id}
+              onToggle={() => setExpandedId(prev => prev === booking._id ? null : booking._id)}
+              actions={getActionsForBooking(booking)}
+            />
           ))}
         </div>
+      ) : (
+        <EmptyState
+          icon={<CalendarDays className="h-12 w-12" />}
+          title={
+            activeTab === 'upcoming' ? 'No upcoming bookings' :
+            activeTab === 'completed' ? 'No completed bookings yet' :
+            'No cancelled bookings'
+          }
+          description={
+            activeTab === 'upcoming' ? 'Browse artisans to book a service' :
+            activeTab === 'completed' ? 'Your completed services will appear here' :
+            'Cancelled and rejected bookings will appear here'
+          }
+          action={
+            activeTab === 'upcoming' ? (
+              <Link to="/search" className="inline-flex items-center px-4 py-2 bg-brand-500 text-white rounded-button text-sm font-medium hover:bg-brand-600 transition-colors">
+                Find Artisans
+              </Link>
+            ) : null
+          }
+        />
       )}
+
+      {/* Cancellation sheet */}
+      <CancellationSheet
+        open={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        bookingId={cancelTarget?.id}
+        bookingStatus={cancelTarget?.status}
+        onCancel={handleCancelSuccess}
+      />
     </div>
   );
-};
-
-export default UserBookings;
+}
