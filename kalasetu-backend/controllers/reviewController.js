@@ -249,6 +249,7 @@ export const toggleHelpful = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const r = await Review.findById(id);
   if (!r) return res.status(404).json({ success: false, message: 'Not found' });
+  if (r.status !== 'active') return res.status(403).json({ success: false, message: 'Cannot vote on this review' });
   const has = r.helpfulVotes.some(u => String(u) === String(userId));
   r.helpfulVotes = has ? r.helpfulVotes.filter(u => String(u) !== String(userId)) : [...r.helpfulVotes, userId];
   await r.save();
