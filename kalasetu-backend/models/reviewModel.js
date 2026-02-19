@@ -42,8 +42,8 @@ const reviewSchema = new mongoose.Schema({
     type: [String],
     default: [],
     validate: {
-      validator: arr => arr.length <= 5,
-      message: 'Maximum 5 tags allowed',
+      validator: arr => arr.length >= 1 && arr.length <= 5,
+      message: 'Select 1 to 5 tags',
     },
   },
   response: {
