@@ -9,11 +9,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Date** | 2026-02-19 |
-| **Branch** | `feat/ui-overhaul` (13 commits ahead of origin) |
+| **Date** | 2026-02-20 |
+| **Branch** | `feat/ui-overhaul` (80 commits ahead of main, pushed to origin) |
 | **Build status** | passing (frontend builds, backend starts clean) |
-| **Test status** | passing (21/21 tests via Vitest) |
-| **Session mood** | code review complete, all critical/high issues fixed |
+| **PR** | PR #1 open (draft) on samyak163/Kalasetu-project |
+| **Session mood** | Phases 6-8 complete + code review fixes applied |
 
 ---
 
@@ -21,30 +21,32 @@
 
 ### What Was Done This Session
 
-**Code Review of Phases 2-5 + Service Detail Sheet + Service Management UI**
+**Phase 7: Reviews Flow** (11 tasks, 5 waves of parallel agents)
+- StarRating component, review tag constants, Review model tags field
+- TagSummary component, tag aggregation API endpoint
+- Tag validation in createReview, ReviewSheet BottomSheet with progressive reveal
+- Leave Review button in UserBookings with deep link support
+- `hasReview` API flag on bookings to prevent duplicate review prompts
 
-Ran 6 parallel review agents across all recent changes. Found 13 CRITICAL/HIGH issues — **all 13 fixed** in two commits:
+**Phase 8: Chat Integration** (2 tasks)
+- `useChatUnread` hook + `totalUnread` tracking via Stream Chat events
+- Chat unread badge on Header
+- MessagesPage rewrite: mobile-first WhatsApp-style layout, custom channel previews, EmptyState, TypingIndicator
 
-**Commit `cf96a50` — Backend + cross-cutting fixes:**
-- NoSQL injection sanitization on query params (`artisanServiceController.js`)
-- Category edits now processed (was silently dropped on update)
-- Store parsed numbers, not raw strings in createService
-- New `GET /api/services/mine` endpoint so artisan management tab can see archived services
-- Booking count filters `confirmed`+`completed` only (was counting cancelled)
-- Response envelope consistency on stats endpoint (`{ success, data }`)
-- `allowed_formats` in Cloudinary signed params (blocks SVG uploads server-side)
-- Frontend adapted for new response envelopes
+**Code Review Fixes** (4 commits)
+- `b53f2f7` — hasReview API, helpful sort via aggregation, dead code removal
+- `3216637` — Blob URL memory leak in ReviewSheet (revokeObjectURL on reset/unmount)
+- `013a254` — ObjectId validation on public review endpoints, JSDoc POST->PATCH fix
+- `0c6fbee` — Stale closure fix in handleReviewSuccess, aria-pressed on tag buttons
 
-**Commit `9c737c9` — Frontend resilience fixes:**
-- Stale closure fix via `imagesRef` in MultiImageUpload (prevents data loss on rapid uploads)
-- `try/finally` prevents ghost spinner previews on upload failure
-- `artisanId` added to useEffect deps in ServicesTab management
-- Spread `initialForm` to avoid shared mutable reference in ServiceFormSheet
-- Guard `onSave(saved)` against undefined API response
+**Search & Booking UX Fixes** (already completed in prior session)
+- ServicePickerSheet for multi-service artisans
+- Price removed from Book buttons
+- suggestedServices in search suggestions
 
 ### What Was Done in Prior Sessions (on this branch)
 
-**Phase 1: Design System Foundation** — Tailwind tokens, Button/Input/Badge/Card upgrades, new BottomSheet/Skeleton/ImageCarousel/EmptyState/Alert components, barrel exports
+**Phase 1: Design System Foundation** — Tailwind tokens, Button/Input/Badge/Card upgrades, BottomSheet/Skeleton/ImageCarousel/EmptyState/Alert, barrel exports
 
 **Phase 2: Homepage Redesign** — HeroSection, TrustBanner, FeaturedArtisans, CategoryBrowse, HowItWorks, TestimonialsCarousel, BottomNav
 
@@ -52,19 +54,18 @@ Ran 6 parallel review agents across all recent changes. Found 13 CRITICAL/HIGH i
 
 **Phase 4: Artisan Profile Page** — ProfileHero, TrustBar, AboutSection, tabbed layout, ReviewsTab
 
-**Phase 5: Booking + Payment Flow** — BookingSheet, DateTimePicker, PaymentSheet, availability API hardening, ServiceSummarySheet
+**Phase 5: Booking + Payment Flow** — ServiceSummarySheet, DateTimePicker, PaymentSheet, availability API hardening
 
-**Service Detail Sheet** (5 tasks) — ServiceDetailSheet with ImageCarousel, per-service stats API, reviews linked to services
+**Phase 6: Booking Status & Tracking** — UserBookings rebuild with StatusBadge, CancellationSheet, booking management
 
-**Service Management UI** (4 tasks) — ServiceFormSheet with live preview, MultiImageUpload, management ServicesTab with archive/activate/delete
+**Service Detail Sheet** — ServiceDetailSheet with ImageCarousel, per-service stats API
+
+**Service Management UI** — ServiceFormSheet with live preview, MultiImageUpload, management ServicesTab
 
 ### What's Remaining
 
 **UI/UX Overhaul Plan** (`docs/plans/2026-02-18-kalasetu-ui-overhaul-plan.md`):
-- Phase 6: Booking Status & Tracking (next up)
-- Phase 7: Reviews Flow
-- Phase 8: Chat Integration
-- Phase 9: Artisan Dashboard Rebuild
+- Phase 9: Artisan Dashboard Rebuild (next up)
 - Phase 10: User Dashboard Rebuild
 - Phase 11: Remaining Integrations & Global Polish
 
@@ -73,6 +74,9 @@ Ran 6 parallel review agents across all recent changes. Found 13 CRITICAL/HIGH i
 - Folder authorization by account type on upload signature endpoint
 - Validate image URLs are Cloudinary URLs on service save
 - Extract `formatDuration` to shared `utils/format.js` (duplicated 5x)
+- Artisan IDs stored in `helpfulVotes` ref:'User' field (protectAny allows artisans)
+- Inline safeParse in reviewController vs validateRequest middleware pattern
+- Cloudinary `allowed_formats` on review photo upload signatures
 
 ### What's Blocked
 
@@ -84,11 +88,11 @@ Ran 6 parallel review agents across all recent changes. Found 13 CRITICAL/HIGH i
 
 | Decision | Choice | Why |
 |----------|--------|-----|
-| Code review scope | 6 parallel agents | Full coverage: backend bugs, CLAUDE.md compliance, security, data flow, frontend components, code quality |
-| Stats response envelope | Changed to `{ success, data }` | Consistent with every other endpoint |
-| Archived services | New `/api/services/mine` endpoint | Artisan management needs all services; public listing correctly filters `isActive: true` |
-| Stale closure fix | `useRef` pattern | Simpler than functional updater on parent callback; `imagesRef.current` always has latest array |
-| Cloudinary format restriction | `allowed_formats` in signed params | Server-enforced by Cloudinary itself; blocks SVG/HTML without backend proxy |
+| Review tags approach | Rating-dependent tag sets | 4-5 stars get positive tags, 1-2 get negative, 3 gets all — mirrors Zomato pattern |
+| hasReview flag | Single Review query with `$in` | Avoids N+1 per booking; maps to Set for O(1) lookup |
+| Helpful sort | Aggregation with `$addFields: $size` | MongoDB sorts arrays by element value, not length |
+| Chat unread tracking | Stream Chat events | `notification.message_new`, `notification.mark_read`, `message.new` provide `total_unread_count` |
+| MessagesPage layout | Mobile-first with showChat toggle | WhatsApp pattern: channel list ↔ chat area swap on mobile, side-by-side on desktop |
 
 ---
 
@@ -99,8 +103,9 @@ Ran 6 parallel review agents across all recent changes. Found 13 CRITICAL/HIGH i
 - Razorpay webhook route must use `express.raw()` BEFORE `express.json()`
 - `bookingModel.modificationRequest` is a nested subdocument (not a ref)
 - `artisanServiceController.js` `listServices` hardcodes `isActive: true` — management tab uses `/api/services/mine` instead
-- `getServiceStats` now returns `{ success: true, data: { bookingCount, averageRating, reviewCount } }` — frontend uses `res.data?.data || res.data`
 - `MultiImageUpload` uses `imagesRef` to avoid stale closure — don't refactor to use `images` prop directly in async handlers
+- `ReviewSheet` photos use blob URLs — must `revokeObjectURL()` before clearing state and on unmount
+- `handleReviewSuccess` takes a `review` param to avoid stale closure on `reviewTarget`
 
 ---
 
@@ -108,34 +113,32 @@ Ran 6 parallel review agents across all recent changes. Found 13 CRITICAL/HIGH i
 
 | Branch | HEAD | Status |
 |--------|------|--------|
-| `feat/ui-overhaul` | `9c737c9` | 13 commits ahead of origin (not pushed) |
+| `feat/ui-overhaul` | `0c6fbee` | 80 commits ahead of main (pushed to origin) |
 | `main` | `4242c6c` | Stable |
 
-**Key commits on feat/ui-overhaul (newest first):**
+**Key commits (newest first):**
 ```
-9c737c9 fix(frontend): address remaining code review findings — stale closures, deps, refs
-cf96a50 fix: address code review findings — security, data integrity, UX
-a31183b feat(frontend): rewrite artisan ServicesTab with image-forward cards
-919a926 feat(frontend): create ServiceFormSheet with live preview
-1a46938 feat(frontend): create MultiImageUpload component
-36b8eea docs: artisan service management UI redesign plan
-d2a6a4e feat(frontend): polish service detail edge cases and a11y
-2de31ae feat(frontend): wire ServicesTab to open service detail on tap
-ce39e59 feat(frontend): create ServiceDetailSheet component
-2a3a33b feat(backend): add per-service stats endpoint
-32b2f54 feat(backend): add service field to review model
-de495fc feat(backend): add API health check script
-86cb3a0 docs: service detail sheet design and implementation plan
+0c6fbee fix(frontend): address remaining code review findings — stale closures, deps, refs
+013a254 fix(reviews): validate artisanId on public endpoints, fix JSDoc POST→PATCH
+3216637 fix(reviews): revoke blob URLs on ReviewSheet reset to prevent memory leak
+496ea37 feat(chat): rebuild MessagesPage with mobile-first layout and unread badge
+b53f2f7 fix(reviews): address code review findings — hasReview API, sort bug, dead code
+a43e961 feat(reviews): add Leave Review button and deep link support
+7ac990f feat(reviews): create ReviewSheet BottomSheet with progressive reveal
+1833239 feat(reviews): add GET /api/reviews/artisan/:id/tags route
+94d2f61 feat(reviews): create interactive StarRating component
+d24c1c4 feat(frontend): rebuild booking management with design system (Phase 6)
+76b5f71 feat: service picker for Book Now, search suggestions for service types
 ```
 
 ---
 
 ## Next Steps
 
-### If Continuing (Phase 6: Booking Status & Tracking)
+### If Continuing (Phase 9: Artisan Dashboard Rebuild)
 
-1. Read the plan: `docs/plans/2026-02-18-kalasetu-ui-overhaul-plan.md` — Phase 6 starts at line 1434
-2. Phase 6 tasks cover booking status pages, tracking UI, status timeline
+1. Read the plan: `docs/plans/2026-02-18-kalasetu-ui-overhaul-plan.md` — Phase 9 section
+2. Phase 9 covers artisan dashboard pages: overview, bookings management, earnings
 3. Continue on `feat/ui-overhaul` branch
 4. Commit after each task with descriptive messages
 
@@ -146,8 +149,9 @@ de495fc feat(backend): add API health check script
 | `docs/plans/2026-02-18-kalasetu-ui-overhaul-plan.md` | Full implementation plan (11 phases, 36 tasks) |
 | `docs/plans/2026-02-18-kalasetu-ui-overhaul-design.md` | Design document (approved) |
 | `docs/plans/2026-02-18-artisan-offering-redesign-plan.md` | Separate offering system plan (don't duplicate) |
+| `docs/plans/2026-02-20-reviews-flow-design.md` | Phase 7 reviews design (implemented) |
 
 ---
 
-*Last updated: 2026-02-19*
+*Last updated: 2026-02-20*
 *Updated by: Claude Code*

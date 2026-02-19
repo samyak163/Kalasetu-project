@@ -52,11 +52,11 @@ export default function UserBookings() {
       if (target) {
         setActiveTab('completed');
         setReviewTarget(target);
+        // Only clear param after successfully finding the booking
+        const url = new URL(window.location);
+        url.searchParams.delete('review');
+        window.history.replaceState({}, '', url);
       }
-      // Clear the query param
-      const url = new URL(window.location);
-      url.searchParams.delete('review');
-      window.history.replaceState({}, '', url);
     }
   }, [bookings]);
 
