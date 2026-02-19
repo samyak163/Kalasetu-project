@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import axios from 'axios';
-import { API_CONFIG } from '../config/env.config.js';
+import api from '../lib/axios.js';
 
 const NotificationContext = createContext({ notifications: [], unreadCount: 0, refresh: () => {}, markRead: async () => {} });
 
@@ -37,7 +36,7 @@ export const NotificationProvider = ({ children }) => {
 
   refreshRef.current = async () => {
     try {
-      const res = await axios.get(`${API_CONFIG.BASE_URL}/api/notifications`, { withCredentials: true });
+      const res = await api.get('/api/notifications');
       const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
       const decorated = list.map((item) => ({
         ...item,
@@ -55,15 +54,17 @@ export const NotificationProvider = ({ children }) => {
 
   const markRead = useCallback(async (id) => {
     try {
-      await axios.patch(`${API_CONFIG.BASE_URL}/api/notifications/${id}/read`, {}, { withCredentials: true });
+      await api.patch(`/api/notifications/${id}/read`);
       setNotifications(prev => prev.map(n => (n._id === id || n.id === id) ? { ...n, read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) { console.error('Failed to mark notification as read:', err); }
   }, []);
 
-  // Fetch once on mount - empty deps, no infinite loop
+  // Fetch on mount and poll every 30 seconds for new notifications
   useEffect(() => {
     refreshRef.current();
+    const interval = setInterval(() => refreshRef.current(), 30000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
