@@ -13,6 +13,7 @@
     "cleanup:dry": "node scripts/cleanupProfiles.js --dry-run",
     "cleanup": "node scripts/cleanupProfiles.js",
     "seed": "node scripts/seedShowcase.js",
+    "health": "node scripts/healthCheck.js",
     "check:artisans": "node scripts/checkArtisans.js",
     "workflow:test": "node scripts/workflowSim.js",
     "generate:db-doc": "node scripts/generateDatabaseDoc.js",
