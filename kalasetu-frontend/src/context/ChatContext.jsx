@@ -14,6 +14,12 @@ export const useChat = () => {
   return context;
 };
 
+/** Hook to get just the unread count — lightweight for navbar usage */
+export const useChatUnread = () => {
+  const context = useContext(ChatContext);
+  return context?.totalUnread ?? 0;
+};
+
 /**
  * Check if Stream Chat is properly configured on the frontend
  */
@@ -31,6 +37,7 @@ export const ChatProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUnavailable, setIsUnavailable] = useState(false);
+  const [totalUnread, setTotalUnread] = useState(0);
   // Ref tracks whether a client was initialized (avoids stale closure in cleanup)
   const clientInitializedRef = useRef(false);
 
@@ -100,11 +107,36 @@ export const ChatProvider = ({ children }) => {
     };
   }, [isAuthenticated, user]);
 
+  // Track unread message count from Stream Chat events
+  useEffect(() => {
+    if (!client) { setTotalUnread(0); return; }
+
+    // Read initial unread count from the connected user
+    setTotalUnread(client.user?.total_unread_count || 0);
+
+    const handleEvent = (event) => {
+      if (event.total_unread_count !== undefined) {
+        setTotalUnread(event.total_unread_count);
+      }
+    };
+
+    client.on('notification.message_new', handleEvent);
+    client.on('notification.mark_read', handleEvent);
+    client.on('message.new', handleEvent);
+
+    return () => {
+      client.off('notification.message_new', handleEvent);
+      client.off('notification.mark_read', handleEvent);
+      client.off('message.new', handleEvent);
+    };
+  }, [client]);
+
   const value = {
     client,
     isLoading,
     error,
     isUnavailable,
+    totalUnread,
   };
 
   // Always provide the context, but only wrap with Chat if client is available
