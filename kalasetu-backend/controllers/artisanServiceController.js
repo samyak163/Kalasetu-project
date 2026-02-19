@@ -18,10 +18,13 @@
  * @see models/categoryModel.js — Category lookup for denormalized categoryName
  */
 
+import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import ArtisanService from '../models/artisanServiceModel.js';
 import Category from '../models/categoryModel.js';
 import Artisan from '../models/artisanModel.js';
+import Booking from '../models/bookingModel.js';
+import Review from '../models/reviewModel.js';
 
 export const listServices = asyncHandler(async (req, res) => {
   const { category, q, artisan, limit = 20, page = 1 } = req.query;
@@ -101,4 +104,26 @@ export const getServicesByArtisanPublicId = asyncHandler(async (req, res) => {
   res.json({ success: true, data: services });
 });
 
+// GET /api/services/:serviceId/stats — per-service booking count + review stats
+export const getServiceStats = asyncHandler(async (req, res) => {
+  const { serviceId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(serviceId)) {
+    return res.status(400).json({ success: false, message: 'Invalid service ID' });
+  }
 
+  const objectId = new mongoose.Types.ObjectId(serviceId);
+
+  // Run both queries in parallel
+  const [bookingCount, reviewAgg] = await Promise.all([
+    Booking.countDocuments({ service: objectId, status: { $nin: ['cancelled'] } }),
+    Review.aggregate([
+      { $match: { service: objectId, status: 'active' } },
+      { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const averageRating = reviewAgg.length ? Number(reviewAgg[0].avg.toFixed(1)) : 0;
+  const reviewCount = reviewAgg.length ? reviewAgg[0].count : 0;
+
+  res.json({ bookingCount, averageRating, reviewCount });
+});

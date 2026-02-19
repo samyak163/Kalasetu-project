@@ -20,13 +20,14 @@
  */
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
-import { listServices, createService, updateService, deleteService, getServicesByArtisanPublicId } from '../controllers/artisanServiceController.js';
+import { listServices, createService, updateService, deleteService, getServicesByArtisanPublicId, getServiceStats } from '../controllers/artisanServiceController.js';
 
 const router = express.Router();
 
 // Controllers are already wrapped in asyncHandler — no need to double-wrap
 router.get('/', listServices);
 router.get('/artisan/:publicId', getServicesByArtisanPublicId);
+router.get('/:serviceId/stats', getServiceStats);
 router.post('/', protect, createService);
 router.patch('/:id', protect, updateService);
 router.delete('/:id', protect, deleteService);
