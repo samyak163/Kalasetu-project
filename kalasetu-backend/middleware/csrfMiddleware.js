@@ -1,18 +1,43 @@
+/**
+ * @file csrfMiddleware.js — Cross-Site Request Forgery Protection
+ *
+ * Implements the "double-submit with custom header" CSRF pattern.
+ *
+ * Why CSRF protection is needed:
+ *  KalaSetu uses SameSite=None cookies (Vercel frontend on *.vercel.app
+ *  talking to Render backend on *.onrender.com). This cross-origin cookie
+ *  setup means browsers WILL send auth cookies on cross-site requests,
+ *  making CSRF attacks possible without this middleware.
+ *
+ * How it works:
+ *  1. On login, generateCsrfToken() creates a JWT-signed token
+ *     → returned in the response body to the frontend
+ *  2. Frontend stores it in memory and attaches it as `X-CSRF-Token` header
+ *     on every state-changing request (POST, PUT, PATCH, DELETE)
+ *  3. verifyCsrf() middleware checks the header exists and is valid
+ *  4. Since custom headers cannot be set by cross-origin forms or <img> tags,
+ *     this blocks CSRF attacks
+ *
+ * Exemptions (routes that skip CSRF):
+ *  - GET, HEAD, OPTIONS (safe/read-only methods)
+ *  - Webhook routes (verified by their own signature mechanisms)
+ *  - QStash job routes (verified by QStash signing keys)
+ *  - Public auth routes (user doesn't have a token yet)
+ *  - All routes in development mode (for easier API testing)
+ *
+ * @exports {Function} generateCsrfToken — Create a CSRF token tied to a user session
+ * @exports {Function} verifyCsrf        — Middleware that validates X-CSRF-Token header
+ *
+ * @requires crypto — Random bytes for token uniqueness
+ * @requires jsonwebtoken — Sign/verify CSRF tokens (same secret as auth JWTs)
+ *
+ * @see controllers/authController.js — Returns CSRF token on artisan login
+ * @see controllers/userAuthController.js — Returns CSRF token on user login
+ * @see kalasetu-frontend/src/lib/axios.js — Attaches X-CSRF-Token header on requests
+ */
+
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-
-/**
- * CSRF Protection Middleware
- *
- * Since we use SameSite=None cookies for cross-origin auth (Vercel frontend + Render backend),
- * we need CSRF protection. This uses the double-submit pattern with a custom header:
- *
- * 1. On login, a CSRF token is generated and returned in the response body
- * 2. Frontend stores it in memory/localStorage and sends it as X-CSRF-Token header
- * 3. This middleware verifies the token on state-changing requests (POST, PUT, PATCH, DELETE)
- *
- * Custom headers cannot be set by cross-origin forms or simple requests, which blocks CSRF.
- */
 
 /**
  * Generate a CSRF token tied to a user session
@@ -70,7 +95,26 @@ export const verifyCsrf = (req, res, next) => {
   }
 
   try {
-    jwt.verify(csrfToken, process.env.JWT_SECRET);
+    const decoded = jwt.verify(csrfToken, process.env.JWT_SECRET);
+
+    // Defense-in-depth: verify CSRF token belongs to the authenticated user
+    // The CSRF payload format is "userId:timestamp:random"
+    const authToken = req.cookies?.[process.env.COOKIE_NAME || 'ks_auth'];
+    if (authToken && decoded.csrf) {
+      try {
+        const authDecoded = jwt.verify(authToken, process.env.JWT_SECRET);
+        const csrfUserId = decoded.csrf.split(':')[0];
+        if (csrfUserId && authDecoded.id && csrfUserId !== authDecoded.id.toString()) {
+          return res.status(403).json({
+            success: false,
+            message: 'CSRF token mismatch',
+          });
+        }
+      } catch {
+        // If auth token is invalid, the auth middleware will reject it later
+      }
+    }
+
     next();
   } catch {
     return res.status(403).json({

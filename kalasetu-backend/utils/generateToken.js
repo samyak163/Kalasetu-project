@@ -1,8 +1,9 @@
 import jwt from 'jsonwebtoken';
 
-// Generates a JWT for a given user id
-export const signJwt = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
+// Generates a JWT for a given user id with account type claim
+// Type claim prevents cross-type token reuse (artisan token used as user or vice versa)
+export const signJwt = (id, type = 'artisan') => {
+    return jwt.sign({ id, type }, process.env.JWT_SECRET, {
         expiresIn: '7d',
     });
 };

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
 /**
  * Generate a 6-digit OTP code
@@ -12,22 +13,25 @@ export const generateOTP = () => {
 /**
  * Generate OTP with expiration time
  * @param {number} expiryMinutes - Expiration time in minutes (default: 10)
- * @returns {Object} { code, expiresAt }
+ * @returns {Object} { code, hashedCode, expiresAt }
  */
-export const generateOTPWithExpiry = (expiryMinutes = 10) => {
+export const generateOTPWithExpiry = async (expiryMinutes = 10) => {
   const code = generateOTP();
   const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000);
-  return { code, expiresAt };
+  // Hash the OTP for storage — plaintext code is only sent to user via email/SMS
+  // Cost factor 8 (lower than passwords) since OTPs are temporary and rate-limited
+  const hashedCode = await bcrypt.hash(code, 8);
+  return { code, hashedCode, expiresAt };
 };
 
 /**
- * Verify OTP code
- * @param {string} providedCode - Code provided by user
- * @param {string} storedCode - Code stored in database
+ * Verify OTP code against a hashed stored code
+ * @param {string} providedCode - Plaintext code provided by user
+ * @param {string} storedCode - Hashed code stored in database
  * @param {Date} expiresAt - Expiration date
- * @returns {boolean} True if valid, false otherwise
+ * @returns {Promise<boolean>} True if valid, false otherwise
  */
-export const verifyOTP = (providedCode, storedCode, expiresAt) => {
+export const verifyOTP = async (providedCode, storedCode, expiresAt) => {
   if (!providedCode || !storedCode || !expiresAt) {
     return false;
   }
@@ -37,7 +41,7 @@ export const verifyOTP = (providedCode, storedCode, expiresAt) => {
     return false;
   }
 
-  // Check if code matches
-  return providedCode.trim() === storedCode.trim();
+  // Compare against bcrypt hash
+  return await bcrypt.compare(providedCode.trim(), storedCode);
 };
 
