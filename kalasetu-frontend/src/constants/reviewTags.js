@@ -30,12 +30,3 @@ export function getTagsForRating(rating) {
   return ALL_TAGS; // 3 stars
 }
 
-/**
- * Returns 'positive' or 'negative' sentiment for a tag string.
- * Used by TagSummary for color coding.
- */
-export function getTagSentiment(tag) {
-  if (POSITIVE_TAGS.includes(tag)) return 'positive';
-  if (NEGATIVE_TAGS.includes(tag)) return 'negative';
-  return 'neutral';
-}

@@ -6,7 +6,7 @@ import { TabBar, Skeleton, EmptyState, Alert } from '../../../components/ui';
 import BookingCard from '../../../components/booking/BookingCard.jsx';
 import CancellationSheet from '../../../components/booking/CancellationSheet.jsx';
 import ReviewSheet from '../../../components/booking/ReviewSheet.jsx';
-import { CalendarDays, Star, MessageCircle, RotateCcw, XCircle } from 'lucide-react';
+import { CalendarDays, Star, CheckCircle, MessageCircle, RotateCcw, XCircle } from 'lucide-react';
 
 const TAB_CONFIG = [
   { key: 'upcoming', label: 'Upcoming', statuses: ['pending', 'confirmed'] },
@@ -24,7 +24,6 @@ export default function UserBookings() {
   const [expandedId, setExpandedId] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null); // { id, status }
   const [reviewTarget, setReviewTarget] = useState(null); // booking object or null
-  const [reviewedIds, setReviewedIds] = useState(new Set()); // track reviewed bookings locally
 
   const fetchBookings = async ({ silent = false } = {}) => {
     try {
@@ -49,7 +48,7 @@ export default function UserBookings() {
     const params = new URLSearchParams(window.location.search);
     const reviewBookingId = params.get('review');
     if (reviewBookingId && bookings.length > 0) {
-      const target = bookings.find(b => b._id === reviewBookingId && b.status === 'completed');
+      const target = bookings.find(b => b._id === reviewBookingId && b.status === 'completed' && !b.hasReview);
       if (target) {
         setActiveTab('completed');
         setReviewTarget(target);
@@ -90,7 +89,9 @@ export default function UserBookings() {
         ];
       case 'completed': {
         const actions = [];
-        if (!reviewedIds.has(booking._id)) {
+        if (booking.hasReview) {
+          actions.push({ label: 'Reviewed', variant: 'ghost', icon: CheckCircle, disabled: true });
+        } else {
           actions.push({ label: 'Leave Review', variant: 'primary', icon: Star, onClick: () => setReviewTarget(booking) });
         }
         actions.push({ label: 'Book Again', variant: 'secondary', icon: RotateCcw, onClick: () => navigate(artisanUrl) });
@@ -112,8 +113,12 @@ export default function UserBookings() {
   };
 
   const handleReviewSuccess = () => {
-    setReviewedIds(prev => new Set(prev).add(reviewTarget?._id));
+    // Mark booking as reviewed in local state and re-fetch for server truth
+    setBookings(prev => prev.map(b =>
+      b._id === reviewTarget?._id ? { ...b, hasReview: true } : b
+    ));
     setReviewTarget(null);
+    fetchBookings({ silent: true });
   };
 
   if (initialLoading) {

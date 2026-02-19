@@ -140,15 +140,37 @@ export const createReview = asyncHandler(async (req, res) => {
 
 export const getArtisanReviews = asyncHandler(async (req, res) => {
   const { artisanId } = req.params;
-  const { page = 1, limit = 20, sort = 'recent', star } = req.query;
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+  const sort = req.query.sort || 'recent';
+  const star = req.query.star ? Number(req.query.star) : null;
   const filter = { artisan: artisanId, status: 'active' };
-  if (star) filter.rating = Number(star);
-  const sortMap = { recent: { createdAt: -1 }, helpful: { helpfulVotes: -1 }, rating: { rating: -1 } };
+  if (star && star >= 1 && star <= 5) filter.rating = star;
+
+  // "helpful" sort requires aggregation to sort by array length, not first element
+  if (sort === 'helpful') {
+    const objectId = new mongoose.Types.ObjectId(artisanId);
+    const matchStage = { artisan: objectId, status: 'active' };
+    if (star && star >= 1 && star <= 5) matchStage.rating = star;
+    const reviews = await Review.aggregate([
+      { $match: matchStage },
+      { $addFields: { helpfulCount: { $size: { $ifNull: ['$helpfulVotes', []] } } } },
+      { $sort: { helpfulCount: -1 } },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+    ]);
+    // Populate user fields on aggregation results
+    await Review.populate(reviews, { path: 'user', select: 'fullName profileImageUrl' });
+    const count = await Review.countDocuments(filter);
+    return res.json({ success: true, data: reviews, count });
+  }
+
+  const sortMap = { recent: { createdAt: -1 }, rating: { rating: -1 } };
   const reviews = await Review.find(filter)
     .populate('user', 'fullName profileImageUrl')
     .sort(sortMap[sort] || sortMap.recent)
     .skip((page - 1) * limit)
-    .limit(parseInt(limit));
+    .limit(limit);
   const count = await Review.countDocuments(filter);
   res.json({ success: true, data: reviews, count });
 });

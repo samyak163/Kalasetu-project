@@ -39,6 +39,7 @@ import { createDirectMessageChannel, upsertStreamUser, sendMessage } from '../ut
 import { createDailyRoom } from '../utils/dailyco.js';
 import { createNotification } from '../utils/notificationService.js';
 import { refundPayment } from '../utils/razorpay.js';
+import Review from '../models/reviewModel.js';
 
 /**
  * Auto-refund helper — processes a full Razorpay refund when a booking is
@@ -235,6 +236,20 @@ export const getMyBookings = asyncHandler(async (req, res) => {
     .populate('artisan', 'fullName publicId profileImageUrl')
     .sort({ createdAt: -1 })
     .lean();
+
+  // Attach hasReview flag to completed bookings (single query, not per-booking)
+  const completedIds = list.filter(b => b.status === 'completed').map(b => b._id);
+  if (completedIds.length > 0) {
+    const reviewedBookings = await Review.find(
+      { user: userId, booking: { $in: completedIds } },
+      { booking: 1 }
+    ).lean();
+    const reviewedSet = new Set(reviewedBookings.map(r => String(r.booking)));
+    for (const b of list) {
+      if (b.status === 'completed') b.hasReview = reviewedSet.has(String(b._id));
+    }
+  }
+
   res.json({ success: true, data: list });
 });
 

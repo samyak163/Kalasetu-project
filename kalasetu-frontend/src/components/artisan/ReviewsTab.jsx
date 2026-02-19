@@ -14,7 +14,7 @@ const REVIEWS_PER_PAGE = 10;
  *
  * Structure:
  *  1. Rating summary bar (average from artisan doc, distribution from loaded reviews)
- *  2. Tag summary chips (Phase 7 — placeholder-ready)
+ *  2. Tag summary chips (aggregated from reviews API)
  *  3. Individual reviews via ReviewCard component
  *  4. "Load more" pagination
  *
