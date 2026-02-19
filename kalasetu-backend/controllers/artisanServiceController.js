@@ -29,13 +29,17 @@ import Review from '../models/reviewModel.js';
 export const listServices = asyncHandler(async (req, res) => {
   const { category, q, artisan, limit = 20, page = 1 } = req.query;
   const filter = { isActive: true };
-  if (category) filter.categoryName = category;
-  if (artisan) filter.artisan = artisan;
-  if (q) filter.$text = { $search: q };
+  // String() prevents NoSQL injection via Express 4's qs parser
+  // (e.g., ?artisan[$ne]=null would otherwise inject a MongoDB operator)
+  if (category) filter.categoryName = String(category);
+  if (artisan) filter.artisan = String(artisan);
+  if (q) filter.$text = { $search: String(q) };
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+  const pageNum = Math.max(1, parseInt(page) || 1);
   const docs = await ArtisanService.find(filter)
     .sort({ createdAt: -1 })
-    .limit(Math.min(100, parseInt(limit)))
-    .skip((Math.max(1, parseInt(page)) - 1) * parseInt(limit))
+    .limit(limitNum)
+    .skip((pageNum - 1) * limitNum)
     .lean();
   res.json({ success: true, data: docs });
 });
@@ -60,8 +64,8 @@ export const createService = asyncHandler(async (req, res) => {
     categoryName: category.name,
     name,
     description: description || '',
-    price,
-    durationMinutes,
+    price: parsedPrice,
+    durationMinutes: parsedDuration,
     images,
   });
   res.status(201).json({ success: true, data: doc });
@@ -77,6 +81,15 @@ export const updateService = asyncHandler(async (req, res) => {
   ['name', 'description', 'price', 'durationMinutes', 'images', 'isActive'].forEach((k) => {
     if (req.body[k] !== undefined) updates[k] = req.body[k];
   });
+
+  // Handle category change — look up by ID and update both fields
+  if (req.body.categoryId && String(req.body.categoryId) !== String(doc.category)) {
+    const newCat = await Category.findById(String(req.body.categoryId)).lean();
+    if (!newCat) return res.status(404).json({ success: false, message: 'Category not found' });
+    updates.category = newCat._id;
+    updates.categoryName = newCat.name;
+  }
+
   Object.assign(doc, updates);
   await doc.save();
   res.json({ success: true, data: doc });
@@ -104,6 +117,16 @@ export const getServicesByArtisanPublicId = asyncHandler(async (req, res) => {
   res.json({ success: true, data: services });
 });
 
+// GET /api/services/mine — Artisan's own services (includes archived/inactive)
+// Uses `protect` middleware — only the owning artisan can see their full list
+export const listMyServices = asyncHandler(async (req, res) => {
+  const artisanId = req.user?._id || req.user?.id;
+  const services = await ArtisanService.find({ artisan: artisanId })
+    .sort({ createdAt: -1 })
+    .lean();
+  res.json({ success: true, data: services });
+});
+
 // GET /api/services/:serviceId/stats — per-service booking count + review stats
 export const getServiceStats = asyncHandler(async (req, res) => {
   const { serviceId } = req.params;
@@ -115,7 +138,8 @@ export const getServiceStats = asyncHandler(async (req, res) => {
 
   // Run both queries in parallel
   const [bookingCount, reviewAgg] = await Promise.all([
-    Booking.countDocuments({ service: objectId, status: { $nin: ['cancelled'] } }),
+    // Only count bookings that actually happened (not rejected/pending/cancelled)
+    Booking.countDocuments({ service: objectId, status: { $in: ['confirmed', 'completed'] } }),
     Review.aggregate([
       { $match: { service: objectId, status: 'active' } },
       { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } },
@@ -125,5 +149,5 @@ export const getServiceStats = asyncHandler(async (req, res) => {
   const averageRating = reviewAgg.length ? Number(reviewAgg[0].avg.toFixed(1)) : 0;
   const reviewCount = reviewAgg.length ? reviewAgg[0].count : 0;
 
-  res.json({ bookingCount, averageRating, reviewCount });
+  res.json({ success: true, data: { bookingCount, averageRating, reviewCount } });
 });

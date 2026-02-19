@@ -44,7 +44,7 @@ const ServicesTab = () => {
     setLoading(true);
     try {
       const [serviceRes, catRes] = await Promise.all([
-        api.get('/api/services', { params: { artisan: artisanId, limit: 100 } }),
+        api.get('/api/services/mine'),
         api.get('/api/categories/suggestions/services/all'),
       ]);
       setServices(serviceRes.data?.data || []);

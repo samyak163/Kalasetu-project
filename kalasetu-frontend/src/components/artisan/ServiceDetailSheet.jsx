@@ -23,7 +23,7 @@ export default function ServiceDetailSheet({ service, artisan, open, onClose, on
     setStatsLoading(true);
     api.get(`/api/services/${service._id}/stats`)
       .then((res) => {
-        if (!cancelled) setStats(res.data);
+        if (!cancelled) setStats(res.data?.data || res.data);
       })
       .catch(() => {
         if (!cancelled) setStats(null);

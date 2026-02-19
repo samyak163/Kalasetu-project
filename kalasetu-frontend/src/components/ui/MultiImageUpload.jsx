@@ -25,7 +25,7 @@ export default function MultiImageUpload({
   // Upload a single file to Cloudinary via signed upload
   const uploadFile = async (file) => {
     const sigRes = await api.get('/api/uploads/signature', { params: { folder } });
-    const { timestamp, signature, api_key, cloud_name, folder: uploadFolder } = sigRes.data;
+    const { timestamp, signature, api_key, cloud_name, folder: uploadFolder, allowed_formats } = sigRes.data;
 
     const formData = new FormData();
     formData.append('file', file);
@@ -33,6 +33,7 @@ export default function MultiImageUpload({
     formData.append('timestamp', timestamp);
     formData.append('signature', signature);
     formData.append('folder', uploadFolder);
+    if (allowed_formats) formData.append('allowed_formats', allowed_formats);
 
     const res = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, {
       method: 'POST',
