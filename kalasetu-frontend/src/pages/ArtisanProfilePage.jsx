@@ -71,8 +71,11 @@ const ArtisanProfilePage = () => {
         ]);
 
         if (cancelled) return;
-        setArtisan(artisanRes.data);
-        setServices(servicesRes.data?.data || servicesRes.data || []);
+        // Handle both cached ({ cached: true, data: {...} }) and direct responses
+        const artisanData = artisanRes.data?.cached ? artisanRes.data.data : artisanRes.data;
+        setArtisan(artisanData);
+        const servicesRaw = servicesRes.data?.cached ? servicesRes.data.data : servicesRes.data;
+        setServices(servicesRaw?.data || servicesRaw || []);
 
         // SEO data — non-critical, don't block render
         api.get(`/api/seo/artisan/${publicId}`)

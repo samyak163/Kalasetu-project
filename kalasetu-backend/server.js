@@ -130,25 +130,10 @@ app.use(express.json({ limit: '200kb' }));
 // Cookie parsing (for HTTP-only JWTs)
 app.use(cookieParser());
 
-// Rate limiting - Increased limits
-const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 300,
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-app.use('/api', apiLimiter);
-
-// CSRF protection for state-changing requests (POST, PUT, PATCH, DELETE)
-// Safe methods (GET, HEAD, OPTIONS) pass through. Webhooks excluded.
-import { verifyCsrf } from './middleware/csrfMiddleware.js';
-app.use('/api', verifyCsrf);
-
-// Add analytics middleware (after auth middleware will be applied in routes)
-app.use('/api', trackApiRequest);
-
-// CORS Configuration
-// Support exact origins and simple wildcard entries like *.vercel.app
+// CORS Configuration — MUST be before rate limiting and CSRF so that preflight
+// OPTIONS requests get proper CORS headers before any other middleware can
+// short-circuit the response (e.g., rate limiter returning 429 without CORS headers
+// causes browsers to treat it as a network error).
 const corsOriginEntries = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
 const exactOrigins = new Set();
 const wildcardSuffixes = [];
@@ -183,6 +168,23 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// Rate limiting - Increased limits
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+app.use('/api', apiLimiter);
+
+// CSRF protection for state-changing requests (POST, PUT, PATCH, DELETE)
+// Safe methods (GET, HEAD, OPTIONS) pass through. Webhooks excluded.
+import { verifyCsrf } from './middleware/csrfMiddleware.js';
+app.use('/api', verifyCsrf);
+
+// Add analytics middleware (after auth middleware will be applied in routes)
+app.use('/api', trackApiRequest);
 
 // --- API Routes ---
 
