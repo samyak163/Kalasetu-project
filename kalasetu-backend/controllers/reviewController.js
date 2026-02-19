@@ -7,8 +7,8 @@
  * Endpoints:
  *  POST /api/reviews              — Create a review (userProtect — customers only)
  *  GET  /api/reviews/artisan/:id  — Get reviews for an artisan (public)
- *  POST /api/reviews/:id/respond  — Artisan responds to a review (protect)
- *  POST /api/reviews/:id/helpful  — Vote a review as helpful (userProtect)
+ *  PATCH /api/reviews/:id/respond — Artisan responds to a review (protect)
+ *  POST  /api/reviews/:id/helpful — Vote a review as helpful (protectAny)
  *
  * On review creation, the artisan's averageRating and totalReviews are
  * recalculated via aggregation and denormalized onto the Artisan document.
@@ -140,6 +140,9 @@ export const createReview = asyncHandler(async (req, res) => {
 
 export const getArtisanReviews = asyncHandler(async (req, res) => {
   const { artisanId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(artisanId)) {
+    return res.status(400).json({ success: false, message: 'Invalid artisan ID' });
+  }
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
   const sort = req.query.sort || 'recent';
@@ -181,6 +184,9 @@ export const getArtisanReviews = asyncHandler(async (req, res) => {
  */
 export const getArtisanTags = asyncHandler(async (req, res) => {
   const { artisanId } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(artisanId)) {
+    return res.status(400).json({ success: false, message: 'Invalid artisan ID' });
+  }
   const objectId = new mongoose.Types.ObjectId(artisanId);
 
   const tags = await Review.aggregate([
