@@ -22,3 +22,4 @@ export { default as ReviewCard } from './ReviewCard';
 export { default as ImageCarousel } from './ImageCarousel';
 export { default as Toast } from './Toast';
 export { default as SlideToConfirm } from './SlideToConfirm';
+export { default as MultiImageUpload } from './MultiImageUpload';
