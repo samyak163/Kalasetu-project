@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Clock, IndianRupee } from 'lucide-react';
-import { Card, Button, EmptyState } from '../ui/index.js';
+import { Button, EmptyState } from '../ui/index.js';
 import { optimizeImage } from '../../utils/cloudinary.js';
 import ServiceDetailSheet from './ServiceDetailSheet.jsx';
 
