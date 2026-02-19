@@ -1,3 +1,31 @@
+/**
+ * @file paymentController.js — Razorpay Payment Processing
+ *
+ * Handles the full payment lifecycle: order creation, checkout verification,
+ * webhook processing, payment history, and refund initiation.
+ *
+ * Endpoints:
+ *  POST /api/payments/create-order  — Create Razorpay order (returns orderId for checkout)
+ *  POST /api/payments/verify        — Verify Razorpay payment signature after checkout
+ *  GET  /api/payments               — Payment history for current user
+ *  GET  /api/payments/:id           — Single payment details
+ *  POST /api/payments/webhook       — Razorpay webhook handler (signature verified)
+ *  POST /api/payments/:id/refund    — Initiate refund request
+ *
+ * Payment flow:
+ *  1. Frontend calls create-order → backend creates Razorpay order → returns orderId
+ *  2. Frontend opens Razorpay checkout with orderId
+ *  3. On success, frontend calls verify → backend verifies signature → marks as captured
+ *  4. Razorpay sends webhook for async confirmation → updates payment status
+ *
+ * @security Webhook signatures MUST be verified using RAZORPAY_WEBHOOK_SECRET.
+ *           Payment amounts are validated against booking prices.
+ *
+ * @see utils/razorpay.js — Razorpay SDK helpers
+ * @see models/paymentModel.js — Payment schema
+ * @see models/refundRequestModel.js — Refund requests
+ */
+
 import asyncHandler from '../utils/asyncHandler.js';
 import { z } from 'zod';
 import Payment from '../models/paymentModel.js';
@@ -52,12 +80,30 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     if (!booking.price || booking.price <= 0) {
       return res.status(400).json({ success: false, message: 'Booking has no valid price' });
     }
+    // Prevent double payment: check for existing non-terminal payment on this booking
+    const existingPayment = await Payment.findOne({
+      'metadata.bookingId': bookingId,
+      status: { $in: ['created', 'captured'] },
+    }).lean();
+    if (existingPayment) {
+      return res.status(409).json({
+        success: false,
+        message: 'A payment already exists for this booking',
+        data: { existingPaymentId: existingPayment._id, status: existingPayment.status },
+      });
+    }
     amount = booking.price;
     resolvedRecipientId = resolvedRecipientId || booking.artisan;
   } else {
-    // Fallback for non-booking payments — client amount with validation
+    // Non-booking payments: client amount with strict validation
     if (!clientAmount) {
       return res.status(400).json({ success: false, message: 'Either bookingId or amount is required' });
+    }
+    if (!recipientId) {
+      return res.status(400).json({ success: false, message: 'recipientId is required for non-booking payments' });
+    }
+    if (clientAmount < 100) {
+      return res.status(400).json({ success: false, message: 'Minimum payment amount is Rs. 100' });
     }
     amount = clientAmount;
   }
@@ -160,6 +206,14 @@ export const verifyPayment = asyncHandler(async (req, res) => {
   // Don't store the signature — it's only needed for verification, not storage
   payment.status = 'captured';
   await payment.save();
+
+  // Update booking payment status if this payment is linked to a booking
+  if (payment.metadata?.bookingId) {
+    await Booking.findByIdAndUpdate(payment.metadata.bookingId, {
+      depositPaid: true,
+      paymentStatus: 'paid',
+    });
+  }
 
   // Fetch full payment details from Razorpay
   const paymentDetails = await fetchPayment(razorpay_payment_id);
@@ -346,6 +400,11 @@ export const getArtisanEarnings = asyncHandler(async (req, res) => {
  * Request refund
  * POST /api/payments/:paymentId/refund
  */
+/**
+ * Request refund — creates a RefundRequest for admin review.
+ * Previously this processed refunds directly via Razorpay, bypassing admin approval.
+ * Now all refunds go through the admin-reviewed RefundRequest flow.
+ */
 export const requestRefund = asyncHandler(async (req, res) => {
   const { paymentId } = req.params;
   const { amount, reason } = req.body;
@@ -360,7 +419,6 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if user is the payer
   if (payment.payerId.toString() !== userId) {
     return res.status(403).json({
       success: false,
@@ -368,7 +426,6 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check payment status — refunded check first since it's more specific
   if (payment.status === 'refunded') {
     return res.status(400).json({
       success: false,
@@ -383,8 +440,7 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
-  // Validate refund amount doesn't exceed original
-  const refundAmount = amount || payment.amount;
+  const refundAmount = (typeof amount === 'number' && amount > 0) ? amount : payment.amount;
   if (refundAmount > payment.amount) {
     return res.status(400).json({
       success: false,
@@ -392,47 +448,45 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
-  // Process refund via Razorpay
-  const refund = await refundPayment(
-    payment.razorpayPaymentId,
-    refundAmount
-  );
-
-  if (!refund) {
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to process refund',
-    });
-  }
-
-  // Atomic update to prevent race conditions
-  const updated = await Payment.findOneAndUpdate(
-    { _id: payment._id, status: 'captured' },
-    {
-      $set: {
-        status: 'refunded',
-        refundId: refund.id,
-        refundAmount,
-        refundedAt: new Date(),
-        'metadata.refundReason': reason,
-      },
-    },
-    { new: true }
-  );
-
-  if (!updated) {
+  // Check for existing pending/approved refund requests on this payment
+  const existingRefund = await RefundRequest.findOne({
+    payment: paymentId,
+    status: { $in: ['pending', 'approved', 'processing'] },
+  }).lean();
+  if (existingRefund) {
     return res.status(409).json({
       success: false,
-      message: 'Payment status changed during refund processing',
+      message: 'A refund request is already pending for this payment',
     });
   }
 
-  res.json({
+  // Create RefundRequest for admin review (do NOT process via Razorpay directly)
+  const refundRequest = await RefundRequest.create({
+    payment: paymentId,
+    booking: payment.metadata?.bookingId || null,
+    requestedBy: req.user._id,
+    requestedByModel: req.accountType === 'artisan' ? 'Artisan' : 'User',
+    amount: refundAmount,
+    reason: reason || 'Refund requested by payer',
+  });
+
+  // Notify user
+  await Notification.create({
+    ownerId: req.user._id,
+    ownerType: req.accountType === 'artisan' ? 'artisan' : 'user',
+    title: 'Refund Request Submitted',
+    text: `Your refund request for Rs.${refundAmount} is pending admin review.`,
+    url: `/refunds/${refundRequest._id}`,
+    read: false,
+  }).catch(() => {});
+
+  res.status(201).json({
     success: true,
-    message: 'Refund processed successfully',
+    message: 'Refund request submitted for review',
     data: {
-      refundId: refund.id,
+      refundRequestId: refundRequest._id,
       amount: refundAmount,
+      status: 'pending',
     },
   });
 });
@@ -509,10 +563,19 @@ async function handlePaymentCaptured(paymentData, eventId) {
     },
   };
 
-  await Payment.findOneAndUpdate(
+  const payment = await Payment.findOneAndUpdate(
     { razorpayOrderId: paymentData.order_id, status: { $ne: 'captured' } },
-    update
+    update,
+    { new: true }
   );
+
+  // Update booking payment status if linked
+  if (payment?.metadata?.bookingId) {
+    await Booking.findByIdAndUpdate(payment.metadata.bookingId, {
+      depositPaid: true,
+      paymentStatus: 'paid',
+    });
+  }
 }
 
 /**
@@ -537,19 +600,19 @@ async function handlePaymentFailed(paymentData, eventId) {
  * Handle refund created event
  */
 async function handleRefundCreated(refundData) {
-  const payment = await Payment.findOne({
-    razorpayPaymentId: refundData.payment_id,
-  });
-
-  if (payment) {
-    payment.status = 'refunded';
-    payment.refundId = refundData.id;
-    payment.refundAmount = refundData.amount / 100; // Convert from paise
-    payment.refundedAt = new Date();
-    await payment.save();
-
-    console.log(`✅ Refund processed: ${payment._id}`);
-  }
+  // Atomic update to prevent race conditions with concurrent webhook/API refund processing
+  const payment = await Payment.findOneAndUpdate(
+    { razorpayPaymentId: refundData.payment_id, status: { $ne: 'refunded' } },
+    {
+      $set: {
+        status: 'refunded',
+        refundId: refundData.id,
+        refundAmount: refundData.amount / 100, // Convert from paise
+        refundedAt: new Date(),
+      },
+    },
+    { new: true }
+  );
 
   // Update RefundRequest status
   const refundRequest = await RefundRequest.findOne({ razorpayRefundId: refundData.id });
