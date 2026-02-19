@@ -270,8 +270,10 @@ const ArtisanProfilePage = () => {
 
         {/* 6. Multi-step Booking Flow */}
 
-        {/* Step 1: Service Summary + Date/Time */}
+        {/* Step 1: Service Summary + Date/Time
+            key forces remount when service changes, resetting local date/time state */}
         <ServiceSummarySheet
+          key={bookingService?._id}
           service={bookingService}
           artisan={artisan}
           open={bookingStep === 'summary'}

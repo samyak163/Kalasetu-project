@@ -96,7 +96,11 @@ export const getAvailability = asyncHandler(async (req, res) => {
   }
 
   const artisanId = artisan._id;
-  const dayOfWeek = requestedDate.getDay(); // 0=Sun, 6=Sat
+  // Derive day-of-week from the date string directly (UTC-safe).
+  // requestedDate.getDay() uses UTC internally, but "2026-02-19T00:00:00+05:30"
+  // is "2026-02-18T18:30:00Z" — getDay() would return the WRONG day for IST dates.
+  const [year, month, dayNum] = date.split('-').map(Number);
+  const dayOfWeek = new Date(Date.UTC(year, month - 1, dayNum)).getUTCDay();
   const dayName = DAY_NAMES[dayOfWeek];
 
   // Check advance booking limit from Availability model

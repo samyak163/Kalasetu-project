@@ -34,6 +34,12 @@ export default function PaymentSheet({ service, artisan, bookingData, open, onCl
     setError(null);
 
     try {
+      // Validate date/time format before constructing ISO string
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(bookingData.date) || !/^\d{2}:\d{2}$/.test(bookingData.time)) {
+        setError('Invalid date or time selection. Please go back and try again.');
+        setProcessing(false);
+        return;
+      }
       // Build ISO start time from date + time
       const startISO = `${bookingData.date}T${bookingData.time}:00+05:30`;
 

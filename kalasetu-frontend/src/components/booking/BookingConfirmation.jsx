@@ -70,7 +70,7 @@ export default function BookingConfirmation({ service, artisan, bookingData, boo
         <Button
           variant="primary"
           className="w-full"
-          onClick={() => navigate(`/messages?artisan=${artisan?._id}`)}
+          onClick={() => artisan?._id && navigate(`/messages?artisan=${artisan._id}`)}
         >
           <MessageCircle className="h-4 w-4" />
           Message Artisan

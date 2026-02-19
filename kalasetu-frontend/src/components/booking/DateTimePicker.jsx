@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import api from '../../lib/axios.js';
 import { Skeleton } from '../ui/index.js';
 
@@ -21,20 +21,25 @@ export default function DateTimePicker({ publicId, selectedDate, selectedTime, o
   const [meta, setMeta] = useState(null);
   const dayScrollRef = useRef(null);
 
-  // Generate next 14 days
-  const days = [];
-  const today = new Date();
-  for (let i = 0; i < DAYS_AHEAD; i++) {
-    const d = new Date(today);
-    d.setDate(d.getDate() + i);
-    days.push({
-      date: d.toISOString().slice(0, 10),
-      dayName: d.toLocaleDateString('en-IN', { weekday: 'short' }),
-      dayNum: d.getDate(),
-      monthName: d.toLocaleDateString('en-IN', { month: 'short' }),
-      isToday: i === 0,
-    });
-  }
+  // Generate next 14 days — memoized to avoid recalc on every render.
+  // Keyed on today's date string so it refreshes at midnight.
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const days = useMemo(() => {
+    const result = [];
+    const today = new Date();
+    for (let i = 0; i < DAYS_AHEAD; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      result.push({
+        date: d.toISOString().slice(0, 10),
+        dayName: d.toLocaleDateString('en-IN', { weekday: 'short' }),
+        dayNum: d.getDate(),
+        monthName: d.toLocaleDateString('en-IN', { month: 'short' }),
+        isToday: i === 0,
+      });
+    }
+    return result;
+  }, [todayStr]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch slots when date changes
   useEffect(() => {

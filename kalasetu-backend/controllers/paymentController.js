@@ -103,6 +103,9 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     if (artisanDoc.isActive === false) {
       return res.status(400).json({ success: false, message: 'This artisan is not currently accepting bookings' });
     }
+    if (service.isActive === false) {
+      return res.status(400).json({ success: false, message: 'This service is no longer available' });
+    }
     if (String(service.artisan) !== String(artisanId)) {
       return res.status(400).json({ success: false, message: 'Service does not belong to this artisan' });
     }
@@ -299,6 +302,16 @@ export const verifyPayment = asyncHandler(async (req, res) => {
         payment.status = 'captured';
         payment.metadata.refundReason = 'slot_conflict';
         await payment.save();
+
+        // Auto-create RefundRequest so admins have visibility
+        RefundRequest.create({
+          payment: payment._id,
+          requestedBy: intent.userId,
+          requestedByModel: 'User',
+          amount: payment.amount,
+          reason: 'Automatic: time slot was booked by another customer during payment. Full refund required.',
+        }).catch(() => {}); // Non-blocking — don't fail the response
+
         return res.status(409).json({
           success: false,
           message: 'This time slot was just booked by someone else. Your payment will be refunded.',
@@ -403,9 +416,10 @@ export const getPaymentDetails = asyncHandler(async (req, res) => {
   }
 
   // Check if user is authorized to view this payment
-  const isAuthorized = 
-    payment.payerId._id.toString() === userId ||
-    (payment.recipientId && payment.recipientId._id.toString() === userId);
+  // Null-safe: populated refs can be null if the referenced document was deleted
+  const payerIdStr = payment.payerId?._id?.toString() || payment.payerId?.toString();
+  const recipientIdStr = payment.recipientId?._id?.toString() || payment.recipientId?.toString();
+  const isAuthorized = payerIdStr === userId || recipientIdStr === userId;
 
   if (!isAuthorized) {
     return res.status(403).json({
@@ -426,7 +440,8 @@ export const getPaymentDetails = asyncHandler(async (req, res) => {
  */
 export const getUserPayments = asyncHandler(async (req, res) => {
   const userId = req.user.id || req.user._id.toString();
-  const { status, type = 'sent', limit = 20, page = 1, bookingId } = req.query;
+  const { status, type = 'sent', limit: rawLimit = 20, page = 1, bookingId } = req.query;
+  const limit = Math.min(Math.max(parseInt(rawLimit) || 20, 1), 100); // Clamp 1-100
 
   const query = {};
 
@@ -451,8 +466,8 @@ export const getUserPayments = asyncHandler(async (req, res) => {
     .populate('payerId', 'fullName email profileImageUrl')
     .populate('recipientId', 'fullName email profileImageUrl')
     .sort({ createdAt: -1 })
-    .limit(parseInt(limit))
-    .skip((parseInt(page) - 1) * parseInt(limit));
+    .limit(limit)
+    .skip((parseInt(page) - 1) * limit);
 
   const total = await Payment.countDocuments(query);
 
@@ -463,7 +478,7 @@ export const getUserPayments = asyncHandler(async (req, res) => {
       pagination: {
         total,
         page: parseInt(page),
-        pages: Math.ceil(total / parseInt(limit)),
+        pages: Math.ceil(total / limit),
       },
     },
   });
