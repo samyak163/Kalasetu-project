@@ -306,7 +306,7 @@ const emailInitSchema = z.object({ newEmail: z.string().email() });
 export const initiateEmailVerification = asyncHandler(async (req, res) => {
   const userId = req.user._id || req.user.id;
   const { newEmail } = emailInitSchema.parse(req.body);
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const code = String(crypto.randomInt(100000, 1000000));
   const expires = new Date(Date.now() + 15 * 60 * 1000);
   await Artisan.findByIdAndUpdate(userId, { $set: { pendingEmail: newEmail, emailVerificationCode: code, emailVerificationExpires: expires } });
   // Send code via email to newEmail

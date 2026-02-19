@@ -27,7 +27,7 @@ import { trackEvent } from '../utils/posthog.js';
 import * as Sentry from '@sentry/node';
 
 // Fields safe for public consumption (excludes bank details, verification docs, auth tokens, OTP)
-const PUBLIC_FIELDS = [
+export const PUBLIC_FIELDS = [
   'publicId', 'slug', 'fullName', 'craft',
   'businessName', 'tagline', 'location', 'bio',
   'profileImageUrl', 'coverImageUrl', 'portfolioImageUrls',

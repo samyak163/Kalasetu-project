@@ -40,13 +40,16 @@ export const listServices = asyncHandler(async (req, res) => {
 export const createService = asyncHandler(async (req, res) => {
   const artisanId = req.user?._id || req.user?.id;
   if (!artisanId) return res.status(401).json({ success: false, message: 'Unauthorized' });
-  const { categoryId, name, description, price = 0, durationMinutes = 60, images = [] } = req.body || {};
-  if (!categoryId || !name) return res.status(400).json({ success: false, message: 'categoryId and name are required' });
+  const { categoryId, categoryName, name, description, price = 0, durationMinutes = 60, images = [] } = req.body || {};
+  if ((!categoryId && !categoryName) || !name) return res.status(400).json({ success: false, message: 'categoryId (or categoryName) and name are required' });
   const parsedPrice = Number(price);
   const parsedDuration = Number(durationMinutes);
   if (isNaN(parsedPrice) || parsedPrice < 0) return res.status(400).json({ success: false, message: 'Price must be a non-negative number' });
   if (isNaN(parsedDuration) || parsedDuration < 1 || parsedDuration > 1440) return res.status(400).json({ success: false, message: 'Duration must be between 1 and 1440 minutes' });
-  const category = await Category.findById(categoryId).lean();
+  // Support lookup by categoryId or by categoryName (for onboarding wizard)
+  const category = categoryId
+    ? await Category.findById(categoryId).lean()
+    : await Category.findOne({ name: categoryName }).lean();
   if (!category) return res.status(404).json({ success: false, message: 'Category not found' });
   const doc = await ArtisanService.create({
     artisan: artisanId,

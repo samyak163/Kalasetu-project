@@ -35,6 +35,7 @@ import {
     getNearbyArtisans,
     updateArtisanProfile,
     getFeaturedArtisans,
+    PUBLIC_FIELDS,
 } from '../controllers/artisanController.js';
 import { getPublicPortfolio } from '../controllers/portfolioController.js';
 import Artisan from '../models/artisanModel.js';
@@ -69,8 +70,7 @@ router.get('/:publicId/portfolio', cache('artisans:portfolio', 300), getPublicPo
 // Slug-based lookup — MUST be before /:publicId to avoid 'slug' matching as a publicId
 // URL: GET /api/artisans/slug/ravi-kumar-pottery
 router.get('/slug/:slug', cache('artisans:public', 300), asyncHandler(async (req, res) => {
-    const artisan = await Artisan.findOne({ slug: req.params.slug })
-        .select('publicId slug fullName craft businessName tagline location bio profileImageUrl coverImageUrl portfolioImageUrls isActive isVerified emailVerified yearsOfExperience teamSize languagesSpoken certifications workingHours emergencyServices serviceRadius minimumBookingNotice profileViews totalBookings completedBookings averageRating totalReviews responseRate acceptanceRate autoAcceptBookings bufferTimeBetweenBookings maxBookingsPerDay subscriptionPlan isOnline vacationMode createdAt updatedAt');
+    const artisan = await Artisan.findOne({ slug: req.params.slug }).select(PUBLIC_FIELDS);
     if (!artisan) return res.status(404).json({ message: 'Artisan not found' });
     res.json(artisan);
 }));
