@@ -261,7 +261,7 @@ async function seedArtisan(categories) {
     {
       name: 'Mehndi Workshop \u2014 Group of 5',
       description: 'Learn the art of mehndi! 2-hour hands-on workshop for a group of up to 5 people. Includes organic henna cones, practice sheets, design booklet, and guided instruction from basic to intermediate patterns.',
-      price: 3000,
+      price: 0, // Free consultation / contact for pricing
       durationMinutes: 120,
       images: IMG.services[4],
     },
@@ -406,6 +406,113 @@ async function seedReviews(artisan, user) {
 }
 
 // ──────────────────────────────────────────────
+// Create sample bookings (various statuses for UI testing)
+// ──────────────────────────────────────────────
+async function seedBookings(artisan, user, services) {
+  const now = new Date();
+  const day = 86400000; // ms in a day
+
+  // Helper: create a date offset from now at a specific hour
+  const dateAt = (offsetDays, hour, minute = 0) => {
+    const d = new Date(now.getTime() + offsetDays * day);
+    d.setHours(hour, minute, 0, 0);
+    return d;
+  };
+
+  const bridalService = services[0]; // Bridal Mehndi — ₹8000, 270 min
+  const partyService = services[1];  // Party Mehndi — ₹500, 30 min
+  const arabicService = services[2]; // Arabic Mehndi — ₹1500, 60 min
+  const babyService = services[3];   // Baby Shower — ₹5000, 180 min
+
+  const bookingsData = [
+    // 1. PENDING — Bridal mehndi, booked yesterday for next week
+    {
+      service: bridalService,
+      start: dateAt(7, 10),
+      end: dateAt(7, 14, 30),
+      status: 'pending',
+      notes: 'Wedding on March 5th. Would love traditional Rajasthani motifs with fiancé\'s name.',
+      price: bridalService.price,
+      createdAt: dateAt(-1, 14),
+    },
+    // 2. CONFIRMED — Arabic mehndi, upcoming in 3 days
+    {
+      service: arabicService,
+      start: dateAt(3, 15),
+      end: dateAt(3, 16),
+      status: 'confirmed',
+      notes: 'For my engagement party. Arabic style preferred.',
+      price: arabicService.price,
+      respondedAt: dateAt(-2, 10),
+      createdAt: dateAt(-3, 18),
+    },
+    // 3. COMPLETED — Party mehndi, done 10 days ago
+    {
+      service: partyService,
+      start: dateAt(-10, 11),
+      end: dateAt(-10, 11, 30),
+      status: 'completed',
+      notes: '',
+      price: partyService.price,
+      respondedAt: dateAt(-12, 9),
+      completedAt: dateAt(-10, 12),
+      createdAt: dateAt(-14, 20),
+    },
+    // 4. COMPLETED — Baby shower, done 20 days ago
+    {
+      service: babyService,
+      start: dateAt(-20, 10),
+      end: dateAt(-20, 13),
+      status: 'completed',
+      notes: 'Baby shower theme: elephant and lotus. Mom-to-be plus 4 friends.',
+      price: babyService.price,
+      respondedAt: dateAt(-25, 11),
+      completedAt: dateAt(-20, 14),
+      createdAt: dateAt(-27, 16),
+    },
+    // 5. CANCELLED — Party mehndi, user cancelled
+    {
+      service: partyService,
+      start: dateAt(-3, 16),
+      end: dateAt(-3, 16, 30),
+      status: 'cancelled',
+      notes: 'Quick mehndi for Diwali celebration',
+      price: partyService.price,
+      respondedAt: dateAt(-8, 10),
+      cancellationReason: 'Schedule conflict',
+      cancelledBy: user._id,
+      createdAt: dateAt(-10, 12),
+    },
+    // 6. REJECTED — Bridal mehndi, artisan rejected (already booked)
+    {
+      service: bridalService,
+      start: dateAt(-15, 9),
+      end: dateAt(-15, 13, 30),
+      status: 'rejected',
+      notes: 'Bridal mehndi for sister\'s wedding',
+      price: bridalService.price,
+      respondedAt: dateAt(-17, 8),
+      rejectionReason: 'Sorry, I\'m already booked for a wedding that day. Please check my availability for the day before or after.',
+      createdAt: dateAt(-18, 22),
+    },
+  ];
+
+  for (const data of bookingsData) {
+    const { service, ...rest } = data;
+    await Booking.create({
+      artisan: artisan._id,
+      user: user._id,
+      service: service._id,
+      serviceName: service.name,
+      categoryName: 'Wellness & Beauty',
+      ...rest,
+    });
+  }
+
+  console.log(`  Created ${bookingsData.length} sample bookings (pending, confirmed, completed x2, cancelled, rejected)`);
+}
+
+// ──────────────────────────────────────────────
 // Main
 // ──────────────────────────────────────────────
 async function run() {
@@ -415,10 +522,11 @@ async function run() {
     await wipeAll();
 
     const categories = await seedCategories();
-    const { artisan } = await seedArtisan(categories);
+    const { artisan, services } = await seedArtisan(categories);
     const user = await seedUser();
     await seedAdmin();
     await seedReviews(artisan, user);
+    await seedBookings(artisan, user, services);
 
     console.log('\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');
     console.log('');

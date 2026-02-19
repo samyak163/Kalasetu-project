@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Clock, IndianRupee } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Clock, IndianRupee, Star, Users } from 'lucide-react';
 import { Button, EmptyState } from '../ui/index.js';
+import api from '../../lib/axios.js';
 import { optimizeImage } from '../../utils/cloudinary.js';
 import ServiceDetailSheet from './ServiceDetailSheet.jsx';
 
@@ -53,6 +54,18 @@ export default function ServicesTab({ services = [], artisan, onBook, className 
 
 function ServiceItem({ service, onBook, onDetail }) {
   const hasImage = service.images?.length > 0;
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    if (!service?._id) return;
+    let cancelled = false;
+    api.get(`/api/services/${service._id}/stats`)
+      .then((res) => { if (!cancelled) setStats(res.data?.data || res.data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [service?._id]);
+
+  const hasStats = stats && (stats.bookingCount > 0 || stats.reviewCount > 0);
 
   return (
     <div
@@ -77,6 +90,25 @@ function ServiceItem({ service, onBook, onDetail }) {
         <h3 className="text-base font-semibold text-gray-900 line-clamp-1">{service.name}</h3>
         {service.description && (
           <p className="text-sm text-gray-500 mt-1 line-clamp-2">{service.description}</p>
+        )}
+
+        {/* Rating + Bookings — below description */}
+        {hasStats && (
+          <div className="flex items-center gap-3 mt-1.5 text-xs">
+            {stats.reviewCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-amber-600 font-medium">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                {stats.averageRating}
+                <span className="text-gray-400 font-normal">({stats.reviewCount})</span>
+              </span>
+            )}
+            {stats.bookingCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-gray-500">
+                <Users className="h-3 w-3" />
+                {stats.bookingCount} booked
+              </span>
+            )}
+          </div>
         )}
 
         {/* Price + Duration */}
