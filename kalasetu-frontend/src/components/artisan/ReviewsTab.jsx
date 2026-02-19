@@ -4,6 +4,7 @@ import api from '../../lib/axios.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { ToastContext } from '../../context/ToastContext.jsx';
 import { ReviewCard, Badge, Skeleton, EmptyState, Alert, Button } from '../ui/index.js';
+import TagSummary from './TagSummary.jsx';
 
 /** Number of reviews per page — matches backend default */
 const REVIEWS_PER_PAGE = 10;
@@ -157,7 +158,8 @@ export default function ReviewsTab({ artisanId, averageRating = 0, totalReviews 
         )}
       </div>
 
-      {/* TODO Phase 7: Tag summary chips will go here */}
+      {/* Tag summary chips — only rendered when artisan has 3+ reviews */}
+      <TagSummary artisanId={artisanId} totalReviews={totalReviews} className="mb-4" />
 
       {/* Individual reviews */}
       <div className="bg-white rounded-card px-4">
