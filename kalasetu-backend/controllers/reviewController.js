@@ -153,6 +153,37 @@ export const getArtisanReviews = asyncHandler(async (req, res) => {
   res.json({ success: true, data: reviews, count });
 });
 
+/**
+ * GET /api/reviews/artisan/:artisanId/tags
+ * Returns aggregated tag counts for an artisan — public endpoint.
+ */
+export const getArtisanTags = asyncHandler(async (req, res) => {
+  const { artisanId } = req.params;
+  const objectId = new mongoose.Types.ObjectId(artisanId);
+
+  const tags = await Review.aggregate([
+    { $match: { artisan: objectId, status: 'active', tags: { $exists: true, $ne: [] } } },
+    { $unwind: '$tags' },
+    { $group: { _id: '$tags', count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+    { $limit: 10 },
+    { $project: {
+      _id: 0,
+      tag: '$_id',
+      count: 1,
+      sentiment: {
+        $cond: {
+          if: { $in: ['$_id', POSITIVE_TAGS] },
+          then: 'positive',
+          else: { $cond: { if: { $in: ['$_id', NEGATIVE_TAGS] }, then: 'negative', else: 'neutral' } },
+        },
+      },
+    }},
+  ]);
+
+  res.json({ success: true, data: tags });
+});
+
 // Artisan responds to a review on their profile
 const respondToReviewSchema = z.object({
   text: z.string().trim().min(1, 'Response cannot be empty').max(500, 'Response must be under 500 characters'),
