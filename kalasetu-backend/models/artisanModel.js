@@ -59,7 +59,7 @@ const artisanSchema = new mongoose.Schema({
   // Optional link to Firebase Authentication user UID
   firebaseUid: { type: String, unique: true, sparse: true, index: true },
     fullName: { type: String, required: true },
-    email: { type: String, unique: true, sparse: true }, // sparse: true allows multiple null values
+    email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     phoneNumber: { type: String, unique: true, sparse: true }, // sparse: true allows multiple null values
     password: { type: String, required: true, select: false },
     craft: { type: String, default: '' },

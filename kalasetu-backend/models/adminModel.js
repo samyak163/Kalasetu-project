@@ -1,3 +1,39 @@
+/**
+ * @file adminModel.js — Admin Account Schema
+ * @collection admins
+ *
+ * Platform administrators who manage artisans, users, bookings, payments,
+ * reviews, and platform settings through the admin panel.
+ *
+ * Separate from User and Artisan models — admins have their own:
+ *  - Collection (admins)
+ *  - Cookie (admin_token, not ks_auth)
+ *  - JWT payload (includes role + permissions)
+ *  - Auth middleware (protectAdmin)
+ *
+ * Role hierarchy:
+ *  - super_admin — Full access to all resources
+ *  - admin       — Configurable permissions per resource
+ *  - moderator   — Typically reviews + artisan management
+ *  - support     — Typically view-only + support tickets
+ *
+ * Granular permissions (per resource × action):
+ *  users, artisans, bookings, payments, reviews, analytics, settings
+ *  Each has specific actions (view, edit, delete, verify, suspend, etc.)
+ *
+ * Instance methods:
+ *  - matchPassword(entered)  — Compare password against bcrypt hash
+ *  - getSignedJwtToken()     — Generate JWT with role + permissions in payload
+ *  - logActivity(action, target, targetId, details) — Append to audit trail (capped at 100)
+ *
+ * @exports {Model} Admin — Mongoose model
+ *
+ * @see middleware/authMiddleware.js — `protectAdmin` reads admin_token cookie
+ * @see middleware/authMiddleware.js — `checkPermission(resource, action)` for granular checks
+ * @see controllers/adminAuthController.js — Admin login
+ * @see controllers/adminDashboardController.js — Admin analytics
+ */
+
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -86,6 +122,10 @@ adminSchema.methods.logActivity = async function(action, target, targetId, detai
   this.activityLog.push({ action, target, targetId, details, timestamp: new Date() });
   if (this.activityLog.length > 100) {
     this.activityLog = this.activityLog.slice(-100);
+  }
+  // Cap loginHistory to prevent unbounded document growth
+  if (this.loginHistory && this.loginHistory.length > 20) {
+    this.loginHistory = this.loginHistory.slice(-20);
   }
   await this.save();
 };
