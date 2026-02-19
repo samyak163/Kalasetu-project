@@ -62,9 +62,12 @@ export const verifyCsrf = (req, res, next) => {
     return next();
   }
 
-  // Skip CSRF for routes that have their own verification (webhooks, jobs)
+  // Skip CSRF for routes that have their own signature verification
   // Note: mounted at /api, so req.path is relative (e.g. /payments/webhook, /jobs/...)
-  if (req.path.includes('/webhook') || req.path.startsWith('/jobs')) {
+  // Use explicit path checks instead of broad .includes('/webhook') to prevent
+  // accidental CSRF bypass if a future route name happens to contain 'webhook'
+  const webhookPaths = ['/payments/webhook'];
+  if (webhookPaths.some(p => req.path.startsWith(p)) || req.path.startsWith('/jobs')) {
     return next();
   }
 
