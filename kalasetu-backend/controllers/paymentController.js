@@ -28,16 +28,27 @@
 
 import asyncHandler from '../utils/asyncHandler.js';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 import Payment from '../models/paymentModel.js';
 import Booking from '../models/bookingModel.js';
+import ArtisanService from '../models/artisanServiceModel.js';
+import Artisan from '../models/artisanModel.js';
 import RefundRequest from '../models/refundRequestModel.js';
 import Notification from '../models/notificationModel.js';
 import { createOrder, verifyPaymentSignature, fetchPayment, refundPayment, verifyWebhookSignature } from '../utils/razorpay.js';
+import { createNotification } from '../utils/notificationService.js';
 import { sendEmail } from '../utils/email.js';
 import { RAZORPAY_CONFIG } from '../config/env.config.js';
 
 const createOrderSchema = z.object({
+  // Path 1: Pay for an existing booking (legacy flow)
   bookingId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid booking ID').optional(),
+  // Path 2: Pay-first flow — booking created atomically after payment verification
+  serviceId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid service ID').optional(),
+  artisanId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid artisan ID').optional(),
+  start: z.string().optional(), // ISO date string for booking start time
+  notes: z.string().max(500).optional(), // Special requests
+  // Path 3: Generic payment (consultation, product, etc.)
   amount: z.number().positive('Amount must be positive').max(500000, 'Amount exceeds maximum').optional(),
   purpose: z.enum(['consultation', 'product_purchase', 'service', 'subscription', 'other']),
   recipientId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
@@ -48,7 +59,11 @@ const createOrderSchema = z.object({
 /**
  * Create payment order
  * POST /api/payments/create-order
- * When bookingId is provided, amount is derived server-side from booking price.
+ *
+ * Three paths:
+ *  1. bookingId provided   → legacy flow, amount from booking
+ *  2. serviceId + artisanId + start → pay-first flow, booking created after verification
+ *  3. amount + recipientId → generic payment (consultation, product, etc.)
  */
 export const createPaymentOrder = asyncHandler(async (req, res) => {
   const parsed = createOrderSchema.safeParse(req.body);
@@ -59,14 +74,61 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  const { bookingId, amount: clientAmount, purpose, recipientId, description, metadata } = parsed.data;
+  const { bookingId, serviceId, artisanId, start, notes,
+          amount: clientAmount, purpose, recipientId, description, metadata } = parsed.data;
   const payerId = req.user.id || req.user._id.toString();
 
   let amount;
   let resolvedRecipientId = recipientId || null;
+  // bookingIntent stores data needed to create booking after payment verification
+  let bookingIntent = null;
 
-  if (bookingId) {
-    // Server-authoritative: derive amount from booking price
+  if (serviceId && artisanId) {
+    // PATH 2: Pay-first flow — derive price from service, store booking intent
+    if (!start) {
+      return res.status(400).json({ success: false, message: 'start is required for service booking' });
+    }
+    const startTime = new Date(start);
+    if (isNaN(startTime.getTime()) || startTime <= new Date()) {
+      return res.status(400).json({ success: false, message: 'Start time must be a valid future date' });
+    }
+
+    const [service, artisanDoc] = await Promise.all([
+      ArtisanService.findById(serviceId).lean(),
+      Artisan.findById(artisanId).select('isActive fullName autoAcceptBookings').lean(),
+    ]);
+
+    if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
+    if (!artisanDoc) return res.status(404).json({ success: false, message: 'Artisan not found' });
+    if (artisanDoc.isActive === false) {
+      return res.status(400).json({ success: false, message: 'This artisan is not currently accepting bookings' });
+    }
+    if (String(service.artisan) !== String(artisanId)) {
+      return res.status(400).json({ success: false, message: 'Service does not belong to this artisan' });
+    }
+    if (!service.price || service.price <= 0) {
+      return res.status(400).json({ success: false, message: 'This service requires contacting the artisan for pricing' });
+    }
+
+    amount = service.price;
+    resolvedRecipientId = artisanId;
+
+    // Store booking intent in payment metadata — used by verifyPayment to create booking
+    bookingIntent = {
+      serviceId,
+      artisanId,
+      userId: payerId,
+      start: startTime.toISOString(),
+      end: new Date(startTime.getTime() + (service.durationMinutes || 60) * 60000).toISOString(),
+      serviceName: service.name || '',
+      categoryName: service.categoryName || '',
+      notes: notes || '',
+      price: amount,
+      autoAccept: !!artisanDoc.autoAcceptBookings,
+    };
+
+  } else if (bookingId) {
+    // PATH 1: Legacy flow — pay for existing booking
     const booking = await Booking.findById(bookingId).lean();
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
@@ -80,7 +142,7 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     if (!booking.price || booking.price <= 0) {
       return res.status(400).json({ success: false, message: 'Booking has no valid price' });
     }
-    // Prevent double payment: check for existing non-terminal payment on this booking
+    // Prevent double payment
     const existingPayment = await Payment.findOne({
       'metadata.bookingId': bookingId,
       status: { $in: ['created', 'captured'] },
@@ -95,9 +157,9 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     amount = booking.price;
     resolvedRecipientId = resolvedRecipientId || booking.artisan;
   } else {
-    // Non-booking payments: client amount with strict validation
+    // PATH 3: Generic payment — client-specified amount
     if (!clientAmount) {
-      return res.status(400).json({ success: false, message: 'Either bookingId or amount is required' });
+      return res.status(400).json({ success: false, message: 'Provide serviceId+artisanId, bookingId, or amount' });
     }
     if (!recipientId) {
       return res.status(400).json({ success: false, message: 'recipientId is required for non-booking payments' });
@@ -126,7 +188,7 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  // Save to database
+  // Save to database — bookingIntent stored in metadata for atomic creation on verify
   const payment = await Payment.create({
     orderId: razorpayOrder.receipt,
     razorpayOrderId: razorpayOrder.id,
@@ -139,7 +201,11 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     recipientModel: resolvedRecipientId ? 'Artisan' : null,
     purpose,
     description,
-    metadata: { ...metadata, ...(bookingId && { bookingId }) },
+    metadata: {
+      ...metadata,
+      ...(bookingId && { bookingId }),
+      ...(bookingIntent && { bookingIntent }),
+    },
   });
 
   res.status(201).json({
@@ -156,8 +222,12 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
 });
 
 /**
- * Verify payment
+ * Verify payment and atomically create booking if booking intent exists.
  * POST /api/payments/verify
+ *
+ * Pay-first flow: if payment.metadata.bookingIntent is present, this
+ * endpoint creates the booking inside a MongoDB transaction after
+ * verifying the Razorpay signature. No booking = no orphans.
  */
 export const verifyPayment = asyncHandler(async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
@@ -183,7 +253,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update payment in database
+  // Find payment record
   const payment = await Payment.findOne({ razorpayOrderId: razorpay_order_id });
 
   if (!payment) {
@@ -202,17 +272,99 @@ export const verifyPayment = asyncHandler(async (req, res) => {
     });
   }
 
-  payment.razorpayPaymentId = razorpay_payment_id;
-  // Don't store the signature — it's only needed for verification, not storage
-  payment.status = 'captured';
-  await payment.save();
+  const intent = payment.metadata?.bookingIntent;
+  let booking = null;
 
-  // Update booking payment status if this payment is linked to a booking
-  if (payment.metadata?.bookingId) {
-    await Booking.findByIdAndUpdate(payment.metadata.bookingId, {
-      depositPaid: true,
-      paymentStatus: 'paid',
-    });
+  if (intent) {
+    // PAY-FIRST FLOW: Create booking atomically with payment capture
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Check for overlapping bookings
+      const startTime = new Date(intent.start);
+      const endTime = new Date(intent.end);
+
+      const overlap = await Booking.findOne({
+        artisan: intent.artisanId,
+        status: { $in: ['pending', 'confirmed'] },
+        start: { $lt: endTime },
+        end: { $gt: startTime },
+      }).session(session);
+
+      if (overlap) {
+        await session.abortTransaction();
+        // Payment was captured by Razorpay but slot is taken — mark for refund
+        payment.razorpayPaymentId = razorpay_payment_id;
+        payment.status = 'captured';
+        payment.metadata.refundReason = 'slot_conflict';
+        await payment.save();
+        return res.status(409).json({
+          success: false,
+          message: 'This time slot was just booked by someone else. Your payment will be refunded.',
+          data: { paymentId: payment._id, requiresRefund: true },
+        });
+      }
+
+      // Determine initial status: auto-accept if artisan has it enabled
+      const initialStatus = intent.autoAccept ? 'confirmed' : 'pending';
+
+      // Create booking atomically
+      const [newBooking] = await Booking.create([{
+        artisan: intent.artisanId,
+        user: intent.userId,
+        service: intent.serviceId,
+        serviceName: intent.serviceName,
+        categoryName: intent.categoryName,
+        start: startTime,
+        end: endTime,
+        notes: intent.notes,
+        price: intent.price,
+        status: initialStatus,
+        depositPaid: true,
+      }], { session });
+
+      // Update payment with booking reference
+      payment.razorpayPaymentId = razorpay_payment_id;
+      payment.status = 'captured';
+      payment.metadata.bookingId = newBooking._id.toString();
+      // Clear bookingIntent from metadata (no longer needed)
+      payment.metadata.bookingIntent = undefined;
+      await payment.save({ session });
+
+      await session.commitTransaction();
+      booking = newBooking;
+
+      // Non-blocking: notify artisan about new booking
+      const startDate = startTime.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      createNotification({
+        ownerId: intent.artisanId,
+        ownerType: 'artisan',
+        title: intent.autoAccept ? 'New Booking Confirmed' : 'New Booking Request',
+        text: intent.autoAccept
+          ? `A booking for ${intent.serviceName || 'a service'} on ${startDate} has been confirmed and paid.`
+          : `You have a new paid booking request for ${intent.serviceName || 'a service'} on ${startDate}. Please respond to confirm or decline.`,
+      }).catch(() => {});
+
+    } catch (err) {
+      await session.abortTransaction();
+      throw err;
+    } finally {
+      session.endSession();
+    }
+
+  } else {
+    // LEGACY FLOW: Just capture payment and update existing booking
+    payment.razorpayPaymentId = razorpay_payment_id;
+    payment.status = 'captured';
+    await payment.save();
+
+    // Update existing booking's deposit status
+    if (payment.metadata?.bookingId) {
+      await Booking.findByIdAndUpdate(payment.metadata.bookingId, {
+        depositPaid: true,
+      });
+    }
   }
 
   // Fetch full payment details from Razorpay
@@ -226,6 +378,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
       status: payment.status,
       amount: payment.amount,
       paymentDetails,
+      ...(booking && { bookingId: booking._id, bookingStatus: booking.status }),
     },
   });
 });
@@ -573,7 +726,6 @@ async function handlePaymentCaptured(paymentData, eventId) {
   if (payment?.metadata?.bookingId) {
     await Booking.findByIdAndUpdate(payment.metadata.bookingId, {
       depositPaid: true,
-      paymentStatus: 'paid',
     });
   }
 }
