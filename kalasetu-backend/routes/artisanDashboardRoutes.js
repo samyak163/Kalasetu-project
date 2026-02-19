@@ -1,3 +1,19 @@
+/**
+ * @file artisanDashboardRoutes.js — Artisan Dashboard Routes
+ *
+ * Serves artisan-facing analytics: booking stats, income reports, and
+ * profile verification checklist. Auth (protect) is applied at mount
+ * level in server.js, not repeated here.
+ *
+ * Mounted at: /api/artisan/dashboard (protect applied in server.js)
+ *
+ * Routes:
+ *  GET /stats               — Dashboard statistics (bookings, revenue, ratings)
+ *  GET /income-report       — Income grouped by period (?period=monthly|weekly)
+ *  GET /verification-status — Profile completeness checklist
+ *
+ * @see controllers/artisanDashboardController.js — Handler implementations
+ */
 import express from 'express';
 import { getDashboardStats, getIncomeReport, getProfileVerificationStatus } from '../controllers/artisanDashboardController.js';
 

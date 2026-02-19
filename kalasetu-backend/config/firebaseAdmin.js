@@ -1,16 +1,47 @@
+/**
+ * @file firebaseAdmin.js — Firebase Admin SDK Initialization
+ *
+ * Sets up the Firebase Admin SDK for server-side authentication.
+ * Used to verify Firebase ID tokens from social login (Google, Facebook)
+ * on the frontend, converting them into KalaSetu JWT sessions.
+ *
+ * Credential loading strategy (prioritized):
+ *  1. FIREBASE_SERVICE_ACCOUNT env var (JSON string) — preferred in production
+ *  2. serviceAccountKey.json file in project root — fallback for local development
+ *  3. If neither exists, Firebase features are disabled (social auth won't work)
+ *
+ * This file is safe to import even without credentials — it logs a warning
+ * and exports the admin SDK (which will throw on actual use if not initialized).
+ *
+ * @exports {Object} admin — Firebase Admin SDK instance (may be uninitialized if no credentials)
+ *
+ * @requires firebase-admin — Firebase Admin SDK
+ * @requires ./env.config.js — FIREBASE_CONFIG (serviceAccount parsed from env)
+ *
+ * @see controllers/authController.js — Artisan social auth using admin.auth().verifyIdToken()
+ * @see controllers/userAuthController.js — User social auth using admin.auth().verifyIdToken()
+ * @see env.config.js — Where FIREBASE_SERVICE_ACCOUNT JSON is parsed
+ *
+ * @security serviceAccountKey.json is in .gitignore — NEVER commit this file
+ */
+
 import admin from 'firebase-admin';
 import fs from 'node:fs';
 import path from 'node:path';
 import { FIREBASE_CONFIG } from './env.config.js';
 
-// Helper to load service account either from env (preferred in production) or local file (dev)
+/**
+ * Load Firebase service account credentials.
+ * Tries env var first (production), then local file (development).
+ * Returns null if neither source is available.
+ */
 function getServiceAccount() {
-  // First, try to get from env.config (which reads from environment variable)
+  // Production: credentials stored as JSON string in FIREBASE_SERVICE_ACCOUNT env var
   if (FIREBASE_CONFIG.serviceAccount) {
     return FIREBASE_CONFIG.serviceAccount;
   }
-  
-  // Fallback to local file if exists (only for local dev)
+
+  // Development fallback: local serviceAccountKey.json file
   const filePath = path.resolve(process.cwd(), 'serviceAccountKey.json');
   if (fs.existsSync(filePath)) {
     try {
@@ -20,10 +51,11 @@ function getServiceAccount() {
       return null;
     }
   }
-  
+
   return null;
 }
 
+// Initialize Firebase Admin only once (guard against multiple imports)
 if (!admin.apps.length) {
   const creds = getServiceAccount();
   if (creds) {

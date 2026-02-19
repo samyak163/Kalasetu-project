@@ -1,3 +1,23 @@
+/**
+ * @file supportController.js — Support Ticket System
+ *
+ * Full support ticket lifecycle — creation, listing, messaging, status updates,
+ * and admin assignment. Users/artisans create tickets; admins manage them.
+ *
+ * Endpoints:
+ *  POST /api/support/tickets         — Create ticket (protectAny)
+ *  GET  /api/support/tickets         — List user's tickets (protectAny)
+ *  GET  /api/support/tickets/:id     — Get ticket with messages (protectAny)
+ *  POST /api/support/tickets/:id/message — Add message to ticket thread
+ *  PUT  /api/support/tickets/:id/status  — Update ticket status (admin)
+ *  PUT  /api/support/tickets/:id/assign  — Assign ticket to admin
+ *  GET  /api/support/admin/tickets       — List all tickets (protectAdmin)
+ *
+ * Ticket numbers auto-generate as TKT-{timestamp}-{count}.
+ *
+ * @see models/supportTicketModel.js — Ticket schema with embedded messages
+ */
+
 import { z } from 'zod';
 import SupportTicket from '../models/supportTicketModel.js';
 import Notification from '../models/notificationModel.js';

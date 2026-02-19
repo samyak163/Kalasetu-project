@@ -1,3 +1,35 @@
+/**
+ * @file userModel.js — Customer (User) Account Schema
+ * @collection users
+ *
+ * Represents customers who browse, book, and pay for artisan services.
+ * Simpler than the Artisan model — customers don't have profiles, services,
+ * or verification documents.
+ *
+ * Key fields:
+ *  - fullName, email, phoneNumber — Identity (email OR phone required, not both)
+ *  - password           — bcrypt hashed (select:false), auto-hashed on save
+ *  - bookmarks          — Array of saved Artisan ObjectIds
+ *  - emailVerified      — Whether the email has been confirmed
+ *  - Security fields    — lockout, reset tokens, OTP (all select:false)
+ *
+ * Middleware:
+ *  - pre('validate')  — Ensures at least one of email or phoneNumber is present
+ *  - pre('save')      — Auto-hashes password when modified (bcrypt, salt 10)
+ *
+ * Instance methods:
+ *  - matchPassword(entered)    — Compare entered password against hash
+ *  - incLoginAttempts()        — Increment failed login counter, lock after 5 (15 min)
+ *  - resetLoginAttempts()      — Clear counter on successful login
+ *  - isLocked()                — Check if temporarily locked
+ *
+ * @exports {Model} User — Mongoose model
+ *
+ * @see middleware/userProtectMiddleware.js — `userProtect` authenticates customers
+ * @see middleware/authMiddleware.js — `protectAny` also checks User collection
+ * @see controllers/userAuthController.js — Registration, login, logout
+ */
+
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 

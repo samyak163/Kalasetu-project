@@ -1,3 +1,22 @@
+/**
+ * @file refundController.js — Refund Request Management
+ *
+ * Handles refund request creation by users/artisans and processing by admins.
+ *
+ * Endpoints:
+ *  POST /api/refunds              — Create refund request (protectAny)
+ *  GET  /api/refunds              — List user's refund requests (protectAny)
+ *  GET  /api/refunds/:id          — Get single refund request
+ *  GET  /api/refunds/admin/all    — List all refund requests (protectAdmin)
+ *  PUT  /api/refunds/admin/:id    — Approve/reject refund (protectAdmin)
+ *
+ * Validates ownership: users can only request refunds for their own payments.
+ * Admin approval triggers the actual Razorpay refund via paymentController.
+ *
+ * @see models/refundRequestModel.js — Refund request schema
+ * @see controllers/paymentController.js — Processes the actual Razorpay refund
+ */
+
 import { z } from 'zod';
 import asyncHandler from '../utils/asyncHandler.js';
 import RefundRequest from '../models/refundRequestModel.js';

@@ -1,3 +1,43 @@
+/**
+ * @file bookingModel.js — Service Booking Schema
+ * @collection bookings
+ *
+ * Represents a booking between a User (customer) and an Artisan (service provider).
+ * This is the central transactional model — it connects users, artisans, services,
+ * payments, reviews, chat channels, and video rooms.
+ *
+ * Lifecycle (status flow):
+ *  pending → confirmed → completed     (happy path)
+ *  pending → rejected                   (artisan declines)
+ *  pending/confirmed → cancelled        (either party cancels)
+ *
+ * Key relationships:
+ *  - artisan  → Artisan (who provides the service)
+ *  - user     → User (who booked the service)
+ *  - service  → ArtisanService (optional, for backward-compat with pre-service bookings)
+ *
+ * Denormalized fields (avoid joins in listing queries):
+ *  - serviceName, categoryName — Copied from ArtisanService at booking time
+ *
+ * Communication fields:
+ *  - chatChannelId  — Stream Chat channel ID created for this booking
+ *  - videoRoomName/Url — Daily.co room for video consultations
+ *
+ * Modification requests:
+ *  - Embedded subdocument for date change requests (pending/approved/rejected)
+ *
+ * Indexes:
+ *  - artisan+start+end — Overlap detection (prevent double-booking)
+ *  - user+status — Customer's booking list filtered by status
+ *  - status+createdAt — Admin dashboard queries
+ *
+ * @exports {Model} Booking — Mongoose model
+ *
+ * @see controllers/bookingController.js — Booking CRUD and status transitions
+ * @see models/paymentModel.js — Payment linked to bookings
+ * @see models/reviewModel.js — Reviews require a completed booking
+ */
+
 import mongoose from 'mongoose';
 
 const bookingSchema = new mongoose.Schema({

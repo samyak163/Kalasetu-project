@@ -1,3 +1,27 @@
+/**
+ * @file notificationRoutes.js — Notification Routes (In-App + Push)
+ *
+ * Two layers of notification endpoints:
+ * 1. User-facing: view own in-app notifications, mark as read (protectAny)
+ * 2. Admin-facing: send push notifications via OneSignal (protectAdmin)
+ *
+ * Mounted at: /api/notifications
+ *
+ * User routes (protectAny):
+ *  GET   /           — List own notifications (paginated)
+ *  PATCH /:id/read   — Mark single notification as read
+ *
+ * Admin routes (protectAdmin + permissions):
+ *  POST   /send-to-user    — Send notification to one user (users:edit)
+ *  POST   /send-to-users   — Send notification to multiple users (users:edit)
+ *  POST   /broadcast       — Broadcast push to all users (users:edit)
+ *  GET    /history          — OneSignal notification history
+ *  DELETE /:notificationId  — Cancel a scheduled notification
+ *
+ * @see controllers/notificationController.js — Handler implementations
+ * @see utils/onesignal.js — OneSignal push integration
+ * @see models/notificationModel.js — In-app notification storage
+ */
 import express from 'express';
 import {
   sendToUser,

@@ -1,3 +1,35 @@
+/**
+ * @file userAuthRoutes.js — Customer Authentication & Account Routes
+ *
+ * Maps customer (User) auth and account management endpoints. This is the
+ * consumer-side counterpart to authRoutes.js (artisan-side).
+ *
+ * Mounted at: /api/users
+ *
+ * Public routes:
+ *  POST /register        — Customer registration (5/hour rate limit)
+ *  POST /login           — Customer login (20/15min rate limit)
+ *  POST /logout          — Clear ks_auth cookie
+ *  POST /forgot-password — Send password reset email
+ *  POST /reset-password  — Reset password via token
+ *
+ * Protected routes (userProtect):
+ *  GET    /me                    — Get current user profile
+ *  PUT    /profile               — Update profile details
+ *  POST   /change-password       — Change password (requires old password)
+ *  GET    /bookmarks             — List bookmarked artisans
+ *  POST   /bookmarks/:artisanId  — Bookmark an artisan
+ *  DELETE /bookmarks/:artisanId  — Remove bookmark
+ *  GET    /ratings               — List user's submitted ratings
+ *  GET    /orders                — List user's booking history
+ *  POST   /support/contact       — Submit support contact form
+ *  POST   /support/report        — Report an issue
+ *
+ * Auth: userProtect middleware (User model only, not artisans).
+ *
+ * @see controllers/userAuthController.js — Handler implementations
+ * @see routes/authRoutes.js — Artisan-side equivalent
+ */
 import express from 'express';
 import {
   registerUser,

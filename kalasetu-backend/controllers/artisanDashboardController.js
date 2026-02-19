@@ -1,3 +1,21 @@
+/**
+ * @file artisanDashboardController.js — Artisan Dashboard Analytics
+ *
+ * Provides statistics, income reports, and profile completeness data for
+ * the artisan dashboard. All endpoints require `protect` (artisan-only).
+ *
+ * Endpoints:
+ *  GET /api/artisan/dashboard/stats               — Overview stats (bookings, earnings, rating, growth)
+ *  GET /api/artisan/dashboard/income-report        — Income grouped by weekly/monthly period
+ *  GET /api/artisan/dashboard/verification-status  — Profile completeness checklist
+ *
+ * Performance: getDashboardStats uses a single MongoDB $facet aggregation
+ * to compute 6 booking metrics in one DB call instead of 6 separate queries.
+ *
+ * @see routes/artisanDashboardRoutes.js — Route definitions
+ * @see pages/dashboard/artisan/ — Frontend dashboard components consuming this data
+ */
+
 import asyncHandler from '../utils/asyncHandler.js';
 import Booking from '../models/bookingModel.js';
 import Review from '../models/reviewModel.js';

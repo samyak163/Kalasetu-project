@@ -1,3 +1,23 @@
+/**
+ * @file availabilityRoutes.js — Artisan Availability Schedule Routes
+ *
+ * Manages artisan recurring schedule and exception dates. Unlike most
+ * route files, this one contains inline Zod validation and handler
+ * logic (no separate controller file). Uses upsert for schedule updates.
+ *
+ * Mounted at: /api/artisan/availability
+ *
+ * Routes (all artisan protect):
+ *  GET  / — Get current artisan's availability schedule
+ *  POST / — Create or update availability (upsert)
+ *
+ * Validated fields:
+ *  recurringSchedule — Array of { dayOfWeek: 0-6, slots: [...] }
+ *  exceptions — Array of date-specific overrides (max 90)
+ *  bufferTime, advanceBookingDays, minNoticeHours — Scheduling constraints
+ *
+ * @see models/availabilityModel.js — Availability schema
+ */
 import express from 'express';
 import { z } from 'zod';
 import { protect } from '../middleware/authMiddleware.js';

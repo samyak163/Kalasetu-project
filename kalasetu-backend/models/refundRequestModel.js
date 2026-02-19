@@ -1,3 +1,34 @@
+/**
+ * @file refundRequestModel.js — Refund Request Schema
+ * @collection refundrequests
+ *
+ * Tracks refund requests from users or artisans, processed by admins.
+ * Each request references a Payment and optionally a Booking.
+ *
+ * Refund lifecycle (status flow):
+ *  pending → approved → processing → processed   (successful refund)
+ *  pending → rejected                              (admin declines)
+ *  approved → processing → failed                  (Razorpay refund failed)
+ *
+ * Polymorphic requester (dual-auth aware):
+ *  - requestedBy + requestedByModel — Either 'User' or 'Artisan' via refPath
+ *
+ * Admin response:
+ *  - Embedded subdocument with adminId, action, reason, timestamp
+ *
+ * Evidence:
+ *  - Array of supporting documents (images, PDFs, text descriptions)
+ *
+ * Razorpay tracking:
+ *  - razorpayRefundId, razorpayRefundStatus — Set after Razorpay processes the refund
+ *
+ * @exports {Model} RefundRequest — Mongoose model
+ *
+ * @see controllers/refundController.js — Refund request creation and admin processing
+ * @see models/paymentModel.js — The payment being refunded
+ * @see models/bookingModel.js — The booking that triggered the refund
+ */
+
 import mongoose from 'mongoose';
 
 const refundRequestSchema = new mongoose.Schema({
