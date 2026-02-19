@@ -1,3 +1,31 @@
+/**
+ * @file artisanRoutes.js — Public Artisan Data Routes
+ *
+ * Serves public-facing artisan data: directory listing, profile lookup by
+ * publicId/slug, geospatial "nearby" search, and featured artisans. Most
+ * routes are cached in Redis (60–300s) for performance.
+ *
+ * Mounted at: /api/artisans
+ *
+ * Public routes (no auth):
+ *  GET /                    — List all artisans (cached 5min)
+ *  GET /id/:id              — Get artisan by MongoDB _id
+ *  GET /featured            — Top-rated active artisans (cached 5min)
+ *  GET /nearby              — Geospatial search (cached 1min)
+ *  GET /:publicId/portfolio — Public portfolio for an artisan (cached 5min)
+ *  GET /:publicId           — Get artisan by vanity publicId (cached 5min)
+ *  GET /slug/:slug          — Get artisan by URL slug (cached 5min)
+ *
+ * Protected routes:
+ *  PUT /profile — Update own profile (artisan protect, invalidates cache)
+ *
+ * Route order matters: /featured and /nearby must precede /:publicId
+ * to avoid the param route capturing them as publicId values.
+ *
+ * @see controllers/artisanController.js — Public artisan data handlers
+ * @see controllers/portfolioController.js — getPublicPortfolio handler
+ * @see middleware/cacheMiddleware.js — Redis cache layer
+ */
 import express from 'express';
 const router = express.Router();
 import {
@@ -38,17 +66,18 @@ router.put('/profile', protect, invalidateCache(['cache:artisans:list*', 'cache:
 // URL: GET /api/artisans/:publicId/portfolio
 router.get('/:publicId/portfolio', cache('artisans:portfolio', 300), getPublicPortfolio);
 
+// Slug-based lookup — MUST be before /:publicId to avoid 'slug' matching as a publicId
+// URL: GET /api/artisans/slug/ravi-kumar-pottery
+router.get('/slug/:slug', cache('artisans:public', 300), asyncHandler(async (req, res) => {
+    const artisan = await Artisan.findOne({ slug: req.params.slug })
+        .select('publicId slug fullName craft businessName tagline location bio profileImageUrl coverImageUrl portfolioImageUrls isActive isVerified emailVerified yearsOfExperience teamSize languagesSpoken certifications workingHours emergencyServices serviceRadius minimumBookingNotice profileViews totalBookings completedBookings averageRating totalReviews responseRate acceptanceRate autoAcceptBookings bufferTimeBetweenBookings maxBookingsPerDay subscriptionPlan isOnline vacationMode createdAt updatedAt');
+    if (!artisan) return res.status(404).json({ message: 'Artisan not found' });
+    res.json(artisan);
+}));
+
 // --- THE PUBLIC VANITY URL ROUTE ---
 // This is the one we will use for our public profiles.
 // URL: GET /api/artisans/ks_a1b2c3d4
 router.get('/:publicId', cache('artisans:public', 300), getArtisanByPublicId);
-
-// NEW: Fetch by slug without conflicting with other routes
-// URL: GET /api/artisans/slug/:slug
-router.get('/slug/:slug', cache('artisans:public', 300), asyncHandler(async (req, res) => {
-    const artisan = await Artisan.findOne({ slug: req.params.slug }).select('-password');
-    if (!artisan) return res.status(404).json({ message: 'Artisan not found' });
-    res.json(artisan);
-}));
 
 export default router;

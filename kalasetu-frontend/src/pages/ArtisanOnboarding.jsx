@@ -82,7 +82,7 @@ const ArtisanOnboarding = () => {
     }
     setSaving(true);
     try {
-      await api.patch('/api/artisan/profile', {
+      await api.put('/api/artisan/profile', {
         fullName: fullName.trim(),
         bio: bio.trim(),
         profileImageUrl: profileImageUrl.trim() || undefined,
@@ -112,7 +112,7 @@ const ArtisanOnboarding = () => {
     }
     setSaving(true);
     try {
-      await api.post('/api/artisan/services', {
+      await api.post('/api/services', {
         name: serviceName.trim(),
         description: serviceDescription.trim(),
         price: Number(servicePrice),
@@ -135,11 +135,13 @@ const ArtisanOnboarding = () => {
     }
     setSaving(true);
     try {
+      // Map day names to numeric dayOfWeek (0=Sun..6=Sat) for backend Zod validation
+      const DAY_TO_NUM = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
       const recurringSchedule = selectedDays.map((day) => ({
-        dayOfWeek: day,
+        dayOfWeek: DAY_TO_NUM[day],
         slots: [{ startTime, endTime }],
       }));
-      await api.post('/api/availability', { recurringSchedule });
+      await api.post('/api/artisan/availability', { recurringSchedule });
       return true;
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to save availability', 'error');
@@ -152,7 +154,7 @@ const ArtisanOnboarding = () => {
   const handlePublish = async () => {
     setSaving(true);
     try {
-      await api.patch('/api/artisan/profile', { isActive: true });
+      await api.put('/api/artisan/profile', { isActive: true });
       setPublished(true);
       showToast('Your profile is now live!', 'success');
     } catch (err) {

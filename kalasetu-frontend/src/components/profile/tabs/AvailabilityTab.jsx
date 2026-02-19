@@ -29,7 +29,7 @@ const AvailabilityTab = () => {
     try {
       setLoading(true);
       const [availRes, bookingsRes] = await Promise.all([
-        api.get('/api/availability').catch(() => ({ data: { data: null } })),
+        api.get('/api/artisan/availability').catch(() => ({ data: { data: null } })),
         api.get('/api/bookings/artisan').catch(() => ({ data: { data: [] } })),
       ]);
 
@@ -89,7 +89,7 @@ const AvailabilityTab = () => {
         bufferTime,
         advanceBookingDays,
       };
-      await api.post('/api/availability', payload);
+      await api.post('/api/artisan/availability', payload);
       showToast('Availability saved!', 'success');
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to save', 'error');
