@@ -24,9 +24,9 @@ const PortfolioTab = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddProject, setShowAddProject] = useState(false);
-  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingProjects, setUploadingProjects] = useState(new Set());
   const [draggedImage, setDraggedImage] = useState(null);
-  const [draggedOverIndex, setDraggedOverIndex] = useState(null);
+  const [draggedOver, setDraggedOver] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null); // { type: 'project'|'image', projectId, imageUrl? }
 
   useEffect(() => {
@@ -55,7 +55,7 @@ const PortfolioTab = () => {
       return;
     }
 
-    setUploadingImages(true);
+    setUploadingProjects(prev => new Set(prev).add(projectId));
     try {
       const uploadedUrls = [];
 
@@ -70,21 +70,27 @@ const PortfolioTab = () => {
         }
 
         const sigResponse = await api.get('/api/uploads/signature', {
-          params: { folder: 'portfolio' }
+          params: { folder: 'kalasetu/artisan/portfolio' }
         });
-        const { signature, timestamp, cloudName, api_key } = sigResponse.data;
+        const { signature, timestamp, cloud_name, api_key } = sigResponse.data;
 
         const formData = new FormData();
         formData.append('file', file);
         formData.append('signature', signature);
         formData.append('timestamp', timestamp);
         formData.append('api_key', api_key);
-        formData.append('folder', 'portfolio');
+        formData.append('folder', 'kalasetu/artisan/portfolio');
+        formData.append('allowed_formats', 'jpg,jpeg,png,webp');
 
         const uploadResponse = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+          `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
           { method: 'POST', body: formData }
         );
+
+        if (!uploadResponse.ok) {
+          showToast(`Upload failed for ${file.name}`, 'error');
+          continue;
+        }
 
         const uploadData = await uploadResponse.json();
         if (uploadData.secure_url) {
@@ -103,7 +109,7 @@ const PortfolioTab = () => {
       console.error('Error uploading images:', error);
       showToast('Failed to upload images. Please try again.', 'error');
     } finally {
-      setUploadingImages(false);
+      setUploadingProjects(prev => { const next = new Set(prev); next.delete(projectId); return next; });
     }
   };
 
@@ -172,15 +178,15 @@ const PortfolioTab = () => {
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (e, index) => {
+  const handleDragOver = (e, index, projectId) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    setDraggedOverIndex(index);
+    setDraggedOver({ projectId, index });
   };
 
   const handleDragEnd = () => {
     setDraggedImage(null);
-    setDraggedOverIndex(null);
+    setDraggedOver(null);
   };
 
   const handleDrop = async (e, projectId, dropIndex) => {
@@ -194,7 +200,7 @@ const PortfolioTab = () => {
     const currentIndex = project.images.indexOf(draggedImage);
     if (currentIndex === -1 || currentIndex === dropIndex) {
       setDraggedImage(null);
-      setDraggedOverIndex(null);
+      setDraggedOver(null);
       return;
     }
 
@@ -218,7 +224,7 @@ const PortfolioTab = () => {
     }
 
     setDraggedImage(null);
-    setDraggedOverIndex(null);
+    setDraggedOver(null);
   };
 
   if (loading) {
@@ -281,7 +287,7 @@ const PortfolioTab = () => {
                   <Button
                     variant="secondary"
                     size="sm"
-                    loading={uploadingImages}
+                    loading={uploadingProjects.has(project._id)}
                     onClick={() => fileInputRefs.current[project._id]?.click()}
                   >
                     <ImagePlus className="h-4 w-4" /> Add Images
@@ -292,7 +298,7 @@ const PortfolioTab = () => {
                     multiple
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => handleImageUpload(Array.from(e.target.files), project._id)}
+                    onChange={(e) => { handleImageUpload(Array.from(e.target.files), project._id); e.target.value = ''; }}
                   />
                   <Button
                     variant="danger"
@@ -312,10 +318,10 @@ const PortfolioTab = () => {
                       key={image}
                       draggable
                       onDragStart={(e) => handleDragStart(e, image)}
-                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index, project._id)}
                       onDragEnd={handleDragEnd}
                       onDrop={(e) => handleDrop(e, project._id, index)}
-                      className={`relative group cursor-move ${draggedImage === image ? 'opacity-50' : ''} ${draggedOverIndex === index ? 'ring-2 ring-brand-500 rounded-lg' : ''}`}
+                      className={`relative group cursor-move ${draggedImage === image ? 'opacity-50' : ''} ${draggedOver?.projectId === project._id && draggedOver?.index === index ? 'ring-2 ring-brand-500 rounded-lg' : ''}`}
                     >
                       <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
                         <img
