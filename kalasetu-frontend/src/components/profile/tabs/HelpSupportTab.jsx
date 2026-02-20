@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import api from '../../../lib/axios.js';
 import { ToastContext } from '../../../context/ToastContext.jsx';
+import { Input, Button } from '../../ui';
 import {
   Calendar,
   CreditCard,
@@ -15,7 +16,7 @@ import {
 } from 'lucide-react';
 
 const HelpSupportTab = () => {
-  const { showToast } = React.useContext(ToastContext);
+  const { showToast } = useContext(ToastContext);
 
   // Tickets state
   const [tickets, setTickets] = useState([]);
@@ -309,51 +310,37 @@ const HelpSupportTab = () => {
           </div>
 
           <div className="space-y-4">
-            {/* Subject */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Subject
-              </label>
-              <input
-                type="text"
-                value={supportForm.subject}
-                onChange={e => setSupportForm(prev => ({ ...prev, subject: e.target.value }))}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900"
-                placeholder="Brief description of your issue"
-                required
-              />
-            </div>
-
-            {/* Message */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Describe your issue
-              </label>
-              <textarea
-                value={supportForm.message}
-                onChange={e => setSupportForm(prev => ({ ...prev, message: e.target.value }))}
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900 resize-none"
-                required
-                minLength={20}
-                placeholder={
-                  selectedCategory.key === 'booking'
-                    ? 'Which booking? What went wrong?'
-                    : selectedCategory.key === 'payment'
-                    ? 'What payment issue are you facing?'
-                    : 'Tell us what happened...'
-                }
-              />
-            </div>
-
-            <button
-              type="button"
+            <Input
+              label="Subject"
+              value={supportForm.subject}
+              onChange={e => setSupportForm(prev => ({ ...prev, subject: e.target.value }))}
+              placeholder="Brief description of your issue"
+              required
+            />
+            <Input
+              label="Describe your issue"
+              as="textarea"
+              value={supportForm.message}
+              onChange={e => setSupportForm(prev => ({ ...prev, message: e.target.value }))}
+              rows={4}
+              required
+              minLength={20}
+              placeholder={
+                selectedCategory.key === 'booking'
+                  ? 'Which booking? What went wrong?'
+                  : selectedCategory.key === 'payment'
+                  ? 'What payment issue are you facing?'
+                  : 'Tell us what happened...'
+              }
+            />
+            <Button
+              variant="primary"
               onClick={handleSupportSubmit}
+              loading={supportLoading}
               disabled={supportLoading || !supportForm.subject || !supportForm.message}
-              className="w-full md:w-auto px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50 transition-colors font-medium"
             >
               {supportLoading ? 'Sending...' : 'Send Message'}
-            </button>
+            </Button>
           </div>
 
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
@@ -400,46 +387,34 @@ const HelpSupportTab = () => {
           Report an Issue
         </h3>
         <form onSubmit={handleIssueReport} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Issue Type
-            </label>
-            <select
-              value={issueReport.type}
-              onChange={e => setIssueReport(prev => ({ ...prev, type: e.target.value }))}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900"
-            >
-              <option value="bug">Bug/Error</option>
-              <option value="payment">Payment Problem</option>
-              <option value="artisan">Artisan Complaint</option>
-              <option value="performance">App Performance</option>
-              <option value="feature">Feature Request</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Description
-            </label>
-            <textarea
-              value={issueReport.description}
-              onChange={e => setIssueReport(prev => ({ ...prev, description: e.target.value }))}
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900 resize-none"
-              required
-              minLength={50}
-              placeholder="Describe the issue in detail..."
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {issueReport.description.length}/50 characters minimum
-            </p>
-          </div>
-          <button
-            type="submit"
-            className="w-full md:w-auto px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
-          >
+          <Input
+            label="Issue Type"
+            as="select"
+            value={issueReport.type}
+            onChange={e => setIssueReport(prev => ({ ...prev, type: e.target.value }))}
+            options={[
+              { value: 'bug', label: 'Bug/Error' },
+              { value: 'payment', label: 'Payment Problem' },
+              { value: 'artisan', label: 'Artisan Complaint' },
+              { value: 'performance', label: 'App Performance' },
+              { value: 'feature', label: 'Feature Request' },
+              { value: 'other', label: 'Other' },
+            ]}
+          />
+          <Input
+            label="Description"
+            as="textarea"
+            value={issueReport.description}
+            onChange={e => setIssueReport(prev => ({ ...prev, description: e.target.value }))}
+            rows={4}
+            required
+            minLength={50}
+            placeholder="Describe the issue in detail..."
+            helperText={`${issueReport.description.length}/50 characters minimum`}
+          />
+          <Button type="submit" variant="primary">
             Submit Report
-          </button>
+          </Button>
         </form>
       </div>
 
