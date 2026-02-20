@@ -83,12 +83,11 @@ const ArtisanAccountPage = () => {
               <p className="text-xs text-gray-500">Artisan Dashboard</p>
             </div>
           </div>
-          <a
-            href={user?.publicId ? `/artisan/${user.publicId}` : '#'}
-            className="hidden md:inline-flex text-sm text-brand-500 hover:text-brand-600 font-medium"
-          >
-            View public profile →
-          </a>
+          {user?.publicId ? (
+            <a href={`/artisan/${user.publicId}`} className="hidden md:inline-flex text-sm text-brand-500 hover:text-brand-600 font-medium">View public profile →</a>
+          ) : (
+            <span className="hidden md:inline-flex text-sm text-gray-300 font-medium cursor-not-allowed">View public profile →</span>
+          )}
         </div>
       </div>
 

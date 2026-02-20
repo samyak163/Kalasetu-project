@@ -7,7 +7,7 @@ import BookingCard from '../../booking/BookingCard.jsx';
 import IncomeChart from '../../dashboard/IncomeChart.jsx';
 import ProfileCompletionCard from '../../dashboard/ProfileCompletionCard.jsx';
 import {
-  CalendarDays, CheckCircle, IndianRupee, Star, TrendingUp,
+  CalendarDays, CheckCircle, IndianRupee, Star, TrendingUp, TrendingDown,
   ArrowRight, MessageSquare, Clock,
 } from 'lucide-react';
 
@@ -103,7 +103,7 @@ const DashboardOverviewTab = ({ onNavigateTab }) => {
                 {isRating && <p className="text-xs text-gray-400 mt-0.5">{reviewCount} review{reviewCount !== 1 ? 's' : ''}</p>}
                 {stats?.weeklyGrowth !== 0 && label === 'Active Bookings' && (
                   <p className={`text-xs mt-0.5 flex items-center gap-0.5 ${stats.weeklyGrowth > 0 ? 'text-success-600' : 'text-error-600'}`}>
-                    <TrendingUp className="h-3 w-3" />
+                    {stats.weeklyGrowth > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                     {stats.weeklyGrowth > 0 ? '+' : ''}{stats.weeklyGrowth}% this week
                   </p>
                 )}

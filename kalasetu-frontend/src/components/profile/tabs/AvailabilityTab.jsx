@@ -82,6 +82,11 @@ const AvailabilityTab = () => {
   };
 
   const handleSave = async () => {
+    const invalidSlot = schedule.some(day => day.slots.some(slot => slot.startTime >= slot.endTime));
+    if (invalidSlot) {
+      showToast('Each time slot must end after it starts.', 'error');
+      return;
+    }
     try {
       setSaving(true);
       const payload = {

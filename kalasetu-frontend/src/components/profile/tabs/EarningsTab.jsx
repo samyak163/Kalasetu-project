@@ -98,10 +98,10 @@ const EarningsTab = () => {
           <Card hover={false} padding={false}>
             <div className="divide-y divide-gray-100">
               {transactions.map(tx => (
-                <div key={tx._id || tx.paymentId} className="flex items-center justify-between p-4">
+                <div key={tx._id} className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${tx.type === 'credit' || tx.status === 'captured' ? 'bg-success-50' : 'bg-error-50'}`}>
-                      {tx.type === 'credit' || tx.status === 'captured'
+                    <div className={`p-2 rounded-full ${tx.type === 'payment' ? 'bg-success-50' : 'bg-error-50'}`}>
+                      {tx.type === 'payment'
                         ? <ArrowDownLeft className="h-4 w-4 text-success-600" />
                         : <ArrowUpRight className="h-4 w-4 text-error-600" />
                       }
@@ -113,8 +113,8 @@ const EarningsTab = () => {
                       </p>
                     </div>
                   </div>
-                  <p className={`text-sm font-semibold ${tx.type === 'credit' || tx.status === 'captured' ? 'text-success-600' : 'text-error-600'}`}>
-                    {tx.type === 'credit' || tx.status === 'captured' ? '+' : '-'}₹{(tx.amount || 0).toLocaleString('en-IN')}
+                  <p className={`text-sm font-semibold ${tx.type === 'payment' ? 'text-success-600' : 'text-error-600'}`}>
+                    {tx.type === 'payment' ? '+' : '-'}₹{(tx.amount || 0).toLocaleString('en-IN')}
                   </p>
                 </div>
               ))}

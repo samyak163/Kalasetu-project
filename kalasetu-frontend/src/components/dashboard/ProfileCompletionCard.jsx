@@ -21,6 +21,7 @@ const STEP_LABELS = {
  */
 export default function ProfileCompletionCard({ onNavigateTab }) {
   const [data, setData] = useState(null);
+  const [fetchError, setFetchError] = useState(false);
   const [dismissed, setDismissed] = useState(() => {
     try { return localStorage.getItem(DISMISS_KEY) === 'true'; } catch { return false; }
   });
@@ -31,10 +32,11 @@ export default function ProfileCompletionCard({ onNavigateTab }) {
       .then(res => {
         if (res.data.success) setData(res.data.data);
       })
-      .catch(() => {});
+      .catch((err) => { console.error('[ProfileCompletionCard] fetch failed:', err.message); setFetchError(true); });
   }, [dismissed]);
 
   if (dismissed || !data || data.isFullyVerified) return null;
+  if (fetchError) return null;
 
   const percentage = Math.round((data.completedCount / data.totalCount) * 100);
   const nextStep = data.steps.find(s => !s.completed);

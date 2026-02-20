@@ -24,7 +24,9 @@ const ReviewsTab = () => {
   const [replyText, setReplyText] = useState('');
   const [replyLoading, setReplyLoading] = useState(false);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    if (user?._id) fetchData();
+  }, [user?._id]);
 
   const fetchData = async () => {
     try {

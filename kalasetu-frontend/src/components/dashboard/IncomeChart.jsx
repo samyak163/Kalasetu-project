@@ -16,24 +16,24 @@ export default function IncomeChart({ months = 6, className = '' }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let stale = false;
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get(`/api/artisan/dashboard/income-report?period=${period}`);
+        if (!stale && res.data.success) setData(res.data.data);
+      } catch {
+        if (!stale) setData({ periods: [], total: 0 });
+      } finally {
+        if (!stale) setLoading(false);
+      }
+    };
     fetchData();
+    return () => { stale = true; };
   }, [period]);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get(`/api/artisan/dashboard/income-report?period=${period}`);
-      if (res.data.success) {
-        setData(res.data.data);
-      }
-    } catch {
-      setData({ periods: [], total: 0 });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const periods = data?.periods?.slice(-months) || [];
+  const visibleTotal = periods.reduce((sum, p) => sum + p.amount, 0);
   const maxAmount = Math.max(...periods.map(p => p.amount), 1);
 
   const formatLabel = (label) => {
@@ -69,9 +69,9 @@ export default function IncomeChart({ months = 6, className = '' }) {
         <FilterChips chips={chips} />
       </div>
 
-      {data?.total > 0 && (
+      {visibleTotal > 0 && (
         <p className="text-2xl font-bold text-gray-900 mb-4">
-          ₹{data.total.toLocaleString('en-IN')}
+          ₹{visibleTotal.toLocaleString('en-IN')}
         </p>
       )}
 

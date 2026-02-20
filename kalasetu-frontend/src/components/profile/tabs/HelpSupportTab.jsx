@@ -146,10 +146,9 @@ const HelpSupportTab = () => {
 
     try {
       setSupportLoading(true);
-      const response = await api.post('/api/users/support/contact', {
+      const response = await api.post('/api/support', {
         subject: supportForm.subject,
-        message: supportForm.message,
-        priority: 'medium',
+        description: supportForm.message,
         category: selectedCategory?.key || 'other',
       });
 
@@ -174,7 +173,11 @@ const HelpSupportTab = () => {
   const handleIssueReport = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/api/users/support/report', issueReport);
+      await api.post('/api/support', {
+        subject: `${issueReport.type} report`,
+        description: issueReport.description,
+        category: issueReport.type,
+      });
       showToast('Issue reported successfully!', 'success');
       setIssueReport({ type: 'bug', description: '' });
       fetchTickets(); // Refresh tickets list

@@ -99,28 +99,6 @@ const AppearanceTab = ({ user }) => {
         </div>
       </Card>
 
-      {/* Accessibility */}
-      <Card hover={false}>
-        <h3 className="text-sm font-semibold text-gray-900 mb-4">
-          Accessibility
-        </h3>
-        <div className="space-y-3">
-          <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-gray-700 dark:text-gray-300">High contrast mode</span>
-            <input
-              type="checkbox"
-              className="w-5 h-5 text-brand-500 rounded focus:ring-brand-500"
-            />
-          </label>
-          <label className="flex items-center justify-between cursor-pointer">
-            <span className="text-gray-700 dark:text-gray-300">Reduce animations</span>
-            <input
-              type="checkbox"
-              className="w-5 h-5 text-brand-500 rounded focus:ring-brand-500"
-            />
-          </label>
-        </div>
-      </Card>
     </div>
   );
 };

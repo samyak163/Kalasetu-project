@@ -58,7 +58,7 @@ const ArtisanProfileTab = () => {
         fullName: formData.fullName.trim(),
         bio: formData.bio.trim(),
       });
-      setFormData(prev => ({ ...prev, fullName: updated.fullName || prev.fullName, bio: updated.bio || prev.bio }));
+      setFormData(prev => ({ ...prev, fullName: updated.fullName || prev.fullName, bio: updated.bio ?? prev.bio }));
       showToast('Profile updated successfully!', 'success');
     } catch (e) {
       showToast(e.response?.data?.message || 'Failed to update profile', 'error');
