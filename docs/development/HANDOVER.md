@@ -10,10 +10,102 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-02-21 |
-| **Branch** | `feat/ui-overhaul` (110 commits ahead of main) |
+| **Branch** | `feat/ui-overhaul` (113 commits ahead of main) |
 | **Build status** | passing (frontend builds cleanly) |
 | **PR** | PR #1 open (draft) on samyak163/Kalasetu-project |
-| **Session mood** | Phases 1-10 complete, ready for Phase 11 |
+| **Session mood** | Phases 1-10 complete, Phase 11 designed + planned, ready for execution |
+
+---
+
+## IMMEDIATE NEXT ACTION — Phase 11 Execution
+
+### What To Do
+
+Execute the Phase 11 implementation plan using agent teams for parallel work, then verify with code review.
+
+### Execution Instructions
+
+```
+Execute Phase 11: Remaining Integrations & Global Polish.
+
+Read the implementation plan at docs/plans/2026-02-21-phase-11-plan.md.
+Read the design doc at docs/plans/2026-02-21-phase-11-design.md.
+
+Use /superpowers:subagent-driven-development to execute the plan.
+
+Execute in this order (use agent teams for parallel layers):
+
+SEQUENTIAL: Layer 1 — Infrastructure (Tasks 1-3)
+  Task 1: Create NotFoundPage + catch-all route in App.jsx
+  Task 2: Upgrade ErrorFallback + add layout-level ErrorBoundary
+  Task 3: Upgrade Suspense fallback to LoadingState
+
+SEQUENTIAL: Layer 2 — Notifications (Task 4)
+  Task 4: Rebuild NotificationPanel + NotificationPrompt
+
+PARALLEL (agent team, 3 agents): Layer 3 — Auth Pages (Tasks 5-7)
+  Agent 1: Task 5 — Rebuild LoginPage + UserLoginPage
+  Agent 2: Task 6 — Rebuild RegisterPage + UserRegisterPage
+  Agent 3: Task 7 — Rebuild AuthSelector + RegisterSelector
+
+PARALLEL (agent team, 5 agents): Layer 4 — Onboarding + Modals (Tasks 8-12)
+  Agent 1: Task 8 — Rebuild ArtisanOnboarding (659 lines, largest file)
+  Agent 2: Task 9 — Rebuild ProfileDropdown
+  Agent 3: Task 10 — Rebuild HowItWorks
+  Agent 4: Task 11 — Rebuild HowItWorksModal
+  Agent 5: Task 12 — Rebuild ArtisanInfoModal
+
+SEQUENTIAL: Layer 5 — Dashboards (Tasks 13-15)
+  Task 13: Rebuild UserDashboard sidebar
+  Task 14: Rebuild UserPayments
+  Task 15: Wire MyClientsTab action buttons
+
+PARALLEL (agent team, 2 agents): Layer 6 — Admin (Tasks 16-17)
+  Agent 1: Task 16 — Upgrade AdminDashboard
+  Agent 2: Task 17 — Upgrade AdminAnalytics
+
+PARALLEL (agent team, 3 agents): Layer 7 — Remaining (Tasks 18-20)
+  Agent 1: Task 18 — Rebuild FeaturedArtisans
+  Agent 2: Task 19 — Rebuild NearbyArtisans
+  Agent 3: Task 20 — Fix env.config.js brand color
+
+After each layer completes: run `npm run build` in kalasetu-frontend to verify.
+After ALL layers complete: run Task 21 (verification sweep).
+```
+
+### After Execution — Verification Pipeline
+
+After all 21 tasks are complete, run this verification sequence:
+
+```
+STEP 1: Verification sweep (Task 21 in the plan)
+  - grep -r "#A55233" kalasetu-frontend/src/ --include="*.jsx" --include="*.js" -l
+    Expected: only env.config.js (documented Razorpay SDK exception)
+  - npm run build (must pass)
+  - npm run lint (no new warnings)
+
+STEP 2: Code review — use /review-code on all changed files
+  Run the code-reviewer agent on the Phase 11 changes.
+  Focus areas: design system consistency, no hardcoded colors, proper
+  component usage, no broken imports, no stale closures.
+
+STEP 3: Evaluate review — use /evaluate-review
+  Critically evaluate the code review findings. Not all suggestions
+  need implementation — fight the LLM mirror problem. Only fix
+  CRITICAL and HIGH issues. Cache research for future sessions.
+
+STEP 4: Fix accepted issues
+  Implement fixes for accepted review findings.
+  Run build + lint again after fixes.
+
+STEP 5: Commit all Phase 11 work
+  Each task should already be committed individually (per the plan).
+  After review fixes, create a final fix commit:
+  git commit -m "fix: address Phase 11 code review findings"
+
+STEP 6: Update this handover
+  Run /handover to update HANDOVER.md with Phase 11 completion status.
+```
 
 ---
 
@@ -44,69 +136,23 @@ StarRating component, review tag constants (rating-dependent positive/negative t
 `useChatUnread` hook, chat unread badge on Header, MessagesPage rewrite (mobile-first WhatsApp-style layout, custom channel previews, EmptyState, TypingIndicator)
 
 ### Phase 9: Artisan Dashboard Rebuild
-
 Full sweep: 6 tab rebuilds, 3 tab polish, container rebuild, 2 shared components, dead code cleanup. Then comprehensive code review + 19 fixes.
 
-**Implementation (13 commits):**
-```
-7d71176 chore: delete orphaned USERsTab.jsx
-5daeb51 feat(dashboard): rebuild ArtisanAccountPage container
-0b0888b feat(dashboard): add IncomeChart shared component
-e71fc05 feat(dashboard): rebuild ArtisanProfileTab with design system
-abde069 feat(dashboard): add ProfileCompletionCard shared component
-efbe810 feat(dashboard): rebuild PortfolioTab with design system
-42535b5 feat(dashboard): rebuild DashboardOverviewTab with smart features
-b29d63f feat(dashboard): rebuild AvailabilityTab with design system
-f0cfe0c feat(dashboard): rebuild EarningsTab with design system
-b6187c8 feat(dashboard): rebuild ReviewsTab with design system
-024e6e9 feat(dashboard): polish MyClientsTab, AppearanceTab, HelpSupportTab
-```
-
-**Code review fixes (2 commits):**
-```
-4bde5cc fix(dashboard): fix 7 PortfolioTab issues from code review
-124f11a fix(dashboard): fix 12 review issues across 8 dashboard tabs
-```
-
-### Phase 10: User Dashboard Rebuild (JUST COMPLETED)
-
+### Phase 10: User Dashboard Rebuild
 Rebuilt 7 files: UserProfilePage container, ProfileModal, and 5 user tabs. Executed via agent team (wave-based parallel execution).
 
-**Implementation (9 commits):**
-```
-ef99b90 feat(dashboard): rebuild UserProfilePage container
-89409f3 feat(dashboard): rebuild ProfileModal with design tokens
-071b450 feat(dashboard): rebuild ProfileTab with design system
-a912e19 feat(dashboard): rebuild RatingsTab with design system
-054a06c feat(dashboard): rebuild BookmarksTab with design system
-87f5f2a feat(dashboard): rebuild OrderHistoryTab with design system
-78bd47a feat(dashboard): rebuild PreferencesTab with design system
-dc4e7f4 docs: add Phase 10 user dashboard design and implementation plan
-92fb3cf fix(lint): suppress fetchPayments exhaustive-deps warnings
-```
-
-**Key changes:**
-- **UserProfilePage:** URL hash navigation (`#profile`, `#ratings`, `#saved`, `#orders`), mobile horizontal icon tab bar, desktop sidebar with brand accent bar, Avatar in header — matches ArtisanAccountPage pattern from Phase 9
-- **ProfileModal:** Emoji icons (👤⭐🔖📋⚙️🎨❓) replaced with Lucide icons (User, Star, Bookmark, ClipboardList, Bell, SunMoon, HelpCircle), all hardcoded `#A55233` → design tokens, X close button from Lucide
-- **ProfileTab:** Avatar for profile photo (replaces raw img), Input/Button/Card throughout, Spinner for upload, password strength with semantic colors (`error-500`/`warning-500`/`success-500`)
-- **RatingsTab:** Text stars (★/☆) → StarRating component, Card for categories, Badge with status mapping (rating >= 4 → "completed", >= 3 → "pending", > 0 → "cancelled"), Alert for info section, EmptyState
-- **BookmarksTab:** Card for artisan cards, Avatar (replaces img+placehold.co fallback), Badge for ratings, Button for View Profile/Contact, EmptyState with Bookmark icon
-- **OrderHistoryTab:** Largest rebuild (443 lines). StatusBadge for order status, Badge for refund status, Avatar for artisan photos. **Refund modal migrated from fixed-position div → BottomSheet component**. Button variants: primary (Rate/Refund), secondary (Details), ghost (Rebook)
-- **PreferencesTab:** Minimal change — Card hover={false}, Button variant="primary", `accent-brand-500` on checkboxes, `focus:ring-brand-500` on selects
-
-**Design decisions:**
-- Keep both UserProfilePage (full page) and ProfileModal (overlay) — they serve different UX contexts
-- URL hash navigation added to UserProfilePage (matches Phase 9 ArtisanAccountPage pattern)
-- BottomSheet for refund modal (consistent with booking cancellation pattern from Phase 6)
-- Styled native checkboxes with `accent-brand-500` (no custom Toggle — YAGNI)
-
-**Verification:** Build passes, zero hardcoded `#A55233` colors, zero emoji icons, zero text stars across all 7 files.
+### Phase 11 Planning (THIS SESSION)
+- Brainstormed scope: comprehensive sweep, full rebuild all 19 hardcoded-color files, admin pages included
+- Designed 7-layer architecture (infrastructure → notifications → auth → onboarding → dashboards → admin → remaining)
+- Wrote implementation plan: 21 tasks, 24 files modified + 1 created
+- Committed design doc (`cc3fe8a`) and plan doc (`45939e7`)
 
 ### Additional Completed Work
 - ServiceDetailSheet with ImageCarousel, per-service stats API
 - ServiceFormSheet with live preview, MultiImageUpload, management ServicesTab
 - Search suggestions for `suggestedServices` from categories
 - Price removed from Book buttons (misleading with multi-service artisans)
+- Resolved all 69 ESLint warnings across 44 frontend files (`1cb1331`)
 
 ### Code Review Fixes (Phases 1-8: 8 commits)
 ```
@@ -124,10 +170,11 @@ b53f2f7 fix(reviews): address code review findings — hasReview API, sort bug, 
 
 ## What's Remaining
 
-### Phase 11: Remaining Integrations & Global Polish (NEXT UP)
-Error states, notifications, 404 page, global polish. Specific scope TBD via brainstorming.
+### Phase 11: Execution (NEXT SESSION)
+21 tasks across 7 layers. Design and plan complete. Execute using agent teams.
+See `docs/plans/2026-02-21-phase-11-plan.md` for full task breakdown.
 
-### Open Non-Blocking Items (from code review)
+### Open Non-Blocking Items (from prior code reviews)
 - Add Zod schemas to `createService`/`updateService` (compliance, not runtime issue)
 - Folder authorization by account type on upload signature endpoint
 - Validate image URLs are Cloudinary URLs on service save
@@ -136,7 +183,6 @@ Error states, notifications, 404 page, global polish. Specific scope TBD via bra
 - Inline safeParse in reviewController vs validateRequest middleware pattern
 - Cloudinary `allowed_formats` on review photo upload signatures
 - ThemeContext calls `/api/users/profile` for artisans — should branch by userType (pre-existing bug, not Phase 9)
-- MyClientsTab action buttons (View History, Call, Message) have no handlers — wire up or remove in Phase 11
 
 ---
 
@@ -158,6 +204,13 @@ Error states, notifications, 404 page, global polish. Specific scope TBD via bra
 | Phase 10 refund UX | BottomSheet component | Consistent with CancellationSheet pattern from Phase 6 |
 | Phase 10 toggles | Styled native checkboxes | `accent-brand-500` — no custom Toggle needed (YAGNI) |
 | Phase 10 execution | Agent team (wave-based) | Wave 1: 2 containers parallel, Wave 2: 5 tabs parallel, Wave 3: verification |
+| Phase 11 scope | Comprehensive sweep | Full rebuild all 19 hardcoded-color files + infrastructure + admin pages |
+| Phase 11 approach | Layer-by-Layer | Infrastructure first, then concentric layers outward — each layer testable |
+| Phase 11 404 page | Illustrated + helpful | CSS illustration, search input, category links, Go Home/Go Back |
+| Phase 11 admin pages | Full treatment | Same visual polish level as user-facing pages |
+| Phase 11 MyClientsTab Call | tel: link | Phone call — Daily.co requires booking context |
+| Phase 11 Razorpay hex | Keep as documented exception | SDK requires hex string, cannot use CSS token |
+| Phase 11 execution | Agent teams (layer-based) | Parallel within layers, sequential between layers |
 
 ---
 
@@ -180,6 +233,10 @@ Error states, notifications, 404 page, global polish. Specific scope TBD via bra
 - **Pre-existing:** ThemeContext calls `/api/users/profile` (userProtect) for theme saves — artisan theme changes fail silently
 - **Phase 10:** Badge uses `status` prop (completed/pending/cancelled) not `variant` — map rating values accordingly
 - **Phase 10:** ProfileModal uses custom event `open-profile` + body scroll lock — don't refactor away the event system
+- **Phase 11:** ProfileDropdown dispatches `open-profile` custom event — keep this intact during rebuild
+- **Phase 11:** `env.config.js` has `#A55233` for Razorpay SDK — this is intentional, not a missed token swap
+- **Phase 11:** HowItWorks imports from `./Icons.jsx` — remove this import when switching to Lucide icons
+- **Phase 11:** ArtisanOnboarding uses `const BRAND = '#A55233'` as a variable — delete the variable and replace ALL usages (it's used ~15 times via inline styles)
 
 ---
 
@@ -187,45 +244,23 @@ Error states, notifications, 404 page, global polish. Specific scope TBD via bra
 
 | Branch | HEAD | Status |
 |--------|------|--------|
-| `feat/ui-overhaul` | `92fb3cf` | 110 commits ahead of main |
+| `feat/ui-overhaul` | `45939e7` | 113 commits ahead of main |
 | `main` | `4242c6c` | Stable |
 
 ---
 
-## Next Steps: Phase 11 — Remaining Integrations & Global Polish
-
-### Scope (TBD via brainstorming)
-
-Potential areas:
-- Error boundary / error states for all pages
-- Notification pages (OneSignal integration UI)
-- 404 page redesign
-- Global polish (loading states, transitions, accessibility)
-- Wire up MyClientsTab action buttons (View History, Call, Message)
-- Address open non-blocking code review items
-
-### Workflow
-
-Use the superpowers brainstorming -> planning -> execution pipeline:
-
-```
-Start Phase 11: Remaining Integrations & Global Polish.
-
-Read the handover at docs/development/HANDOVER.md. Phase 10 (user dashboard) is complete.
-Phase 11 covers error states, notifications, 404, and global polish.
-Use /brainstorming to define scope, then /writing-plans, then execute.
-```
-
-### Reference Files
+## Reference Files
 
 | File | Purpose |
 |------|---------|
-| `docs/plans/2026-02-21-user-dashboard-design.md` | Phase 10 design (latest reference) |
-| `docs/plans/2026-02-21-user-dashboard-plan.md` | Phase 10 plan (latest reference) |
-| `kalasetu-frontend/src/components/ui/index.js` | Design system barrel exports |
-| `kalasetu-frontend/src/pages/NotFoundPage.jsx` | Current 404 page |
-| `kalasetu-frontend/src/components/Header.jsx` | Global header (chat badge already added) |
-| `kalasetu-frontend/src/components/BottomNav.jsx` | Mobile bottom navigation |
+| `docs/plans/2026-02-21-phase-11-design.md` | Phase 11 design (approved) |
+| `docs/plans/2026-02-21-phase-11-plan.md` | Phase 11 implementation plan (21 tasks) |
+| `docs/plans/2026-02-21-user-dashboard-design.md` | Phase 10 design |
+| `docs/plans/2026-02-21-user-dashboard-plan.md` | Phase 10 plan |
+| `kalasetu-frontend/src/components/ui/index.js` | Design system barrel exports (27 components) |
+| `kalasetu-frontend/src/App.jsx` | Main routing (add catch-all here) |
+| `kalasetu-frontend/src/components/Layout.jsx` | Layout wrapper (add ErrorBoundary here) |
+| `kalasetu-frontend/src/main.jsx` | Entry point (Sentry ErrorBoundary here) |
 
 ---
 
