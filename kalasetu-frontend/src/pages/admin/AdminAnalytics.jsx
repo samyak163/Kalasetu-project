@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../../lib/axios';
 import { RefreshCcw, IndianRupee, Users, Briefcase, CalendarCheck, TrendingUp, BarChart3, AlertCircle } from 'lucide-react';
+import { Button, Card, Skeleton, EmptyState } from '../../components/ui';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -14,10 +15,10 @@ const formatINR = (amount) => {
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const STATUS_COLORS = {
-  completed: 'bg-green-500',
+  completed: 'bg-success-500',
   confirmed: 'bg-blue-500',
-  pending: 'bg-yellow-400',
-  cancelled: 'bg-red-500',
+  pending: 'bg-warning-400',
+  cancelled: 'bg-error-500',
   'in-progress': 'bg-brand-500',
   refunded: 'bg-purple-500',
 };
@@ -29,7 +30,7 @@ const statusColor = (name) => STATUS_COLORS[name?.toLowerCase()] || 'bg-gray-400
 // ---------------------------------------------------------------------------
 
 const StatCard = ({ icon: Icon, label, value, sub, iconBg = 'bg-brand-500' }) => ( // eslint-disable-line no-unused-vars
-  <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+  <Card hover={false} padding={false} className="p-5">
     <div className="flex items-center gap-3 mb-3">
       <div className={`${iconBg} p-2.5 rounded-lg`}>
         <Icon className="w-5 h-5 text-white" />
@@ -38,14 +39,14 @@ const StatCard = ({ icon: Icon, label, value, sub, iconBg = 'bg-brand-500' }) =>
     </div>
     <p className="text-2xl font-bold text-gray-800 truncate">{value}</p>
     {sub && <p className="text-xs text-gray-500 mt-1 truncate">{sub}</p>}
-  </div>
+  </Card>
 );
 
 const SectionError = () => (
-  <div className="flex items-center gap-2 text-gray-400 py-6 justify-center">
-    <AlertCircle className="w-5 h-5" />
-    <span className="text-sm">No data available</span>
-  </div>
+  <EmptyState
+    icon={<AlertCircle className="w-8 h-8" />}
+    title="No data available"
+  />
 );
 
 const VerticalBars = ({ data, valueKey = 'amount', labelKey = 'month', color = 'bg-brand-500' }) => {
@@ -70,39 +71,39 @@ const VerticalBars = ({ data, valueKey = 'amount', labelKey = 'month', color = '
 };
 
 const SkeletonCard = () => (
-  <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 animate-pulse">
+  <Card hover={false} padding={false} className="p-5">
     <div className="flex items-center gap-3 mb-3">
-      <div className="w-10 h-10 bg-gray-200 rounded-lg" />
-      <div className="h-3 w-20 bg-gray-200 rounded" />
+      <Skeleton className="w-10 h-10 rounded-lg" />
+      <Skeleton className="h-3 w-20 rounded" />
     </div>
-    <div className="h-6 w-28 bg-gray-200 rounded mt-2" />
-    <div className="h-3 w-16 bg-gray-200 rounded mt-2" />
-  </div>
+    <Skeleton className="h-6 w-28 rounded mt-2" />
+    <Skeleton className="h-3 w-16 rounded mt-2" />
+  </Card>
 );
 
 const SkeletonBars = () => (
-  <div className="flex items-end gap-1 h-40 animate-pulse">
+  <div className="flex items-end gap-1 h-40">
     {Array.from({ length: 12 }).map((_, i) => (
       <div key={i} className="flex-1 flex flex-col items-center">
-        <div className="w-full bg-gray-200 rounded-t" style={{ height: `${20 + Math.random() * 60}%` }} />
-        <div className="h-2 w-full bg-gray-100 rounded mt-1" />
+        <Skeleton className="w-full rounded-t" height={`${20 + Math.random() * 60}%`} />
+        <Skeleton className="h-2 w-full rounded mt-1" />
       </div>
     ))}
   </div>
 );
 
 const SkeletonSection = () => (
-  <div className="space-y-4 animate-pulse">
-    <div className="h-5 w-40 bg-gray-200 rounded" />
+  <div className="space-y-4">
+    <Skeleton className="h-5 w-40 rounded" />
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <SkeletonCard />
       <SkeletonCard />
       <SkeletonCard />
     </div>
-    <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-      <div className="h-4 w-32 bg-gray-200 rounded mb-4" />
+    <Card hover={false} padding={false} className="p-5">
+      <Skeleton className="h-4 w-32 rounded mb-4" />
       <SkeletonBars />
-    </div>
+    </Card>
   </div>
 );
 
@@ -209,14 +210,15 @@ const AdminAnalytics = () => {
             In-depth platform metrics across revenue, users, and bookings.
           </p>
         </div>
-        <button
+        <Button
+          variant="primary"
           onClick={fetchData}
           disabled={loading}
-          className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50 flex items-center gap-2 text-sm md:text-base"
+          loading={loading}
         >
           <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
-        </button>
+        </Button>
       </div>
 
       {/* ================================================================= */}
@@ -231,9 +233,9 @@ const AdminAnalytics = () => {
         {loading ? (
           <SkeletonSection />
         ) : errors.revenue ? (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <Card hover={false}>
             <SectionError />
-          </div>
+          </Card>
         ) : (
           <div className="space-y-4">
             {/* Stat card */}
@@ -247,14 +249,14 @@ const AdminAnalytics = () => {
             </div>
 
             {/* Monthly revenue chart */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <Card hover={false} padding={false} className="p-5">
               <h3 className="text-sm font-semibold text-gray-700 mb-4">Monthly Revenue (Last 12 Months)</h3>
               <VerticalBars data={monthlyRevenue} valueKey="amount" labelKey="month" />
-            </div>
+            </Card>
 
             {/* Revenue by category */}
             {revenueByCategory.length > 0 && (
-              <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+              <Card hover={false} padding={false} className="p-5">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Revenue by Category</h3>
                 <div className="space-y-2">
                   {revenueByCategory.map((cat) => {
@@ -267,7 +269,7 @@ const AdminAnalytics = () => {
                         </span>
                         <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
                           <div
-                            className="bg-[#A55233] h-full rounded-full transition-all duration-500"
+                            className="bg-brand-500 h-full rounded-full transition-all duration-500"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -278,7 +280,7 @@ const AdminAnalytics = () => {
                     );
                   })}
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         )}
@@ -298,14 +300,14 @@ const AdminAnalytics = () => {
         {loading ? (
           <SkeletonSection />
         ) : errors.users ? (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <Card hover={false}>
             <SectionError />
-          </div>
+          </Card>
         ) : (
           <div className="space-y-4">
             {/* Stat cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <StatCard icon={Users} label="Total Users" value={formatINR(totalUsers)} iconBg="bg-green-600" />
+              <StatCard icon={Users} label="Total Users" value={formatINR(totalUsers)} iconBg="bg-success-600" />
               <StatCard icon={Briefcase} label="Total Artisans" value={formatINR(totalArtisans)} iconBg="bg-brand-500" />
               <StatCard
                 icon={TrendingUp}
@@ -316,10 +318,10 @@ const AdminAnalytics = () => {
             </div>
 
             {/* Monthly growth chart */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <Card hover={false} padding={false} className="p-5">
               <h3 className="text-sm font-semibold text-gray-700 mb-4">Monthly User Growth</h3>
-              <VerticalBars data={monthlyGrowth} valueKey="count" labelKey="month" color="bg-green-500" />
-            </div>
+              <VerticalBars data={monthlyGrowth} valueKey="count" labelKey="month" color="bg-success-500" />
+            </Card>
           </div>
         )}
       </section>
@@ -338,9 +340,9 @@ const AdminAnalytics = () => {
         {loading ? (
           <SkeletonSection />
         ) : errors.bookings ? (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <Card hover={false}>
             <SectionError />
-          </div>
+          </Card>
         ) : (
           <div className="space-y-4">
             {/* Stat cards */}
@@ -355,19 +357,19 @@ const AdminAnalytics = () => {
                 icon={BarChart3}
                 label="Completion Rate"
                 value={`${Number(completionRate).toFixed(1)}%`}
-                iconBg="bg-green-600"
+                iconBg="bg-success-600"
               />
               <StatCard
                 icon={AlertCircle}
                 label="Cancellation Rate"
                 value={`${Number(cancellationRate).toFixed(1)}%`}
-                iconBg="bg-red-500"
+                iconBg="bg-error-500"
               />
             </div>
 
             {/* Bookings by status -- horizontal stacked bar */}
             {byStatus.length > 0 && (
-              <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+              <Card hover={false} padding={false} className="p-5">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Bookings by Status</h3>
                 <div className="flex h-8 rounded-full overflow-hidden">
                   {byStatus.map((s) => (
@@ -389,12 +391,12 @@ const AdminAnalytics = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Popular categories */}
             {popularCategories.length > 0 && (
-              <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+              <Card hover={false} padding={false} className="p-5">
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">Popular Categories (Top 5)</h3>
                 <div className="space-y-2">
                   {popularCategories.slice(0, 5).map((cat, idx) => {
@@ -417,14 +419,14 @@ const AdminAnalytics = () => {
                     );
                   })}
                 </div>
-              </div>
+              </Card>
             )}
 
             {/* Monthly trend */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <Card hover={false} padding={false} className="p-5">
               <h3 className="text-sm font-semibold text-gray-700 mb-4">Monthly Booking Trend</h3>
               <VerticalBars data={monthlyTrend} valueKey="count" labelKey="month" color="bg-blue-500" />
-            </div>
+            </Card>
           </div>
         )}
       </section>
