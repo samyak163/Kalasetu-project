@@ -22,7 +22,7 @@ const AdminPayments = () => {
   useEffect(() => {
     fetchPayments();
     fetchStats();
-  }, [page, status, startDate, endDate, minAmount, maxAmount, search]);
+  }, [page, status, startDate, endDate, minAmount, maxAmount, search]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchPayments = async () => {
     setLoading(true);

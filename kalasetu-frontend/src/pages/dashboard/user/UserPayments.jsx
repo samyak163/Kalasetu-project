@@ -17,10 +17,6 @@ const UserPayments = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState(null);
 
-  useEffect(() => {
-    fetchPayments();
-  }, []);
-
   const fetchPayments = async () => {
     try {
       setLoading(true);
@@ -32,6 +28,10 @@ const UserPayments = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchPayments();
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleRefund = async (paymentId) => {
     if (!window.confirm('Are you sure you want to request a refund?')) return;
