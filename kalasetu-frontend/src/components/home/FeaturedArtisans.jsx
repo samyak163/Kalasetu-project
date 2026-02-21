@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { BadgeCheck, Star, ArrowRight } from 'lucide-react';
 import api from '../../lib/axios.js';
+import { Avatar, Skeleton, Button, Card } from '../ui';
 
 const SkeletonCard = () => (
-  <div className="animate-pulse bg-white rounded-xl border border-gray-100 overflow-hidden">
-    <div className="h-48 bg-gray-200" />
+  <Card hover={false} padding={false} className="overflow-hidden">
+    <Skeleton className="h-48 w-full rounded-none" />
     <div className="p-4 space-y-3">
-      <div className="h-4 bg-gray-200 rounded w-3/4" />
-      <div className="h-3 bg-gray-200 rounded w-1/2" />
-      <div className="h-3 bg-gray-200 rounded w-1/3" />
+      <Skeleton variant="text" lines={1} className="w-3/4" />
+      <Skeleton variant="text" lines={1} className="w-1/2" />
+      <Skeleton variant="text" lines={1} className="w-1/3" />
     </div>
-  </div>
+  </Card>
 );
 
 const FeaturedArtisans = () => {
@@ -84,104 +86,71 @@ const FeaturedArtisans = () => {
             <Link
               key={artisan._id || artisan.publicId}
               to={profileLink}
-              className="group bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+              className="group"
             >
-              {/* Profile Image */}
-              {artisan.profileImageUrl ? (
-                <img
-                  src={artisan.profileImageUrl}
-                  alt={artisan.fullName}
-                  className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              ) : (
-                <div
-                  className="w-full h-48 flex items-center justify-center text-white text-4xl font-bold"
-                  style={{
-                    background: `linear-gradient(135deg, #A55233, #C97B5D)`,
-                  }}
-                >
-                  {artisan.fullName
-                    ? artisan.fullName.charAt(0).toUpperCase()
-                    : '?'}
-                </div>
-              )}
+              <Card hover={false} padding={false} className="overflow-hidden border border-gray-100 hover:shadow-md hover:border-brand-200 transition-all">
+                {/* Profile Image */}
+                {artisan.profileImageUrl ? (
+                  <img
+                    src={artisan.profileImageUrl}
+                    alt={artisan.fullName}
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-brand-100 to-brand-200">
+                    <Avatar name={artisan.fullName} size="xl" />
+                  </div>
+                )}
 
-              {/* Card Content */}
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900 truncate">
-                    {artisan.fullName}
-                  </h3>
-                  {artisan.isVerified && (
-                    <span
-                      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-green-500 flex-shrink-0"
-                      title="KalaSetu Verified Artisan"
-                    >
-                      <svg
-                        width="10"
-                        height="10"
-                        viewBox="0 0 12 12"
-                        fill="none"
-                      >
-                        <path
-                          d="M2 6L5 9L10 3"
-                          stroke="white"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </span>
+                {/* Card Content */}
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-gray-900 truncate">
+                      {artisan.fullName}
+                    </h3>
+                    {artisan.isVerified && (
+                      <BadgeCheck
+                        className="w-4 h-4 text-success-500 flex-shrink-0"
+                        aria-label="KalaSetu Verified Artisan"
+                      />
+                    )}
+                  </div>
+
+                  {(artisan.craft || artisan.category) && (
+                    <p className="text-sm text-gray-600 truncate">
+                      {artisan.craft || artisan.category}
+                    </p>
                   )}
+
+                  {artisan.location?.city && (
+                    <p className="text-sm text-gray-500 truncate">
+                      {artisan.location.city}
+                    </p>
+                  )}
+
+                  {artisan.averageRating > 0 && (
+                    <p className="text-sm text-gray-700 mt-1 flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                      {artisan.averageRating.toFixed(1)}
+                    </p>
+                  )}
+
+                  <span className="inline-block mt-3 text-sm font-medium text-brand-500 group-hover:underline">
+                    View Profile
+                  </span>
                 </div>
-
-                {(artisan.craft || artisan.category) && (
-                  <p className="text-sm text-gray-600 truncate">
-                    {artisan.craft || artisan.category}
-                  </p>
-                )}
-
-                {artisan.location?.city && (
-                  <p className="text-sm text-gray-500 truncate">
-                    {artisan.location.city}
-                  </p>
-                )}
-
-                {artisan.averageRating > 0 && (
-                  <p className="text-sm text-gray-700 mt-1">
-                    <span className="text-yellow-500">&#11088;</span>{' '}
-                    {artisan.averageRating.toFixed(1)}
-                  </p>
-                )}
-
-                <span className="inline-block mt-3 text-sm font-medium text-brand-500 group-hover:underline">
-                  View Profile
-                </span>
-              </div>
+              </Card>
             </Link>
           );
         })}
       </div>
 
       <div className="mt-8 text-center">
-        <Link
-          to="/search"
-          className="inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold text-brand-500 border border-brand-500 rounded-lg hover:bg-brand-500 hover:text-white transition-colors"
-        >
-          View All Artisans
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17 8l4 4m0 0l-4 4m4-4H3"
-            />
-          </svg>
+        <Link to="/search">
+          <Button variant="outline" className="gap-2">
+            View All Artisans
+            <ArrowRight className="w-4 h-4" />
+          </Button>
         </Link>
       </div>
     </section>
