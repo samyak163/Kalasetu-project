@@ -65,6 +65,7 @@ const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 
 // Phase 3: Artisan onboarding wizard
 const ArtisanOnboarding = lazy(() => import('./pages/ArtisanOnboarding'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function App() {
   return (
@@ -190,6 +191,9 @@ function App() {
         </Route>
         
         {/* USER protected routes can be added here in future releases */}
+
+        {/* 404 Catch-All */}
+        <Route path="*" element={<NotFoundPage />} />
 
       </Route>
       {/* Admin Routes (separate from main site layout) */}
