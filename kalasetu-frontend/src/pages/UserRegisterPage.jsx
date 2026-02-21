@@ -1,9 +1,11 @@
 ﻿import { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ToastContext } from '../context/ToastContext.jsx';
 import { useNotifications } from '../context/NotificationContext.jsx';
 import { captureException } from '../lib/sentry.js';
+import { Button, Card, Input, Alert } from '../components/ui';
 
 const UserRegisterPage = () => {
     const [formData, setFormData] = useState({ 
@@ -87,7 +89,7 @@ const UserRegisterPage = () => {
             <div className="max-w-md w-full space-y-8">
                 {/* Header */}
                 <div className="text-center">
-                    <Link to="/" className="text-3xl font-bold text-[#A55233]">Kala<span className="text-gray-800">Setu</span></Link>
+                    <Link to="/" className="text-3xl font-bold text-brand-500">Kala<span className="text-gray-800">Setu</span></Link>
                     <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
                         Create your account
                     </h2>
@@ -97,29 +99,22 @@ const UserRegisterPage = () => {
                 </div>
 
                 {/* Registration Form */}
-                <div className="bg-white py-8 px-6 shadow-xl rounded-2xl border border-gray-100">
+                <Card className="py-8 px-6" padding={false} hover={false}>
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {error && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                <p className="text-sm text-red-600">{error}</p>
-                            </div>
+                            <Alert variant="error">{error}</Alert>
                         )}
 
                         {/* Full Name */}
-                        <div>
-                            <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
-                                Full Name
-                            </label>
-                            <input 
-                                type="text" 
-                                id="fullName" 
-                                value={formData.fullName} 
-                                onChange={handleChange} 
-                                required 
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                                placeholder="Enter your full name"
-                            />
-                        </div>
+                        <Input
+                            label="Full Name"
+                            type="text"
+                            id="fullName"
+                            value={formData.fullName}
+                            onChange={handleChange}
+                            required
+                            placeholder="Enter your full name"
+                        />
 
                         {/* Authentication Method Toggle */}
                         <div className="flex items-center justify-center space-x-4">
@@ -127,8 +122,8 @@ const UserRegisterPage = () => {
                                 type="button"
                                 onClick={toggleAuthMethod}
                                 className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                                    formData.useEmail 
-                                        ? 'bg-[#A55233] text-white' 
+                                    formData.useEmail
+                                        ? 'bg-brand-500 text-white'
                                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                 }`}
                             >
@@ -138,9 +133,9 @@ const UserRegisterPage = () => {
                                 type="button"
                                 onClick={toggleAuthMethod}
                                 className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                                    formData.useEmail 
+                                    formData.useEmail
                                         ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                        : 'bg-[#A55233] text-white'
+                                        : 'bg-brand-500 text-white'
                                 }`}
                             >
                                 Phone
@@ -149,50 +144,39 @@ const UserRegisterPage = () => {
 
                         {/* Email or Phone Input */}
                         {formData.useEmail ? (
-                            <div>
-                                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Email Address
-                                </label>
-                                <input 
-                                    type="email" 
-                                    id="email" 
-                                    value={formData.email} 
-                                    onChange={handleChange} 
-                                    required={formData.useEmail}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                                    placeholder="Enter your email address"
-                                />
-                            </div>
+                            <Input
+                                label="Email Address"
+                                type="email"
+                                id="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                required={formData.useEmail}
+                                placeholder="Enter your email address"
+                            />
                         ) : (
-                            <div>
-                                <label htmlFor="phoneNumber" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Phone Number
-                                </label>
-                                <input 
-                                    type="tel" 
-                                    id="phoneNumber" 
-                                    value={formData.phoneNumber} 
-                                    onChange={handleChange} 
-                                    required={!formData.useEmail}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-                                    placeholder="Enter your phone number"
-                                />
-                            </div>
+                            <Input
+                                label="Phone Number"
+                                type="tel"
+                                id="phoneNumber"
+                                value={formData.phoneNumber}
+                                onChange={handleChange}
+                                required={!formData.useEmail}
+                                placeholder="Enter your phone number"
+                            />
                         )}
 
                         {/* Password */}
                         <div>
-                            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                                 Password
                             </label>
                             <div className="relative">
-                                <input 
-                                    type={showPassword ? 'text' : 'password'} 
-                                    id="password" 
-                                    value={formData.password} 
-                                    onChange={handleChange} 
-                                    required 
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 pr-12 text-gray-900 placeholder-gray-400"
+                                <Input
+                                    type={showPassword ? 'text' : 'password'}
+                                    id="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    required
                                     placeholder="Create a strong password (8+ characters)"
                                 />
                                 <button
@@ -203,33 +187,36 @@ const UserRegisterPage = () => {
                                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                                 >
                                     {showPassword ? (
-                                        <svg width="20" height="20" fill="none" stroke="currentColor"><path d="M1 10C3 4.5 9 2 14 5c2 .8 6 4 6 5s-4 4.2-6 5C9 18 3 15.5 1 10z"/><circle cx="10" cy="10" r="3"/></svg>
+                                        <Eye className="w-5 h-5" />
                                     ) : (
-                                        <svg width="20" height="20" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="3"/><path d="M1 10C3 4.5 9 2 14 5c2 .8 6 4 6 5s-4 4.2-6 5C9 18 3 15.5 1 10z"/><line x1="4" y1="4" x2="16" y2="16"/></svg>
+                                        <EyeOff className="w-5 h-5" />
                                     )}
                                 </button>
                             </div>
                         </div>
 
-                        <button 
-                            type="submit" 
-                            disabled={loading} 
-                            className="w-full bg-[#A55233] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#8e462b] focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200"
+                        <Button
+                            type="submit"
+                            variant="primary"
+                            size="lg"
+                            className="w-full"
+                            disabled={loading}
+                            loading={loading}
                         >
                             {loading ? 'Creating Account...' : 'Create Account'}
-                        </button>
+                        </Button>
                     </form>
 
                     {/* Login Link */}
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-600">
                             Already have an account?{' '}
-                            <Link to="/user/login" className="font-semibold text-[#A55233] hover:text-[#8e462b] transition-colors">
+                            <Link to="/user/login" className="font-semibold text-brand-500 hover:text-brand-600 transition-colors">
                                 Sign in
                             </Link>
                         </p>
                     </div>
-                </div>
+                </Card>
             </div>
         </div>
     );

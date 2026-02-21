@@ -1,5 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
+import { User, Palette } from 'lucide-react';
+import { Card } from '../components/ui';
 
 export default function RegisterSelector() {
   return (
@@ -11,26 +13,28 @@ export default function RegisterSelector() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <Link to="/user/register" className="group block rounded-xl border border-gray-200 bg-white hover:shadow-lg transition p-8">
-            <div className="text-4xl mb-4">👤</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Sign up as USER</h3>
-            <p className="text-gray-600">Find artisans, book services and track orders.</p>
+          <Link to="/user/register" className="group block">
+            <Card hover={false} className="p-8 border border-gray-200 hover:shadow-lg hover:border-brand-200 transition">
+              <User className="w-10 h-10 text-brand-500 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Sign up as User</h3>
+              <p className="text-gray-600">Find artisans, book services and track orders.</p>
+            </Card>
           </Link>
 
-          <Link to="/artisan/register" className="group block rounded-xl border border-gray-200 bg-white hover:shadow-lg transition p-8">
-            <div className="text-4xl mb-4">🔧</div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Sign up as Artisan</h3>
-            <p className="text-gray-600">Get leads, manage jobs and grow your business.</p>
+          <Link to="/artisan/register" className="group block">
+            <Card hover={false} className="p-8 border border-gray-200 hover:shadow-lg hover:border-brand-200 transition">
+              <Palette className="w-10 h-10 text-brand-500 mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Sign up as Artisan</h3>
+              <p className="text-gray-600">Get leads, manage jobs and grow your business.</p>
+            </Card>
           </Link>
         </div>
 
         <div className="text-center mt-8 text-sm text-gray-700">
           Already have an account?{' '}
-          <Link to="/artisan/login" className="text-[#A55233] font-semibold hover:underline">Log In</Link>
+          <Link to="/artisan/login" className="text-brand-500 hover:text-brand-600 font-semibold hover:underline">Log In</Link>
         </div>
       </div>
     </div>
   );
 }
-
-

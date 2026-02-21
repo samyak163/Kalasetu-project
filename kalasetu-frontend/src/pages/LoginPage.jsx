@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Eye, EyeOff } from 'lucide-react';
+import { Button, Card, Input, Alert } from '../components/ui';
 
 const LoginPage = () => {
     const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -33,7 +35,7 @@ const LoginPage = () => {
             <div className="max-w-md w-full space-y-8">
                 {/* Header */}
                 <div className="text-center">
-                    <Link to="/" className="text-3xl font-bold text-[#A55233]">Kala<span className="text-gray-800">Setu</span></Link>
+                    <Link to="/" className="text-3xl font-bold text-brand-500">Kala<span className="text-gray-800">Setu</span></Link>
                     <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
                         Welcome back
                     </h2>
@@ -43,35 +45,34 @@ const LoginPage = () => {
                 </div>
 
                 {/* Login Form */}
-                <div className="bg-white py-8 px-6 shadow-xl rounded-2xl border border-gray-100">
+                <Card className="py-8 px-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label htmlFor="loginIdentifier" className="block text-sm font-semibold text-gray-700 mb-2">
                                 Email or Phone Number
                             </label>
-                            <input
+                            <Input
                                 id="loginIdentifier"
                                 type="text"
                                 value={loginIdentifier}
                                 onChange={(e) => setLoginIdentifier(e.target.value)}
                                 required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                 placeholder="Enter your email or phone number"
                             />
                         </div>
-                        
+
                         <div>
                             <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                                 Password
                             </label>
                             <div className="relative">
-                                <input
+                                <Input
                                     id="password"
                                     type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:border-transparent transition-all duration-200 pr-12 text-gray-900 placeholder-gray-400"
+                                    className="pr-12"
                                     placeholder="Enter your password"
                                 />
                                 <button
@@ -82,42 +83,36 @@ const LoginPage = () => {
                                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                                 >
                                     {showPassword ? (
-                                        <svg width="20" height="20" fill="none" stroke="currentColor"><path d="M1 10C3 4.5 9 2 14 5c2 .8 6 4 6 5s-4 4.2-6 5C9 18 3 15.5 1 10z"/><circle cx="10" cy="10" r="3"/></svg>
+                                        <Eye className="w-5 h-5" />
                                     ) : (
-                                        <svg width="20" height="20" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="3"/><path d="M1 10C3 4.5 9 2 14 5c2 .8 6 4 6 5s-4 4.2-6 5C9 18 3 15.5 1 10z"/><line x1="4" y1="4" x2="16" y2="16"/></svg>
+                                        <EyeOff className="w-5 h-5" />
                                     )}
                                 </button>
                             </div>
                         </div>
                         <div className="flex justify-end mb-2">
-                            <Link to="/forgot-password" className="text-xs text-[#A55233] hover:underline">Forgot Password?</Link>
+                            <Link to="/forgot-password" className="text-xs text-brand-500 hover:underline">Forgot Password?</Link>
                         </div>
 
                         {error && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                                <p className="text-sm text-red-600">{error}</p>
-                            </div>
+                            <Alert variant="error">{error}</Alert>
                         )}
 
-                        <button 
-                            type="submit" 
-                            disabled={loading} 
-                            className="w-full bg-[#A55233] text-white py-3 px-4 rounded-lg font-semibold hover:bg-[#8e462b] focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200"
-                        >
+                        <Button variant="primary" className="w-full" disabled={loading}>
                             {loading ? 'Signing in...' : 'Sign In'}
-                        </button>
+                        </Button>
                     </form>
 
                     {/* Sign Up Link */}
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-600">
                             Don't have an account?{' '}
-                            <Link to="/register" className="font-semibold text-[#A55233] hover:text-[#8e462b] transition-colors">
+                            <Link to="/register" className="font-semibold text-brand-500 hover:text-brand-600 transition-colors">
                                 Create new account
                             </Link>
                         </p>
                     </div>
-                </div>
+                </Card>
 
                 {/* Additional Info */}
                 <div className="text-center">
