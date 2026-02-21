@@ -1,3 +1,21 @@
+/**
+ * @file authHelpersRoutes.js — Authentication Helper Routes
+ *
+ * Supplementary auth utilities that don't belong in the main auth
+ * flow. Currently provides reCAPTCHA v3 token verification for
+ * bot protection on registration and login forms.
+ *
+ * Mounted at: /api/auth (merged with authRoutes.js)
+ *
+ * Routes:
+ *  POST /verify-recaptcha — Verify reCAPTCHA v3 token
+ *
+ * If reCAPTCHA is disabled or not configured (dev mode), returns
+ * success without verification — graceful degradation.
+ *
+ * @see utils/recaptcha.js — Google reCAPTCHA verification
+ * @see config/env.config.js — RECAPTCHA_CONFIG
+ */
 import express from 'express';
 import { verifyRecaptcha } from '../utils/recaptcha.js';
 import { RECAPTCHA_CONFIG } from '../config/env.config.js';

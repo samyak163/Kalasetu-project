@@ -48,6 +48,7 @@ const CallsHistory = lazy(() => import('./pages/dashboard/artisan/CallsHistory')
 import RequireAuth from './components/RequireAuth';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import AdminLayout from './components/admin/AdminLayout';
+import { LoadingState } from './components/ui';
 
 // Admin pages (lazy — only admins load these, keeps main bundle smaller)
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
@@ -65,10 +66,11 @@ const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 
 // Phase 3: Artisan onboarding wizard
 const ArtisanOnboarding = lazy(() => import('./pages/ArtisanOnboarding'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function App() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-sm text-gray-600">Loading...</div>}>
+    <Suspense fallback={<LoadingState />}>
       <Routes>
       <Route path="/" element={<Layout />}>
         {/* Public Routes */}
@@ -190,6 +192,9 @@ function App() {
         </Route>
         
         {/* USER protected routes can be added here in future releases */}
+
+        {/* 404 Catch-All */}
+        <Route path="*" element={<NotFoundPage />} />
 
       </Route>
       {/* Admin Routes (separate from main site layout) */}

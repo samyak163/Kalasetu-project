@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useRef } from 'react';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 import {
   getArtisanProfile,
@@ -6,9 +6,11 @@ import {
   uploadProfilePhoto,
 } from '../../../lib/api/artisanProfile.js';
 import { optimizeImage } from '../../../utils/cloudinary.js';
+import { Avatar, Button, Input, Spinner, Card } from '../../ui';
 
 const ArtisanProfileTab = () => {
   const { showToast } = useContext(ToastContext);
+  const fileInputRef = useRef(null);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -56,7 +58,7 @@ const ArtisanProfileTab = () => {
         fullName: formData.fullName.trim(),
         bio: formData.bio.trim(),
       });
-      setFormData(prev => ({ ...prev, fullName: updated.fullName || prev.fullName, bio: updated.bio || prev.bio }));
+      setFormData(prev => ({ ...prev, fullName: updated.fullName || prev.fullName, bio: updated.bio ?? prev.bio }));
       showToast('Profile updated successfully!', 'success');
     } catch (e) {
       showToast(e.response?.data?.message || 'Failed to update profile', 'error');
@@ -80,65 +82,99 @@ const ArtisanProfileTab = () => {
     }
   };
 
-  const getInitials = (name) => {
-    if (!name) return 'A';
-    const parts = name.trim().split(' ');
-    if (parts.length === 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
-
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Your Profile</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">View and edit your artisan profile</p>
+        <h2 className="text-xl font-bold font-display text-gray-900">Your Profile</h2>
+        <p className="text-sm text-gray-500 mt-1">View and edit your artisan profile</p>
       </div>
 
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
-        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Profile Picture</label>
+      {/* Profile photo */}
+      <Card hover={false}>
+        <label className="block text-sm font-semibold text-gray-700 mb-4">Profile Picture</label>
         <div className="flex items-center gap-6">
-          <div className="h-32 w-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-            {formData.profileImageUrl ? (
-              <img src={optimizeImage(formData.profileImageUrl, { width: 128, height: 128 })} loading="lazy" alt="Profile" className="h-full w-full object-cover" />
-            ) : (
-              <div className="h-full w-full bg-[#A55233] text-white flex items-center justify-center text-2xl font-semibold">
-                {getInitials(formData.fullName)}
-              </div>
-            )}
-          </div>
-          <div>
-            <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors">
+          <Avatar
+            name={formData.fullName}
+            src={formData.profileImageUrl ? optimizeImage(formData.profileImageUrl, { width: 128, height: 128 }) : undefined}
+            size="xl"
+          />
+          <div className="space-y-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              loading={uploading}
+              disabled={uploading}
+            >
               {uploading ? 'Uploading...' : 'Upload Photo'}
-              <input type="file" className="hidden" accept="image/*" onChange={onUploadPhoto} disabled={uploading} />
-            </label>
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={onUploadPhoto}
+              disabled={uploading}
+            />
+            <p className="text-xs text-gray-400">JPG, PNG. Max 5 MB.</p>
           </div>
         </div>
-      </div>
+      </Card>
 
+      {/* Form fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Full Name <span className="text-red-500">*</span></label>
-          <input type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900" placeholder="Enter your full name" maxLength={50} required />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Email Address</label>
-          <input type="email" name="email" value={formData.email} disabled className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed" />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Phone Number</label>
-          <input type="tel" name="phoneNumber" value={formData.phoneNumber} disabled className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed" />
-        </div>
+        <Input
+          label="Full Name *"
+          name="fullName"
+          value={formData.fullName}
+          onChange={handleInputChange}
+          placeholder="Enter your full name"
+          maxLength={50}
+          required
+        />
+        <Input
+          label="Email Address"
+          name="email"
+          type="email"
+          value={formData.email}
+          disabled
+          helperText="Email cannot be changed"
+        />
+        <Input
+          label="Phone Number"
+          name="phoneNumber"
+          type="tel"
+          value={formData.phoneNumber}
+          disabled
+          helperText="Phone cannot be changed"
+        />
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">About Me</label>
-        <textarea name="bio" value={formData.bio} onChange={handleInputChange} rows={4} className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-gray-800 dark:text-white resize-none" placeholder="Tell customers about your experience..." maxLength={500} />
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{(formData.bio || '').length}/500 characters</p>
-      </div>
+      <Input
+        label="About Me"
+        name="bio"
+        as="textarea"
+        value={formData.bio}
+        onChange={handleInputChange}
+        rows={4}
+        placeholder="Tell customers about your experience..."
+        maxLength={500}
+        helperText={`${(formData.bio || '').length}/500 characters`}
+      />
 
-      <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <button onClick={() => window.history.back()} className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">Cancel</button>
-        <button onClick={handleSave} disabled={loading || uploading} className="px-6 py-3 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">{loading ? 'Saving...' : 'Save Changes'}</button>
+      {/* Actions */}
+      <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+        <Button variant="ghost" onClick={() => window.history.back()}>
+          Cancel
+        </Button>
+        <Button
+          variant="primary"
+          onClick={handleSave}
+          loading={loading}
+          disabled={loading || uploading}
+        >
+          {loading ? 'Saving...' : 'Save Changes'}
+        </Button>
       </div>
     </div>
   );

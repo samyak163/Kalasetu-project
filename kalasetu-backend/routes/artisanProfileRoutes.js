@@ -1,3 +1,46 @@
+/**
+ * @file artisanProfileRoutes.js — Artisan Profile Management Routes
+ *
+ * Authenticated profile management for artisans: profile CRUD, photo uploads,
+ * document verification, bank details, slug customization, and email/phone
+ * verification flows. All routes require artisan `protect` middleware.
+ *
+ * Mounted at: /api/artisan (singular — authenticated artisan context)
+ *
+ * Profile:
+ *  GET  /profile       — Get own profile (cached 1min)
+ *  PUT  /profile       — Update profile fields (invalidates cache)
+ *
+ * Photo:
+ *  POST   /profile/photo — Upload profile photo (multipart, Cloudinary)
+ *  DELETE /profile/photo — Remove profile photo
+ *
+ * Documents:
+ *  PUT  /profile/documents       — Update document metadata
+ *  POST /profile/documents/upload — Upload verification document (multipart)
+ *
+ * Verification:
+ *  GET /profile/verification-status — Get verification checklist (cached 1min)
+ *
+ * Bank details:
+ *  PUT /profile/bank — Update bank/payout details
+ *
+ * Slug:
+ *  PUT /profile/slug — Update custom URL slug
+ *
+ * Email/Phone verification:
+ *  POST /profile/verify/email/initiate — Send email verification OTP
+ *  POST /profile/verify/email/confirm  — Confirm email OTP
+ *  POST /profile/verify/phone/initiate — Send phone verification (not configured)
+ *  POST /profile/verify/phone/confirm  — Confirm phone OTP (not configured)
+ *
+ * Includes a local `toTempFile` middleware that converts multer's memory
+ * buffer to a temp file for Cloudinary's file-path-based upload API.
+ *
+ * @see controllers/artisanProfileController.js — Handler implementations
+ * @see config/multer.js — imageUpload, documentUpload configs
+ * @see middleware/cacheMiddleware.js — Redis cache layer
+ */
 import express from 'express';
 import { protect } from '../middleware/authMiddleware.js';
 import { cache, invalidateCache } from '../middleware/cacheMiddleware.js';

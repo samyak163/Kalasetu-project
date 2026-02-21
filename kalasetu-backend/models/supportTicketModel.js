@@ -1,5 +1,40 @@
-import mongoose from 'mongoose';
+/**
+ * @file supportTicketModel.js — Support Ticket Schema
+ * @collection supporttickets
+ *
+ * Help desk system for users and artisans to report issues,
+ * ask questions, and request assistance. Managed by admins.
+ *
+ * Two sub-schemas:
+ *  1. messageSchema       — Individual messages within a ticket thread
+ *  2. supportTicketSchema — The ticket itself with metadata and message history
+ *
+ * Ticket lifecycle (status flow):
+ *  open → in_progress → resolved → closed
+ *
+ * Polymorphic creator (dual-auth aware):
+ *  - createdBy.userId + createdBy.userModel — Either 'User' or 'Artisan'
+ *
+ * Message thread:
+ *  - Each ticket has an embedded messages array (not a separate collection)
+ *  - Messages can have attachments (images, documents)
+ *  - internal:true messages are admin-only notes (not visible to the ticket creator)
+ *
+ * Related entities:
+ *  - Optional references to Booking, Payment, RefundRequest for context
+ *
+ * Auto-generated ticket numbers: TKT-{timestamp}-{00001} via pre('save') hook
+ *
+ * @exports {Model} SupportTicket — Mongoose model
+ *
+ * @see controllers/supportController.js — Ticket creation and management
+ * @see pages/admin/AdminSupport.jsx — Admin ticket management UI
+ */
 
+import mongoose from 'mongoose';
+import crypto from 'crypto';
+
+/** Sub-schema for individual messages within a support ticket thread */
 const messageSchema = new mongoose.Schema({
   sender: {
     senderId: { type: mongoose.Schema.Types.ObjectId, required: true },
@@ -65,12 +100,13 @@ supportTicketSchema.index({ assignedTo: 1, status: 1 });
 supportTicketSchema.index({ 'createdBy.userId': 1, status: 1 });
 
 // Auto-generate ticketNumber before saving
-supportTicketSchema.pre('save', async function(next) {
+// Uses crypto.randomBytes instead of countDocuments to avoid race conditions
+// when two tickets are created simultaneously
+supportTicketSchema.pre('save', function(next) {
   if (!this.ticketNumber) {
     const timestamp = Date.now();
-    const count = await this.constructor.countDocuments();
-    const paddedCount = String(count + 1).padStart(5, '0');
-    this.ticketNumber = `TKT-${timestamp}-${paddedCount}`;
+    const rand = crypto.randomBytes(3).toString('hex');
+    this.ticketNumber = `TKT-${timestamp}-${rand}`;
   }
   next();
 });

@@ -1,4 +1,6 @@
 import React from 'react';
+import { X } from 'lucide-react';
+import { Button } from './ui';
 
 const HowItWorksModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
@@ -18,9 +20,7 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
           aria-label="Close"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X className="w-6 h-6" />
         </button>
 
         {/* Header */}
@@ -32,7 +32,7 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
         <div className="px-6 py-6 space-y-6">
           {/* Step 1 */}
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-10 h-10 bg-[#A55233] text-white rounded-full flex items-center justify-center font-bold">
+            <div className="flex-shrink-0 w-10 h-10 bg-brand-500 text-white rounded-full flex items-center justify-center font-bold">
               1
             </div>
             <div>
@@ -47,7 +47,7 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
 
           {/* Step 2 */}
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-10 h-10 bg-[#A55233] text-white rounded-full flex items-center justify-center font-bold">
+            <div className="flex-shrink-0 w-10 h-10 bg-brand-500 text-white rounded-full flex items-center justify-center font-bold">
               2
             </div>
             <div>
@@ -62,7 +62,7 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
 
           {/* Step 3 */}
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-10 h-10 bg-[#A55233] text-white rounded-full flex items-center justify-center font-bold">
+            <div className="flex-shrink-0 w-10 h-10 bg-brand-500 text-white rounded-full flex items-center justify-center font-bold">
               3
             </div>
             <div>
@@ -77,7 +77,7 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
 
           {/* Step 4 */}
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-10 h-10 bg-[#A55233] text-white rounded-full flex items-center justify-center font-bold">
+            <div className="flex-shrink-0 w-10 h-10 bg-brand-500 text-white rounded-full flex items-center justify-center font-bold">
               4
             </div>
             <div>
@@ -92,7 +92,7 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
 
           {/* Step 5 */}
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-10 h-10 bg-[#A55233] text-white rounded-full flex items-center justify-center font-bold">
+            <div className="flex-shrink-0 w-10 h-10 bg-brand-500 text-white rounded-full flex items-center justify-center font-bold">
               5
             </div>
             <div>
@@ -108,12 +108,7 @@ const HowItWorksModal = ({ isOpen, onClose }) => {
 
         {/* Close Button at Bottom */}
         <div className="px-6 pb-6">
-          <button
-            onClick={onClose}
-            className="w-full bg-[#A55233] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#8e462b] transition-colors"
-          >
-            Got It!
-          </button>
+          <Button variant="primary" className="w-full" onClick={onClose}>Got It!</Button>
         </div>
       </div>
     </div>

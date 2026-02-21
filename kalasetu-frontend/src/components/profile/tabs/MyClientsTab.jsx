@@ -1,10 +1,12 @@
 import { useEffect, useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 import api from '../../../lib/axios.js';
-import { LoadingState, EmptyState, Avatar } from '../../ui';
+import { LoadingState, EmptyState, Avatar, Card, Button, Input } from '../../ui';
 import { Search, Phone, Mail, Calendar, Users } from 'lucide-react';
 
 const MyClientsTab = () => {
+  const navigate = useNavigate();
   const { showToast } = useContext(ToastContext);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +14,7 @@ const MyClientsTab = () => {
 
   useEffect(() => {
     fetchClients();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchClients = async () => {
     try {
@@ -49,34 +51,33 @@ const MyClientsTab = () => {
       </div>
 
       <div className="relative">
-        <input
-          type="text"
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none z-10" />
+        <Input
           placeholder="Search clients by name, phone, or email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-input focus:ring-2 focus:ring-brand-500 bg-white text-gray-900"
+          className="pl-10"
           aria-label="Search clients"
         />
-        <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card">
+        <Card hover={false} compact>
           <div className="text-sm text-gray-500">Total Clients</div>
           <div className="text-2xl font-bold text-gray-900">{clients.length}</div>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card">
+        </Card>
+        <Card hover={false} compact>
           <div className="text-sm text-gray-500">Regular Clients</div>
           <div className="text-2xl font-bold text-success-600">
             {clients.filter(c => (c.totalBookings || 0) >= 3).length}
           </div>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-card p-4 shadow-card">
+        </Card>
+        <Card hover={false} compact>
           <div className="text-sm text-gray-500">New Clients</div>
           <div className="text-2xl font-bold text-brand-500">
             {clients.filter(c => (c.totalBookings || 0) === 1).length}
           </div>
-        </div>
+        </Card>
       </div>
 
       {filteredClients.length > 0 ? (
@@ -135,17 +136,11 @@ const MyClientsTab = () => {
               </div>
 
               <div className="flex gap-2 pt-4 border-t border-gray-100">
-                <button className="btn-press px-4 py-2 bg-brand-500 text-white rounded-button hover:bg-brand-600 text-sm">
-                  View History
-                </button>
+                <Button variant="primary" size="sm" onClick={() => navigate('/artisan/dashboard#bookings')}>View History</Button>
                 {(client.phoneNumber || client.phone) && (
-                  <button className="btn-press px-4 py-2 border border-gray-300 rounded-button hover:bg-gray-50 text-sm">
-                    Call
-                  </button>
+                  <Button variant="secondary" size="sm" onClick={() => window.open(`tel:${client.phoneNumber || client.phone}`)}>Call</Button>
                 )}
-                <button className="btn-press px-4 py-2 border border-gray-300 rounded-button hover:bg-gray-50 text-sm">
-                  Message
-                </button>
+                <Button variant="secondary" size="sm" onClick={() => navigate('/messages')}>Message</Button>
               </div>
             </div>
           ))}

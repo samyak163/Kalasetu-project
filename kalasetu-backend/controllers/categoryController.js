@@ -1,3 +1,17 @@
+/**
+ * @file categoryController.js — Service Category Operations
+ *
+ * Lists active categories and their suggested service templates.
+ * Categories are seeded via `npm run seed:core` and rarely change at runtime.
+ *
+ * Endpoints:
+ *  GET /api/categories         — List all active categories (public)
+ *  GET /api/categories/:id     — Get category with suggested services
+ *
+ * @see models/categoryModel.js — Category schema with suggestedServices
+ * @see scripts/seedCoreData.js — Seeds initial categories
+ */
+
 import asyncHandler from '../utils/asyncHandler.js';
 import Category from '../models/categoryModel.js';
 

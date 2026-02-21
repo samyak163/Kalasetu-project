@@ -1,3 +1,31 @@
+/**
+ * @file artisanServiceModel.js — Artisan Service Offering Schema
+ * @collection artisanservices
+ *
+ * Individual services offered by an artisan (e.g., "Traditional Mehndi - Bridal",
+ * "Wood Carving - Custom Furniture"). Each artisan can have multiple services.
+ *
+ * Key fields:
+ *  - artisan       — Reference to the Artisan who offers this service
+ *  - category      — Reference to the Category (e.g., Mehndi, Carpentry)
+ *  - categoryName  — Denormalized for search/filter without joining Category
+ *  - name          — Service title
+ *  - price         — Base price in INR
+ *  - durationMinutes — Expected service duration
+ *  - images        — Cloudinary URLs showcasing this specific service
+ *  - isActive      — Soft-delete flag (inactive services hidden from search)
+ *
+ * Text index:
+ *  - Full-text search across name, description, categoryName
+ *    (used by MongoDB $text queries, complementing Algolia for backend-only search)
+ *
+ * @exports {Model} ArtisanService — Mongoose model
+ *
+ * @see controllers/artisanServiceController.js — Service CRUD
+ * @see models/bookingModel.js — Bookings reference a specific service
+ * @see models/categoryModel.js — Parent category with suggested service templates
+ */
+
 import mongoose from 'mongoose';
 
 const artisanServiceSchema = new mongoose.Schema({

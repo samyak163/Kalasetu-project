@@ -1,8 +1,49 @@
-﻿import mongoose from 'mongoose';
+﻿/**
+ * @file artisanModel.js — Artisan (Service Provider) Schema
+ * @collection artisans
+ *
+ * The core model for artisan accounts — traditional Indian artisans who offer services
+ * on the platform. This is the largest and most field-rich model in KalaSetu.
+ *
+ * Schema sections:
+ *  - Identity       — publicId (nanoid), slug, firebaseUid, fullName, email, phone
+ *  - Profile        — craft, bio, businessName, tagline, images, portfolio
+ *  - Location       — GeoJSON point with address, city, state (2dsphere indexed)
+ *  - Qualifications — yearsOfExperience, certifications, languagesSpoken
+ *  - Work Prefs     — workingHours (per-day), serviceRadius, emergencyServices
+ *  - Verification   — Aadhar, PAN, police check, business license, insurance docs
+ *  - Financial      — bankDetails, businessType, GST number
+ *  - Stats          — profileViews, totalBookings, averageRating, totalEarnings
+ *  - Settings       — autoAcceptBookings, bufferTime, maxBookingsPerDay
+ *  - Notifications  — Per-channel (email/sms/push) notification preferences
+ *  - Subscription   — Plan, expiry, vacation mode
+ *  - Security       — Password (hashed, select:false), lockout fields, OTP fields
+ *
+ * Instance methods:
+ *  - incLoginAttempts()   — Increment failed login counter, lock after 5 attempts (15 min)
+ *  - resetLoginAttempts() — Clear counter after successful login
+ *  - isLocked()           — Check if account is temporarily locked
+ *
+ * Indexes:
+ *  - location (2dsphere) — Geospatial proximity queries ("artisans near me")
+ *  - publicId (unique)   — URL-friendly short IDs (e.g., ks_a1b2c3d4)
+ *  - slug (unique, sparse) — Vanity URLs (e.g., /artisan/ravi-pottery)
+ *  - email, phoneNumber (unique, sparse) — Login lookups
+ *  - city+state, isActive+rating — Browse/filter queries
+ *
+ * @exports {Model} Artisan — Mongoose model
+ *
+ * @see middleware/authMiddleware.js — `protect` middleware authenticates artisans
+ * @see controllers/artisanProfileController.js — Profile CRUD operations
+ * @see controllers/artisanController.js — Public browsing queries
+ */
+
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 import { customAlphabet } from 'nanoid';
 
-// We create a generator for short, URL-friendly, unique IDs (like YouTube's).
-// This will generate an 8-character ID using numbers and lowercase letters.
+// Generate 8-char alphanumeric IDs prefixed with "ks_" (e.g., "ks_a1b2c3d4")
+// Used as URL-friendly public identifiers instead of exposing MongoDB ObjectIds
 const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 8);
 
 const artisanSchema = new mongoose.Schema({
@@ -18,7 +59,7 @@ const artisanSchema = new mongoose.Schema({
   // Optional link to Firebase Authentication user UID
   firebaseUid: { type: String, unique: true, sparse: true, index: true },
     fullName: { type: String, required: true },
-    email: { type: String, unique: true, sparse: true }, // sparse: true allows multiple null values
+    email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     phoneNumber: { type: String, unique: true, sparse: true }, // sparse: true allows multiple null values
     password: { type: String, required: true, select: false },
     craft: { type: String, default: '' },
@@ -192,6 +233,21 @@ const artisanSchema = new mongoose.Schema({
   otpExpires: { type: Date, select: false },
   otpAttempts: { type: Number, default: 0, select: false },
 }, { timestamps: true });
+
+// Auto-hash password on save (mirrors User model's pre-save hook)
+// Without this, any code path that sets artisan.password and calls .save()
+// would store the plaintext password in MongoDB.
+artisanSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+// Compare entered password against stored hash
+artisanSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
 // Add helpers to model for login lockout
 artisanSchema.methods.incLoginAttempts = async function () {

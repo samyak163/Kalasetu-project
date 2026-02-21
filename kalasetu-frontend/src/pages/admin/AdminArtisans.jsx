@@ -13,7 +13,7 @@ const AdminArtisans = () => {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
 
-  useEffect(() => { fetchArtisans(); }, [page, status, verified, search]);
+  useEffect(() => { fetchArtisans(); }, [page, status, verified, search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchArtisans = async () => {
     setLoading(true);

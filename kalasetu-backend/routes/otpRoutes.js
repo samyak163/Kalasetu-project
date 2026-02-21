@@ -1,3 +1,28 @@
+/**
+ * @file otpRoutes.js — OTP Generation & Verification Routes
+ *
+ * Email-based OTP for registration and login flows. Contains inline
+ * handler logic (no separate controller). Rate-limited to 5 OTP
+ * requests per 15 minutes per IP to prevent email quota abuse.
+ *
+ * Mounted at: /api/otp
+ *
+ * Routes:
+ *  POST /send   — Generate and email an OTP (5/15min rate limit)
+ *  POST /verify — Verify an OTP code (max 5 attempts per code)
+ *
+ * OTP storage strategy:
+ *  - Existing users: OTP stored directly on User/Artisan document
+ *    (otpCode, otpExpires fields)
+ *  - New registrations: OTP stored in temporary OTP collection
+ *    (auto-deleted by MongoDB TTL index)
+ *
+ * Phone OTP is defined but not yet implemented (returns error).
+ *
+ * @see utils/otp.js — OTP generation and verification helpers
+ * @see utils/email.js — sendOTPEmail()
+ * @see models/otpModel.js — Temporary OTP storage with TTL
+ */
 import express from 'express';
 import { generateOTPWithExpiry, verifyOTP } from '../utils/otp.js';
 import { sendOTPEmail } from '../utils/email.js';
@@ -32,38 +57,28 @@ router.post('/send', otpLimiter, asyncHandler(async (req, res) => {
     });
   }
 
-  // Generate OTP
-  const { code, expiresAt } = generateOTPWithExpiry(10);
-
-  // Store OTP in database (use email/phone as identifier)
-  // For now, we'll store in a temporary way (in production, use Redis)
-  const identifier = email || phoneNumber;
-  const otpData = {
-    code,
-    expiresAt,
-    purpose,
-    attempts: 0,
-  };
+  // Generate OTP (returns plaintext code for email + hashed code for storage)
+  const { code, hashedCode, expiresAt } = await generateOTPWithExpiry(10);
 
   // Store OTP (works for both existing and new users)
   if (email) {
     // Check if user exists
     let user = await User.findOne({ email }).select('_id email fullName +otpCode +otpExpires');
     let userType = 'user';
-    
+
     if (!user) {
       user = await Artisan.findOne({ email }).select('_id email fullName +otpCode +otpExpires');
       userType = 'artisan';
     }
 
     if (user) {
-      // Store OTP in user document temporarily
-      user.otpCode = code;
+      // Store HASHED OTP in user document (plaintext only sent via email)
+      user.otpCode = hashedCode;
       user.otpExpires = expiresAt;
       user.otpAttempts = 0;
       await user.save({ validateBeforeSave: false });
 
-      // Send OTP email
+      // Send plaintext OTP via email
       await sendOTPEmail(
         email,
         user.fullName || 'User',
@@ -74,19 +89,18 @@ router.post('/send', otpLimiter, asyncHandler(async (req, res) => {
       });
     } else {
       // New user registration - store OTP in temporary collection
-      // Delete any existing OTP for this email
       await OTP.deleteMany({ identifier: email });
-      
-      // Create new OTP record
+
+      // Store HASHED code in DB
       await OTP.create({
         identifier: email,
-        code,
+        code: hashedCode,
         expiresAt,
         purpose,
         attempts: 0,
       });
 
-      // Send OTP email
+      // Send plaintext OTP via email
       await sendOTPEmail(
         email,
         'User',
@@ -180,8 +194,8 @@ router.post('/verify', asyncHandler(async (req, res) => {
     });
   }
 
-  // Verify OTP
-  const isValid = verifyOTP(otp, storedCode, expiresAt);
+  // Verify OTP (async — uses bcrypt.compare for hashed codes)
+  const isValid = await verifyOTP(otp, storedCode, expiresAt);
 
   if (!isValid) {
     // Increment attempts

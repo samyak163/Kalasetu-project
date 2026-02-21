@@ -1,28 +1,36 @@
+/**
+ * @file callHistoryRoutes.js — Call History CRUD Routes
+ *
+ * Records and retrieves video/voice call history for both artisans and
+ * users. Uses a custom auth middleware that tries artisan protect first,
+ * then falls back to userProtect — a manual "protectAny" implementation
+ * (predates the centralized protectAny middleware).
+ *
+ * Mounted at: /api/call-history
+ *
+ * Routes (custom dual-auth):
+ *  GET  /     — List call history for authenticated user
+ *  POST /     — Create a call history entry
+ *  PUT  /:id  — Update a call history entry (duration, status)
+ *
+ * @see controllers/callHistoryController.js — Handler implementations
+ * @see models/callHistoryModel.js — CallHistory schema
+ */
 import express from 'express';
 import {
   getCallHistory,
   createCallHistory,
   updateCallHistory,
 } from '../controllers/callHistoryController.js';
-import { protect } from '../middleware/authMiddleware.js';
-import { userProtect } from '../middleware/userProtectMiddleware.js';
+import { protectAny } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Custom middleware: try artisan auth first, then user auth
-const authMiddleware = async (req, res, next) => {
-  try {
-    await protect(req, res, next);
-  } catch (artisanError) {
-    try {
-      await userProtect(req, res, next);
-    } catch (userError) {
-      res.status(401).json({ message: 'Not authorized. Please log in.' });
-    }
-  }
-};
-
-router.use(authMiddleware);
+// protectAny properly handles dual-auth (tries User first, then Artisan, sets req.accountType)
+// Replaces a broken custom middleware that used try/catch on protect/userProtect
+// (Express auth middlewares send responses on failure instead of throwing,
+// so the catch-based fallback never executed)
+router.use(protectAny);
 
 router.route('/').get(getCallHistory).post(createCallHistory);
 

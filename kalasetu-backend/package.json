@@ -12,11 +12,10 @@
     "start": "node server.js",
     "cleanup:dry": "node scripts/cleanupProfiles.js --dry-run",
     "cleanup": "node scripts/cleanupProfiles.js",
-    "wipe:all": "node scripts/wipeAllAccounts.js",
-    "seed:core": "node scripts/seedCoreData.js",
+    "seed": "node scripts/seedShowcase.js",
+    "health": "node scripts/healthCheck.js",
     "check:artisans": "node scripts/checkArtisans.js",
     "workflow:test": "node scripts/workflowSim.js",
-    "create:admin": "node scripts/createAdmin.js",
     "generate:db-doc": "node scripts/generateDatabaseDoc.js",
     "test": "vitest run",
     "test:watch": "vitest"

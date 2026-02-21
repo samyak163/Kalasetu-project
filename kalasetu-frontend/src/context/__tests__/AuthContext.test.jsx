@@ -287,7 +287,7 @@ describe('AuthContext', () => {
       await act(async () => {
         try {
           screen.getByTestId('artisan-login-btn').click();
-        } catch (e) {
+        } catch {
           // Expected rejection
         }
       });

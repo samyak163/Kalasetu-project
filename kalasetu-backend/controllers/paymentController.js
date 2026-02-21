@@ -1,15 +1,54 @@
+/**
+ * @file paymentController.js — Razorpay Payment Processing
+ *
+ * Handles the full payment lifecycle: order creation, checkout verification,
+ * webhook processing, payment history, and refund initiation.
+ *
+ * Endpoints:
+ *  POST /api/payments/create-order  — Create Razorpay order (returns orderId for checkout)
+ *  POST /api/payments/verify        — Verify Razorpay payment signature after checkout
+ *  GET  /api/payments               — Payment history for current user
+ *  GET  /api/payments/:id           — Single payment details
+ *  POST /api/payments/webhook       — Razorpay webhook handler (signature verified)
+ *  POST /api/payments/:id/refund    — Initiate refund request
+ *
+ * Payment flow:
+ *  1. Frontend calls create-order → backend creates Razorpay order → returns orderId
+ *  2. Frontend opens Razorpay checkout with orderId
+ *  3. On success, frontend calls verify → backend verifies signature → marks as captured
+ *  4. Razorpay sends webhook for async confirmation → updates payment status
+ *
+ * @security Webhook signatures MUST be verified using RAZORPAY_WEBHOOK_SECRET.
+ *           Payment amounts are validated against booking prices.
+ *
+ * @see utils/razorpay.js — Razorpay SDK helpers
+ * @see models/paymentModel.js — Payment schema
+ * @see models/refundRequestModel.js — Refund requests
+ */
+
 import asyncHandler from '../utils/asyncHandler.js';
 import { z } from 'zod';
+import mongoose from 'mongoose';
 import Payment from '../models/paymentModel.js';
 import Booking from '../models/bookingModel.js';
+import ArtisanService from '../models/artisanServiceModel.js';
+import Artisan from '../models/artisanModel.js';
 import RefundRequest from '../models/refundRequestModel.js';
 import Notification from '../models/notificationModel.js';
 import { createOrder, verifyPaymentSignature, fetchPayment, refundPayment, verifyWebhookSignature } from '../utils/razorpay.js';
+import { createNotification } from '../utils/notificationService.js';
 import { sendEmail } from '../utils/email.js';
 import { RAZORPAY_CONFIG } from '../config/env.config.js';
 
 const createOrderSchema = z.object({
+  // Path 1: Pay for an existing booking (legacy flow)
   bookingId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid booking ID').optional(),
+  // Path 2: Pay-first flow — booking created atomically after payment verification
+  serviceId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid service ID').optional(),
+  artisanId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid artisan ID').optional(),
+  start: z.string().optional(), // ISO date string for booking start time
+  notes: z.string().max(500).optional(), // Special requests
+  // Path 3: Generic payment (consultation, product, etc.)
   amount: z.number().positive('Amount must be positive').max(500000, 'Amount exceeds maximum').optional(),
   purpose: z.enum(['consultation', 'product_purchase', 'service', 'subscription', 'other']),
   recipientId: z.string().regex(/^[0-9a-fA-F]{24}$/).optional(),
@@ -20,7 +59,11 @@ const createOrderSchema = z.object({
 /**
  * Create payment order
  * POST /api/payments/create-order
- * When bookingId is provided, amount is derived server-side from booking price.
+ *
+ * Three paths:
+ *  1. bookingId provided   → legacy flow, amount from booking
+ *  2. serviceId + artisanId + start → pay-first flow, booking created after verification
+ *  3. amount + recipientId → generic payment (consultation, product, etc.)
  */
 export const createPaymentOrder = asyncHandler(async (req, res) => {
   const parsed = createOrderSchema.safeParse(req.body);
@@ -31,14 +74,64 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  const { bookingId, amount: clientAmount, purpose, recipientId, description, metadata } = parsed.data;
+  const { bookingId, serviceId, artisanId, start, notes,
+          amount: clientAmount, purpose, recipientId, description, metadata } = parsed.data;
   const payerId = req.user.id || req.user._id.toString();
 
   let amount;
   let resolvedRecipientId = recipientId || null;
+  // bookingIntent stores data needed to create booking after payment verification
+  let bookingIntent = null;
 
-  if (bookingId) {
-    // Server-authoritative: derive amount from booking price
+  if (serviceId && artisanId) {
+    // PATH 2: Pay-first flow — derive price from service, store booking intent
+    if (!start) {
+      return res.status(400).json({ success: false, message: 'start is required for service booking' });
+    }
+    const startTime = new Date(start);
+    if (isNaN(startTime.getTime()) || startTime <= new Date()) {
+      return res.status(400).json({ success: false, message: 'Start time must be a valid future date' });
+    }
+
+    const [service, artisanDoc] = await Promise.all([
+      ArtisanService.findById(serviceId).lean(),
+      Artisan.findById(artisanId).select('isActive fullName autoAcceptBookings').lean(),
+    ]);
+
+    if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
+    if (!artisanDoc) return res.status(404).json({ success: false, message: 'Artisan not found' });
+    if (artisanDoc.isActive === false) {
+      return res.status(400).json({ success: false, message: 'This artisan is not currently accepting bookings' });
+    }
+    if (service.isActive === false) {
+      return res.status(400).json({ success: false, message: 'This service is no longer available' });
+    }
+    if (String(service.artisan) !== String(artisanId)) {
+      return res.status(400).json({ success: false, message: 'Service does not belong to this artisan' });
+    }
+    if (!service.price || service.price <= 0) {
+      return res.status(400).json({ success: false, message: 'This service requires contacting the artisan for pricing' });
+    }
+
+    amount = service.price;
+    resolvedRecipientId = artisanId;
+
+    // Store booking intent in payment metadata — used by verifyPayment to create booking
+    bookingIntent = {
+      serviceId,
+      artisanId,
+      userId: payerId,
+      start: startTime.toISOString(),
+      end: new Date(startTime.getTime() + (service.durationMinutes || 60) * 60000).toISOString(),
+      serviceName: service.name || '',
+      categoryName: service.categoryName || '',
+      notes: notes || '',
+      price: amount,
+      autoAccept: !!artisanDoc.autoAcceptBookings,
+    };
+
+  } else if (bookingId) {
+    // PATH 1: Legacy flow — pay for existing booking
     const booking = await Booking.findById(bookingId).lean();
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
@@ -52,12 +145,30 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     if (!booking.price || booking.price <= 0) {
       return res.status(400).json({ success: false, message: 'Booking has no valid price' });
     }
+    // Prevent double payment
+    const existingPayment = await Payment.findOne({
+      'metadata.bookingId': bookingId,
+      status: { $in: ['created', 'captured'] },
+    }).lean();
+    if (existingPayment) {
+      return res.status(409).json({
+        success: false,
+        message: 'A payment already exists for this booking',
+        data: { existingPaymentId: existingPayment._id, status: existingPayment.status },
+      });
+    }
     amount = booking.price;
     resolvedRecipientId = resolvedRecipientId || booking.artisan;
   } else {
-    // Fallback for non-booking payments — client amount with validation
+    // PATH 3: Generic payment — client-specified amount
     if (!clientAmount) {
-      return res.status(400).json({ success: false, message: 'Either bookingId or amount is required' });
+      return res.status(400).json({ success: false, message: 'Provide serviceId+artisanId, bookingId, or amount' });
+    }
+    if (!recipientId) {
+      return res.status(400).json({ success: false, message: 'recipientId is required for non-booking payments' });
+    }
+    if (clientAmount < 100) {
+      return res.status(400).json({ success: false, message: 'Minimum payment amount is Rs. 100' });
     }
     amount = clientAmount;
   }
@@ -80,7 +191,7 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  // Save to database
+  // Save to database — bookingIntent stored in metadata for atomic creation on verify
   const payment = await Payment.create({
     orderId: razorpayOrder.receipt,
     razorpayOrderId: razorpayOrder.id,
@@ -93,7 +204,11 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
     recipientModel: resolvedRecipientId ? 'Artisan' : null,
     purpose,
     description,
-    metadata: { ...metadata, ...(bookingId && { bookingId }) },
+    metadata: {
+      ...metadata,
+      ...(bookingId && { bookingId }),
+      ...(bookingIntent && { bookingIntent }),
+    },
   });
 
   res.status(201).json({
@@ -110,8 +225,12 @@ export const createPaymentOrder = asyncHandler(async (req, res) => {
 });
 
 /**
- * Verify payment
+ * Verify payment and atomically create booking if booking intent exists.
  * POST /api/payments/verify
+ *
+ * Pay-first flow: if payment.metadata.bookingIntent is present, this
+ * endpoint creates the booking inside a MongoDB transaction after
+ * verifying the Razorpay signature. No booking = no orphans.
  */
 export const verifyPayment = asyncHandler(async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
@@ -137,7 +256,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
     });
   }
 
-  // Update payment in database
+  // Find payment record
   const payment = await Payment.findOne({ razorpayOrderId: razorpay_order_id });
 
   if (!payment) {
@@ -156,10 +275,110 @@ export const verifyPayment = asyncHandler(async (req, res) => {
     });
   }
 
-  payment.razorpayPaymentId = razorpay_payment_id;
-  // Don't store the signature — it's only needed for verification, not storage
-  payment.status = 'captured';
-  await payment.save();
+  const intent = payment.metadata?.bookingIntent;
+  let booking = null;
+
+  if (intent) {
+    // PAY-FIRST FLOW: Create booking atomically with payment capture
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // Check for overlapping bookings
+      const startTime = new Date(intent.start);
+      const endTime = new Date(intent.end);
+
+      const overlap = await Booking.findOne({
+        artisan: intent.artisanId,
+        status: { $in: ['pending', 'confirmed'] },
+        start: { $lt: endTime },
+        end: { $gt: startTime },
+      }).session(session);
+
+      if (overlap) {
+        await session.abortTransaction();
+        // Payment was captured by Razorpay but slot is taken — mark for refund
+        payment.razorpayPaymentId = razorpay_payment_id;
+        payment.status = 'captured';
+        payment.metadata.refundReason = 'slot_conflict';
+        await payment.save();
+
+        // Auto-create RefundRequest so admins have visibility
+        RefundRequest.create({
+          payment: payment._id,
+          requestedBy: intent.userId,
+          requestedByModel: 'User',
+          amount: payment.amount,
+          reason: 'Automatic: time slot was booked by another customer during payment. Full refund required.',
+        }).catch(() => {}); // Non-blocking — don't fail the response
+
+        return res.status(409).json({
+          success: false,
+          message: 'This time slot was just booked by someone else. Your payment will be refunded.',
+          data: { paymentId: payment._id, requiresRefund: true },
+        });
+      }
+
+      // Determine initial status: auto-accept if artisan has it enabled
+      const initialStatus = intent.autoAccept ? 'confirmed' : 'pending';
+
+      // Create booking atomically
+      const [newBooking] = await Booking.create([{
+        artisan: intent.artisanId,
+        user: intent.userId,
+        service: intent.serviceId,
+        serviceName: intent.serviceName,
+        categoryName: intent.categoryName,
+        start: startTime,
+        end: endTime,
+        notes: intent.notes,
+        price: intent.price,
+        status: initialStatus,
+        depositPaid: true,
+      }], { session });
+
+      // Update payment with booking reference
+      payment.razorpayPaymentId = razorpay_payment_id;
+      payment.status = 'captured';
+      payment.metadata.bookingId = newBooking._id.toString();
+      // Clear bookingIntent from metadata (no longer needed)
+      payment.metadata.bookingIntent = undefined;
+      await payment.save({ session });
+
+      await session.commitTransaction();
+      booking = newBooking;
+
+      // Non-blocking: notify artisan about new booking
+      const startDate = startTime.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      createNotification({
+        ownerId: intent.artisanId,
+        ownerType: 'artisan',
+        title: intent.autoAccept ? 'New Booking Confirmed' : 'New Booking Request',
+        text: intent.autoAccept
+          ? `A booking for ${intent.serviceName || 'a service'} on ${startDate} has been confirmed and paid.`
+          : `You have a new paid booking request for ${intent.serviceName || 'a service'} on ${startDate}. Please respond to confirm or decline.`,
+      }).catch(() => {});
+
+    } catch (err) {
+      await session.abortTransaction();
+      throw err;
+    } finally {
+      session.endSession();
+    }
+
+  } else {
+    // LEGACY FLOW: Just capture payment and update existing booking
+    payment.razorpayPaymentId = razorpay_payment_id;
+    payment.status = 'captured';
+    await payment.save();
+
+    // Update existing booking's deposit status
+    if (payment.metadata?.bookingId) {
+      await Booking.findByIdAndUpdate(payment.metadata.bookingId, {
+        depositPaid: true,
+      });
+    }
+  }
 
   // Fetch full payment details from Razorpay
   const paymentDetails = await fetchPayment(razorpay_payment_id);
@@ -172,6 +391,7 @@ export const verifyPayment = asyncHandler(async (req, res) => {
       status: payment.status,
       amount: payment.amount,
       paymentDetails,
+      ...(booking && { bookingId: booking._id, bookingStatus: booking.status }),
     },
   });
 });
@@ -196,9 +416,10 @@ export const getPaymentDetails = asyncHandler(async (req, res) => {
   }
 
   // Check if user is authorized to view this payment
-  const isAuthorized = 
-    payment.payerId._id.toString() === userId ||
-    (payment.recipientId && payment.recipientId._id.toString() === userId);
+  // Null-safe: populated refs can be null if the referenced document was deleted
+  const payerIdStr = payment.payerId?._id?.toString() || payment.payerId?.toString();
+  const recipientIdStr = payment.recipientId?._id?.toString() || payment.recipientId?.toString();
+  const isAuthorized = payerIdStr === userId || recipientIdStr === userId;
 
   if (!isAuthorized) {
     return res.status(403).json({
@@ -219,7 +440,8 @@ export const getPaymentDetails = asyncHandler(async (req, res) => {
  */
 export const getUserPayments = asyncHandler(async (req, res) => {
   const userId = req.user.id || req.user._id.toString();
-  const { status, type = 'sent', limit = 20, page = 1, bookingId } = req.query;
+  const { status, type = 'sent', limit: rawLimit = 20, page = 1, bookingId } = req.query;
+  const limit = Math.min(Math.max(parseInt(rawLimit) || 20, 1), 100); // Clamp 1-100
 
   const query = {};
 
@@ -244,8 +466,8 @@ export const getUserPayments = asyncHandler(async (req, res) => {
     .populate('payerId', 'fullName email profileImageUrl')
     .populate('recipientId', 'fullName email profileImageUrl')
     .sort({ createdAt: -1 })
-    .limit(parseInt(limit))
-    .skip((parseInt(page) - 1) * parseInt(limit));
+    .limit(limit)
+    .skip((parseInt(page) - 1) * limit);
 
   const total = await Payment.countDocuments(query);
 
@@ -256,7 +478,7 @@ export const getUserPayments = asyncHandler(async (req, res) => {
       pagination: {
         total,
         page: parseInt(page),
-        pages: Math.ceil(total / parseInt(limit)),
+        pages: Math.ceil(total / limit),
       },
     },
   });
@@ -346,6 +568,11 @@ export const getArtisanEarnings = asyncHandler(async (req, res) => {
  * Request refund
  * POST /api/payments/:paymentId/refund
  */
+/**
+ * Request refund — creates a RefundRequest for admin review.
+ * Previously this processed refunds directly via Razorpay, bypassing admin approval.
+ * Now all refunds go through the admin-reviewed RefundRequest flow.
+ */
 export const requestRefund = asyncHandler(async (req, res) => {
   const { paymentId } = req.params;
   const { amount, reason } = req.body;
@@ -360,7 +587,6 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check if user is the payer
   if (payment.payerId.toString() !== userId) {
     return res.status(403).json({
       success: false,
@@ -368,7 +594,6 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
-  // Check payment status — refunded check first since it's more specific
   if (payment.status === 'refunded') {
     return res.status(400).json({
       success: false,
@@ -383,8 +608,7 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
-  // Validate refund amount doesn't exceed original
-  const refundAmount = amount || payment.amount;
+  const refundAmount = (typeof amount === 'number' && amount > 0) ? amount : payment.amount;
   if (refundAmount > payment.amount) {
     return res.status(400).json({
       success: false,
@@ -392,47 +616,45 @@ export const requestRefund = asyncHandler(async (req, res) => {
     });
   }
 
-  // Process refund via Razorpay
-  const refund = await refundPayment(
-    payment.razorpayPaymentId,
-    refundAmount
-  );
-
-  if (!refund) {
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to process refund',
-    });
-  }
-
-  // Atomic update to prevent race conditions
-  const updated = await Payment.findOneAndUpdate(
-    { _id: payment._id, status: 'captured' },
-    {
-      $set: {
-        status: 'refunded',
-        refundId: refund.id,
-        refundAmount,
-        refundedAt: new Date(),
-        'metadata.refundReason': reason,
-      },
-    },
-    { new: true }
-  );
-
-  if (!updated) {
+  // Check for existing pending/approved refund requests on this payment
+  const existingRefund = await RefundRequest.findOne({
+    payment: paymentId,
+    status: { $in: ['pending', 'approved', 'processing'] },
+  }).lean();
+  if (existingRefund) {
     return res.status(409).json({
       success: false,
-      message: 'Payment status changed during refund processing',
+      message: 'A refund request is already pending for this payment',
     });
   }
 
-  res.json({
+  // Create RefundRequest for admin review (do NOT process via Razorpay directly)
+  const refundRequest = await RefundRequest.create({
+    payment: paymentId,
+    booking: payment.metadata?.bookingId || null,
+    requestedBy: req.user._id,
+    requestedByModel: req.accountType === 'artisan' ? 'Artisan' : 'User',
+    amount: refundAmount,
+    reason: reason || 'Refund requested by payer',
+  });
+
+  // Notify user
+  await Notification.create({
+    ownerId: req.user._id,
+    ownerType: req.accountType === 'artisan' ? 'artisan' : 'user',
+    title: 'Refund Request Submitted',
+    text: `Your refund request for Rs.${refundAmount} is pending admin review.`,
+    url: `/refunds/${refundRequest._id}`,
+    read: false,
+  }).catch(() => {});
+
+  res.status(201).json({
     success: true,
-    message: 'Refund processed successfully',
+    message: 'Refund request submitted for review',
     data: {
-      refundId: refund.id,
+      refundRequestId: refundRequest._id,
       amount: refundAmount,
+      status: 'pending',
     },
   });
 });
@@ -509,10 +731,18 @@ async function handlePaymentCaptured(paymentData, eventId) {
     },
   };
 
-  await Payment.findOneAndUpdate(
+  const payment = await Payment.findOneAndUpdate(
     { razorpayOrderId: paymentData.order_id, status: { $ne: 'captured' } },
-    update
+    update,
+    { new: true }
   );
+
+  // Update booking payment status if linked
+  if (payment?.metadata?.bookingId) {
+    await Booking.findByIdAndUpdate(payment.metadata.bookingId, {
+      depositPaid: true,
+    });
+  }
 }
 
 /**
@@ -537,19 +767,19 @@ async function handlePaymentFailed(paymentData, eventId) {
  * Handle refund created event
  */
 async function handleRefundCreated(refundData) {
-  const payment = await Payment.findOne({
-    razorpayPaymentId: refundData.payment_id,
-  });
-
-  if (payment) {
-    payment.status = 'refunded';
-    payment.refundId = refundData.id;
-    payment.refundAmount = refundData.amount / 100; // Convert from paise
-    payment.refundedAt = new Date();
-    await payment.save();
-
-    console.log(`✅ Refund processed: ${payment._id}`);
-  }
+  // Atomic update to prevent race conditions with concurrent webhook/API refund processing
+  const payment = await Payment.findOneAndUpdate(
+    { razorpayPaymentId: refundData.payment_id, status: { $ne: 'refunded' } },
+    {
+      $set: {
+        status: 'refunded',
+        refundId: refundData.id,
+        refundAmount: refundData.amount / 100, // Convert from paise
+        refundedAt: new Date(),
+      },
+    },
+    { new: true }
+  );
 
   // Update RefundRequest status
   const refundRequest = await RefundRequest.findOne({ razorpayRefundId: refundData.id });

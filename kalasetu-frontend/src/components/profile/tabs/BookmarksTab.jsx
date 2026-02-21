@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../../lib/axios.js';
 import { ToastContext } from '../../../context/ToastContext.jsx';
+import { Card, Avatar, Badge, Button, Input, EmptyState, Skeleton } from '../../ui';
+import { Heart, Bookmark, Search } from 'lucide-react';
 
-const BookmarksTab = ({ user }) => {
+const BookmarksTab = () => {
   const { showToast } = React.useContext(ToastContext);
   const navigate = useNavigate();
   const [bookmarks, setBookmarks] = useState([]);
@@ -14,7 +16,7 @@ const BookmarksTab = ({ user }) => {
 
   useEffect(() => {
     fetchBookmarks();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchBookmarks = async () => {
     try {
@@ -22,7 +24,7 @@ const BookmarksTab = ({ user }) => {
       const data = res?.data;
       // Filter out null entries (deleted artisans)
       setBookmarks(Array.isArray(data) ? data.filter(Boolean) : []);
-    } catch (error) {
+    } catch {
       showToast('Failed to load bookmarks', 'error');
     } finally {
       setLoading(false);
@@ -36,7 +38,7 @@ const BookmarksTab = ({ user }) => {
       await api.delete(`/api/users/bookmarks/${artisanId}`);
       setBookmarks(prev => prev.filter(a => a._id !== artisanId));
       showToast('Bookmark removed successfully', 'success');
-    } catch (error) {
+    } catch {
       showToast('Failed to remove bookmark', 'error');
     }
   };
@@ -64,13 +66,23 @@ const BookmarksTab = ({ user }) => {
   const crafts = [...new Set(bookmarks.map(b => b.craft).filter(Boolean))];
 
   if (loading) {
-    return <div className="text-center py-8">Loading bookmarks...</div>;
+    return (
+      <div className="space-y-6">
+        <Skeleton variant="rect" height="28px" width="200px" />
+        <Skeleton variant="rect" height="42px" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} variant="rect" height="240px" className="rounded-card" />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h2 className="text-xl font-bold font-display text-gray-900 dark:text-white">
           Saved Artisans ({bookmarks.length})
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -81,18 +93,16 @@ const BookmarksTab = ({ user }) => {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4">
         <div className="flex-1">
-          <input
-            type="text"
+          <Input
             placeholder="Search by name or specialty..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900"
           />
         </div>
         <select
           value={sortBy}
           onChange={e => setSortBy(e.target.value)}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-input focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900 text-sm"
         >
           <option value="recent">Recently Added</option>
           <option value="rating">Rating (High to Low)</option>
@@ -101,7 +111,7 @@ const BookmarksTab = ({ user }) => {
         <select
           value={filterBy}
           onChange={e => setFilterBy(e.target.value)}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900"
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-input focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900 text-sm"
         >
           <option value="all">All Specialties</option>
           {crafts.map(craft => (
@@ -114,66 +124,59 @@ const BookmarksTab = ({ user }) => {
       {filteredAndSorted.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAndSorted.map(artisan => (
-            <div
-              key={artisan._id}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border border-gray-200 dark:border-gray-700"
-            >
+            <Card key={artisan._id}>
               <div className="flex items-start justify-between mb-4">
-                <img
-                  src={artisan.profileImageUrl || 'https://placehold.co/100x100'}
-                  alt={artisan.fullName}
-                  className="w-20 h-20 rounded-full object-cover"
+                <Avatar
+                  src={artisan.profileImageUrl}
+                  name={artisan.fullName}
+                  size="xl"
                 />
                 <button
                   onClick={() => handleRemoveBookmark(artisan._id)}
                   className="text-brand-500 hover:text-brand-600 transition-colors"
                   aria-label="Remove bookmark"
                 >
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                  </svg>
+                  <Heart className="h-5 w-5" fill="currentColor" />
                 </button>
               </div>
               <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-1">
                 {artisan.fullName}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{artisan.craft}</p>
-              <div className="flex items-center gap-1 mb-4">
-                <span className="text-yellow-500">★</span>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {artisan.rating?.toFixed(1) || '—'} ({artisan.reviewCount || 0})
-                </span>
+              <div className="mb-4">
+                <Badge variant="rating" rating={artisan.rating || 0} count={artisan.reviewCount || 0} />
               </div>
               <div className="flex gap-2">
                 <Link
                   to={`/${artisan.publicId}`}
-                  className="flex-1 text-center px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors text-sm"
+                  className="flex-1"
                 >
-                  View Profile
+                  <Button variant="primary" size="sm" className="w-full">
+                    View Profile
+                  </Button>
                 </Link>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => navigate(`/messages?artisan=${artisan._id}`)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
                 >
                   Contact
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">No saved artisans yet</p>
-          <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
-            Bookmark artisans to easily find them later!
-          </p>
-          <Link
-            to="/search"
-            className="inline-block px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors"
-          >
-            Browse Artisans
-          </Link>
-        </div>
+        <EmptyState
+          icon={<Bookmark className="h-12 w-12" />}
+          title="No saved artisans yet"
+          description="Bookmark artisans to easily find them later!"
+          action={
+            <Link to="/search">
+              <Button variant="primary">Browse Artisans</Button>
+            </Link>
+          }
+        />
       )}
     </div>
   );

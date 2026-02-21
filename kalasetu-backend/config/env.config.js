@@ -1,10 +1,54 @@
 /**
- * Backend Environment Configuration
- * Centralized configuration for all environment variables
- * The actual values are in .env file
+ * @file env.config.js — Centralized Environment Configuration
+ *
+ * Single source of truth for ALL environment variables in the backend.
+ * Every service, integration, and config value is read from process.env here
+ * and exported as typed, structured config objects.
+ *
+ * Why centralized?
+ *  - Avoids scattered process.env reads across 50+ files
+ *  - Provides defaults for development (most services work without .env)
+ *  - validateConfig() catches missing required vars at startup
+ *  - Easy to audit what env vars the app depends on
+ *
+ * Config sections:
+ *  CORE           — SERVER_CONFIG, DATABASE_CONFIG, JWT_CONFIG, CORS_CONFIG, FRONTEND_CONFIG
+ *  ACTIVE         — CLOUDINARY_CONFIG, RAZORPAY_CONFIG, FIREBASE_CONFIG
+ *  INTEGRATIONS   — SEARCH_CONFIG, EMAIL_CONFIG, RECAPTCHA_CONFIG, PUSH_CONFIG,
+ *                   CHAT_CONFIG, ANALYTICS_CONFIG, ERROR_TRACKING_CONFIG, MAPS_CONFIG,
+ *                   VIDEO_CONFIG, AB_TESTING_CONFIG, CACHE_CONFIG, JOBS_CONFIG
+ *
+ * @exports {Object} SERVER_CONFIG     — Node environment, port, public URL
+ * @exports {Object} DATABASE_CONFIG   — MongoDB URI and Mongoose options
+ * @exports {Object} JWT_CONFIG        — JWT secret, expiry, cookie settings
+ * @exports {Object} CORS_CONFIG       — Allowed origins and credentials flag
+ * @exports {Object} FRONTEND_CONFIG   — Frontend base URL for email links, redirects
+ * @exports {Object} CLOUDINARY_CONFIG — Image upload cloud name, API keys
+ * @exports {Object} RAZORPAY_CONFIG   — Payment gateway keys and webhook secret
+ * @exports {Object} FIREBASE_CONFIG   — Firebase Admin service account
+ * @exports {Object} SEARCH_CONFIG     — Algolia app ID, API keys, index name
+ * @exports {Object} EMAIL_CONFIG      — Resend API key, from address
+ * @exports {Object} RECAPTCHA_CONFIG  — reCAPTCHA keys and score threshold
+ * @exports {Object} PUSH_CONFIG       — OneSignal app ID and REST key
+ * @exports {Object} CHAT_CONFIG       — Stream Chat API key and secret
+ * @exports {Object} ANALYTICS_CONFIG  — PostHog API key and host
+ * @exports {Object} ERROR_TRACKING_CONFIG — Sentry DSN and sample rate
+ * @exports {Object} MAPS_CONFIG       — Google Maps API key
+ * @exports {Object} VIDEO_CONFIG      — Daily.co API key and domain
+ * @exports {Object} AB_TESTING_CONFIG — A/B testing provider keys (disabled by default)
+ * @exports {Object} CACHE_CONFIG      — Upstash Redis URL, token, TTL
+ * @exports {Object} JOBS_CONFIG       — QStash token, signing keys, webhook URL
+ * @exports {Function} validateConfig  — Checks required env vars are present
+ * @exports {Function} isServiceEnabled — Helper to check if a service config is enabled
+ * @exports {Object} config            — Legacy flat object for backward compatibility
+ *
+ * @requires dotenv — Loads .env file into process.env
+ *
+ * @see .env.example — Template listing all expected environment variables
+ * @see utils/validateEnv.js — Additional startup validation
  */
 
-// Ensure environment variables are loaded whenever this module is imported
+// Load .env file into process.env before reading any variables
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -222,7 +266,8 @@ export const AB_TESTING_CONFIG = {
 
 // Redis/Caching Configuration (Upstash/Redis Cloud)
 export const CACHE_CONFIG = {
-  enabled: true,
+  // Only enable caching when Redis credentials are actually configured
+  enabled: !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN),
   provider: 'upstash',
   upstash: {
     url: process.env.UPSTASH_REDIS_REST_URL,
@@ -274,7 +319,17 @@ export function validateConfig() {
   } else {
     console.log('✅ All required environment variables are set');
   }
-  
+
+  // Warn about payment credentials in production (payments will fail silently without them)
+  if (SERVER_CONFIG.isProduction) {
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.warn('⚠️  RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET not set — payments will not work');
+    }
+    if (!process.env.RAZORPAY_WEBHOOK_SECRET) {
+      console.warn('⚠️  RAZORPAY_WEBHOOK_SECRET not set — webhook verification disabled');
+    }
+  }
+
   // Log environment
   console.log(`🚀 Server running in ${SERVER_CONFIG.nodeEnv} mode`);
 }

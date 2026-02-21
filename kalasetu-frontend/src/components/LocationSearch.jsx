@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useJsApiLoader, Autocomplete } from '@react-google-maps/api';
 import { getGoogleMapsApiKey } from '../lib/googleMaps.js';
 
-const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', showMap = false }) => {
+const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', showMap: _showMap = false }) => {
   const [autocomplete, setAutocomplete] = useState(null);
   const [inputValue, setInputValue] = useState(defaultValue);
   const inputRef = useRef(null);
@@ -16,7 +16,7 @@ const LocationSearch = ({ onLocationSelect, className = '', defaultValue = '', s
     if (defaultValue && defaultValue !== inputValue) {
       setInputValue(defaultValue);
     }
-  }, [defaultValue]);
+  }, [defaultValue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onLoad = useCallback((autocompleteInstance) => {
     setAutocomplete(autocompleteInstance);

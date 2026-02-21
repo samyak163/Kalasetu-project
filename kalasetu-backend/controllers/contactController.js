@@ -1,3 +1,17 @@
+/**
+ * @file contactController.js — Public Contact Form
+ *
+ * Handles the public "Contact Us" form submission. No auth required.
+ * Sends the message to the KalaSetu team via Resend email.
+ *
+ * Endpoints:
+ *  POST /api/contact — Submit contact form (name, email, subject, message)
+ *
+ * Validated with Zod. Email is sent asynchronously via utils/email.js.
+ *
+ * @see utils/email.js — sendContactFormEmail()
+ */
+
 import asyncHandler from '../utils/asyncHandler.js';
 import { sendContactFormEmail } from '../utils/email.js';
 import { z } from 'zod';

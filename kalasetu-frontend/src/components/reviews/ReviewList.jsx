@@ -17,7 +17,7 @@ const ReviewList = ({ artisanId }) => {
         const res = await axios.get(`${API_CONFIG.BASE_URL}/api/reviews/artisan/${artisanId}`);
         const list = res.data?.data || [];
         setReviews(list);
-      } catch (e) {
+      } catch {
         setError('Failed to load reviews');
       } finally {
         setLoading(false);

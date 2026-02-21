@@ -1,65 +1,116 @@
-import React, { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useMemo } from 'react';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 import api from '../../../lib/axios.js';
-import { LoadingState, Badge, Alert, EmptyState } from '../../ui';
-import { Calendar, Phone, Mail, FileText, Clock, IndianRupee } from 'lucide-react';
+import { FilterChips, BottomSheet, Button, Input, Skeleton, EmptyState, Alert } from '../../ui';
+import BookingCard from '../../booking/BookingCard.jsx';
+import CancellationSheet from '../../booking/CancellationSheet.jsx';
+import { Calendar, CheckCircle, Phone, XCircle } from 'lucide-react';
 
-const filterTabs = ['all', 'pending', 'confirmed', 'completed', 'rejected', 'cancelled'];
+const FILTER_CONFIG = [
+  { key: 'all', label: 'All' },
+  { key: 'pending', label: 'Pending' },
+  { key: 'confirmed', label: 'Confirmed' },
+  { key: 'completed', label: 'Completed' },
+  { key: 'cancelled', label: 'Cancelled' }, // includes rejected
+];
 
 const BookingsTab = () => {
   const { showToast } = useContext(ToastContext);
   const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filter, setFilter] = useState('all');
+  const [expandedId, setExpandedId] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
+
+  // Reject sheet state
+  const [rejectTarget, setRejectTarget] = useState(null); // booking ID
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
+
+  // Cancel sheet state
+  const [cancelTarget, setCancelTarget] = useState(null); // { id, status }
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchBookings = async () => {
+  const fetchBookings = async ({ silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setInitialLoading(true);
       setError(null);
-      const response = await api.get('/api/bookings/artisan');
-      if (response.data.success) {
-        setBookings(response.data.data || []);
-      } else {
-        setError('Failed to load bookings');
-      }
+      const res = await api.get('/api/bookings/artisan');
+      setBookings(res.data.data || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load bookings');
       showToast(err.response?.data?.message || 'Failed to load bookings', 'error');
       setBookings([]);
     } finally {
-      setLoading(false);
+      if (!silent) setInitialLoading(false);
     }
   };
 
-  const handleRespondToBooking = async (bookingId, action, reason = '') => {
+  // Build filter chips with counts
+  const chips = useMemo(() =>
+    FILTER_CONFIG.map(({ key, label }) => {
+      const count = key === 'all'
+        ? bookings.length
+        : key === 'cancelled'
+          ? bookings.filter(b => b.status === 'cancelled' || b.status === 'rejected').length
+          : bookings.filter(b => b.status === key).length;
+      return {
+        key,
+        label: key === 'all' ? label : `${label} (${count})`,
+        active: filter === key,
+        onClick: () => setFilter(key),
+      };
+    }),
+    [bookings, filter]
+  );
+
+  const filtered = useMemo(() => {
+    if (filter === 'all') return bookings;
+    if (filter === 'cancelled') return bookings.filter(b => b.status === 'cancelled' || b.status === 'rejected');
+    return bookings.filter(b => b.status === filter);
+  }, [bookings, filter]);
+
+  // --- Action handlers ---
+
+  const handleAccept = async (bookingId) => {
     try {
       setActionLoading(bookingId);
-      const response = await api.patch(`/api/bookings/${bookingId}/respond`, { action, reason });
-      if (response.data.success) {
-        showToast(`Booking ${action}ed successfully`, 'success');
-        await fetchBookings();
-      }
+      await api.patch(`/api/bookings/${bookingId}/respond`, { action: 'accept' });
+      showToast('Booking accepted', 'success');
+      await fetchBookings({ silent: true });
     } catch (err) {
-      showToast(err.response?.data?.message || `Failed to ${action} booking`, 'error');
+      showToast(err.response?.data?.message || 'Failed to accept booking', 'error');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleCompleteBooking = async (bookingId) => {
+  const handleRejectSubmit = async () => {
+    if (!rejectTarget) return;
+    try {
+      setRejectSubmitting(true);
+      await api.patch(`/api/bookings/${rejectTarget}/respond`, { action: 'reject', reason: rejectReason.trim() });
+      showToast('Booking rejected', 'success');
+      setRejectTarget(null);
+      setRejectReason('');
+      await fetchBookings({ silent: true });
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to reject booking', 'error');
+    } finally {
+      setRejectSubmitting(false);
+    }
+  };
+
+  const handleComplete = async (bookingId) => {
     try {
       setActionLoading(bookingId);
-      const response = await api.patch(`/api/bookings/${bookingId}/complete`);
-      if (response.data.success) {
-        showToast('Booking marked as completed', 'success');
-        await fetchBookings();
-      }
+      await api.patch(`/api/bookings/${bookingId}/complete`);
+      showToast('Booking marked as completed', 'success');
+      await fetchBookings({ silent: true });
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to complete booking', 'error');
     } finally {
@@ -67,178 +118,84 @@ const BookingsTab = () => {
     }
   };
 
-  const handleCancelBooking = async (bookingId) => {
-    try {
-      setActionLoading(bookingId);
-      const response = await api.patch(`/api/bookings/${bookingId}/respond`, { action: 'reject', reason: 'Cancelled by artisan' });
-      if (response.data.success) {
-        showToast('Booking cancelled', 'success');
-        await fetchBookings();
-      }
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to cancel booking', 'error');
-    } finally {
-      setActionLoading(null);
+  const handleCancelSuccess = () => {
+    setCancelTarget(null);
+    fetchBookings({ silent: true });
+  };
+
+  // Build per-booking actions for artisan perspective
+  const getActionsForBooking = (booking) => {
+    const isLoading = actionLoading === booking._id;
+
+    switch (booking.status) {
+      case 'pending':
+        return [
+          { label: 'Accept', variant: 'primary', icon: CheckCircle, onClick: () => handleAccept(booking._id), loading: isLoading },
+          { label: 'Reject', variant: 'danger', icon: XCircle, onClick: () => setRejectTarget(booking._id) },
+        ];
+      case 'confirmed':
+        return [
+          { label: 'Mark Complete', variant: 'primary', icon: CheckCircle, onClick: () => handleComplete(booking._id), loading: isLoading },
+          ...(booking.user?.phoneNumber ? [{
+            label: 'Call Customer', variant: 'secondary', icon: Phone,
+            onClick: () => { window.location.href = `tel:${booking.user.phoneNumber}`; },
+          }] : []),
+          { label: 'Cancel', variant: 'danger', icon: XCircle, onClick: () => setCancelTarget({ id: booking._id, status: booking.status }) },
+        ];
+      default:
+        return [];
     }
   };
 
-  const filteredBookings = filter === 'all'
-    ? bookings
-    : bookings.filter(b => b.status === filter);
-
-  if (loading) {
-    return <LoadingState message="Loading bookings..." />;
+  if (initialLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton variant="rect" width="240px" height="28px" />
+        <Skeleton variant="rect" height="36px" />
+        {[1, 2, 3].map(i => (
+          <Skeleton key={i} variant="rect" height="88px" />
+        ))}
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Bookings & Schedule</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Manage your appointments and bookings
-        </p>
+        <h2 className="text-xl font-bold font-display text-gray-900">Bookings & Schedule</h2>
+        <p className="text-sm text-gray-500 mt-1">Manage your appointments and bookings</p>
       </div>
 
+      {/* Error */}
       {error && (
         <Alert variant="error" onDismiss={() => setError(null)}>
-          <p className="font-medium">Error</p>
           <p className="text-sm">{error}</p>
           <button onClick={fetchBookings} className="mt-1 text-sm underline hover:no-underline">Try again</button>
         </Alert>
       )}
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2" role="tablist">
-        {filterTabs.map(status => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            role="tab"
-            aria-selected={filter === status}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              filter === status
-                ? 'bg-brand-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-            {status !== 'all' && (
-              <span className="ml-1.5 text-xs opacity-70">
-                ({bookings.filter(b => b.status === status).length})
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      {/* Filter chips */}
+      <FilterChips chips={chips} />
 
-      {/* Bookings List */}
-      {filteredBookings.length > 0 ? (
-        <div className="space-y-4">
-          {filteredBookings.map(booking => (
-            <div key={booking._id || booking.id} className="bg-white border border-gray-200 rounded-card p-6 shadow-card">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {booking.serviceName || booking.service?.name || 'Service'}
-                    </h3>
-                    <Badge status={booking.status} />
-                  </div>
-                  <div className="space-y-1 text-sm text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{booking.user?.fullName || booking.userName || 'Customer'}</span>
-                    </div>
-                    {booking.user?.phoneNumber && (
-                      <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> {booking.user.phoneNumber}</div>
-                    )}
-                    {booking.user?.email && (
-                      <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> {booking.user.email}</div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {new Date(booking.start || booking.scheduledDate).toLocaleDateString()}
-                      {(booking.start || booking.scheduledDate) && (
-                        <>
-                          <Clock className="h-3.5 w-3.5 ml-2" />
-                          {new Date(booking.start || booking.scheduledDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {booking.end && (
-                            <> - {new Date(booking.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</>
-                          )}
-                        </>
-                      )}
-                    </div>
-                    {booking.notes && (
-                      <div className="flex items-center gap-2"><FileText className="h-3.5 w-3.5" /> {booking.notes}</div>
-                    )}
-                    {booking.rejectionReason && (
-                      <div className="text-error-600">Reason: {booking.rejectionReason}</div>
-                    )}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center text-2xl font-bold text-gray-900">
-                    <IndianRupee className="h-5 w-5" />{booking.price || 0}
-                  </div>
-                </div>
-              </div>
-
-              {/* Pending: Accept / Reject */}
-              {booking.status === 'pending' && (
-                <div className="flex gap-2 flex-wrap pt-4 border-t border-gray-100">
-                  <button
-                    onClick={() => handleRespondToBooking(booking._id, 'accept')}
-                    disabled={actionLoading === booking._id}
-                    className="px-4 py-2 text-sm bg-success-600 text-white rounded-lg hover:bg-success-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {actionLoading === booking._id ? 'Processing...' : 'Accept'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      const reason = prompt('Reason for rejection (optional):');
-                      if (reason !== null) handleRespondToBooking(booking._id, 'reject', reason);
-                    }}
-                    disabled={actionLoading === booking._id}
-                    className="px-4 py-2 text-sm border border-error-300 text-error-600 rounded-lg hover:bg-error-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {actionLoading === booking._id ? 'Processing...' : 'Reject'}
-                  </button>
-                </div>
-              )}
-
-              {/* Confirmed: Mark as Completed / Call Customer / Cancel */}
-              {booking.status === 'confirmed' && (
-                <div className="flex gap-2 flex-wrap pt-4 border-t border-gray-100">
-                  <button
-                    onClick={() => handleCompleteBooking(booking._id)}
-                    disabled={actionLoading === booking._id}
-                    className="px-4 py-2 text-sm bg-brand-500 text-white rounded-lg hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {actionLoading === booking._id ? 'Processing...' : 'Mark as Completed'}
-                  </button>
-                  {booking.user?.phoneNumber && (
-                    <a
-                      href={`tel:${booking.user.phoneNumber}`}
-                      className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 inline-flex items-center gap-1"
-                    >
-                      <Phone className="h-3.5 w-3.5" /> Call Customer
-                    </a>
-                  )}
-                  <button
-                    onClick={() => handleCancelBooking(booking._id)}
-                    disabled={actionLoading === booking._id}
-                    className="px-4 py-2 text-sm text-error-600 border border-error-300 rounded-lg hover:bg-error-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-            </div>
+      {/* Booking list */}
+      {filtered.length > 0 ? (
+        <div className="space-y-3">
+          {filtered.map(booking => (
+            <BookingCard
+              key={booking._id}
+              booking={booking}
+              perspective="artisan"
+              expanded={expandedId === booking._id}
+              onToggle={() => setExpandedId(prev => prev === booking._id ? null : booking._id)}
+              actions={getActionsForBooking(booking)}
+            />
           ))}
         </div>
       ) : (
         <EmptyState
           icon={<Calendar className="h-12 w-12" />}
-          title={`No ${filter !== 'all' ? filter : ''} bookings`}
+          title={filter !== 'all' ? `No ${filter} bookings` : 'No bookings yet'}
           description={
             filter !== 'all'
               ? 'Try selecting a different filter to see other bookings'
@@ -246,6 +203,41 @@ const BookingsTab = () => {
           }
         />
       )}
+
+      {/* Reject sheet */}
+      <BottomSheet
+        open={!!rejectTarget}
+        onClose={() => { setRejectTarget(null); setRejectReason(''); }}
+        title="Reject Booking"
+      >
+        <div className="space-y-4">
+          <Input
+            as="textarea"
+            label="Reason for rejection (optional)"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Let the customer know why you can't take this booking..."
+            rows={3}
+          />
+          <Button
+            variant="danger"
+            className="w-full"
+            onClick={handleRejectSubmit}
+            loading={rejectSubmitting}
+          >
+            Confirm Rejection
+          </Button>
+        </div>
+      </BottomSheet>
+
+      {/* Cancellation sheet */}
+      <CancellationSheet
+        open={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        bookingId={cancelTarget?.id}
+        bookingStatus={cancelTarget?.status}
+        onCancel={handleCancelSuccess}
+      />
     </div>
   );
 };

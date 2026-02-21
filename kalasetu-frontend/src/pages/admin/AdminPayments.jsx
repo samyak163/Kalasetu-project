@@ -22,7 +22,7 @@ const AdminPayments = () => {
   useEffect(() => {
     fetchPayments();
     fetchStats();
-  }, [page, status, startDate, endDate, minAmount, maxAmount, search]);
+  }, [page, status, startDate, endDate, minAmount, maxAmount, search]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -59,8 +59,8 @@ const AdminPayments = () => {
       if (response.data.success) {
         setStats(response.data.data);
       }
-    } catch (err) {
-      // Log stats error
+    } catch {
+      // Stats error — non-critical
     }
   };
 
@@ -102,7 +102,7 @@ const AdminPayments = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (err) {
+    } catch {
       alert('Failed to export CSV');
     }
   };
@@ -125,7 +125,7 @@ const AdminPayments = () => {
     }).format(amount / 100); // Assuming amount is in paise
   };
 
-  const getPaymentMethodIcon = (method) => {
+  const getPaymentMethodIcon = (_method) => {
     return <CreditCard className="w-4 h-4 text-gray-400" />;
   };
 

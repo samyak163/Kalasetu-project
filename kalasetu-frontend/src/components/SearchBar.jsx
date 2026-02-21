@@ -9,7 +9,7 @@ const EMPTY_SUGGESTIONS = {
   artisans: [],
 };
 
-const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '', onSearch, userLocation }) => {
+const SearchBar = ({ className = '', showLocationSearch: _showLocationSearch = true, initialQuery = '', onSearch, userLocation }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState(initialQuery || '');
   const [suggestions, setSuggestions] = useState(EMPTY_SUGGESTIONS);
@@ -74,7 +74,7 @@ const SearchBar = ({ className = '', showLocationSearch = true, initialQuery = '
     if (initialQuery !== undefined && initialQuery !== query) {
       setQuery(initialQuery);
     }
-  }, [initialQuery]);
+  }, [initialQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = (e) => {
     e.preventDefault();

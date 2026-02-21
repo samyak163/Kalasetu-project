@@ -37,6 +37,15 @@ export default {
           600: '#DC2626',
           700: '#B91C1C',
         },
+        surface: {
+          DEFAULT: '#FFFFFF',
+          hover: '#F9FAFB',
+          muted: '#F3F4F6',
+        },
+        'text-primary': '#111827',
+        'text-secondary': '#4B5563',
+        'text-muted': '#9CA3AF',
+        'border-default': '#E5E7EB',
       },
       fontFamily: {
         display: ['"Playfair Display"', 'Georgia', 'serif'],
@@ -51,6 +60,14 @@ export default {
         card: '0.75rem',
         button: '0.5rem',
         input: '0.5rem',
+      },
+      zIndex: {
+        sticky: '40',
+        modal: '50',
+        toast: '9999',
+      },
+      maxWidth: {
+        container: '1280px',
       },
       keyframes: {
         fadeInUp: {
@@ -73,6 +90,10 @@ export default {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(100%)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'fade-in-up': 'fadeInUp 0.3s ease-out',
@@ -80,6 +101,7 @@ export default {
         'slide-in': 'slideIn 0.2s ease-out',
         'scale-in': 'scaleIn 0.25s ease-out',
         'fade-in': 'fadeIn 0.2s ease-out',
+        'slide-up': 'slideUp 0.3s ease-out',
       },
     },
   },

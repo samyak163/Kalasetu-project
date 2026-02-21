@@ -25,7 +25,7 @@ export const initSentry = () => {
       ],
       replaysSessionSampleRate: 0.1,
       replaysOnErrorSampleRate: 1.0,
-      beforeSend(event, hint) {
+      beforeSend(event, _hint) {
         // Don't send errors in development
         if (import.meta.env.DEV) {
           console.log('Sentry event (dev):', event);

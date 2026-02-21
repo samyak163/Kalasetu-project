@@ -15,7 +15,7 @@ export const useNotifications = () => {
     return () => {
       setNotificationClickHandler(null);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const checkSubscription = async () => {
     const status = await isSubscribed();

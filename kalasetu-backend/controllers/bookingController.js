@@ -1,3 +1,31 @@
+/**
+ * @file bookingController.js — Booking Management
+ *
+ * Core booking lifecycle — creation, listing, status transitions, cancellation,
+ * and modification requests. Uses `protectAny` (both users and artisans).
+ *
+ * Endpoints:
+ *  POST /api/bookings              — Create booking (user books artisan)
+ *  GET  /api/bookings              — List bookings for current user (filtered by status)
+ *  GET  /api/bookings/:id          — Get single booking with populated details
+ *  PUT  /api/bookings/:id/status   — Update booking status (confirm/reject/complete/cancel)
+ *  PUT  /api/bookings/:id/modify   — Request date modification
+ *  PUT  /api/bookings/:id/modify/respond — Approve/reject modification request
+ *
+ * On booking creation:
+ *  - Creates a Stream Chat channel for artisan-user communication
+ *  - Creates a Daily.co video room for consultations
+ *  - Sends in-app notifications to both parties
+ *
+ * Status transitions are validated — e.g., only pending→confirmed is allowed,
+ * not completed→pending. Artisan stats are updated on completion/cancellation.
+ *
+ * @see models/bookingModel.js — Booking schema and status enum
+ * @see controllers/paymentController.js — Payment tied to bookings
+ * @see utils/streamChat.js — Chat channel creation
+ * @see utils/dailyco.js — Video room creation
+ */
+
 import asyncHandler from '../utils/asyncHandler.js';
 import { z } from 'zod';
 import mongoose from 'mongoose';
@@ -5,9 +33,93 @@ import Booking from '../models/bookingModel.js';
 import ArtisanService from '../models/artisanServiceModel.js';
 import Artisan from '../models/artisanModel.js';
 import User from '../models/userModel.js';
+import Payment from '../models/paymentModel.js';
+import RefundRequest from '../models/refundRequestModel.js';
 import { createDirectMessageChannel, upsertStreamUser, sendMessage } from '../utils/streamChat.js';
 import { createDailyRoom } from '../utils/dailyco.js';
 import { createNotification } from '../utils/notificationService.js';
+import { refundPayment } from '../utils/razorpay.js';
+import Review from '../models/reviewModel.js';
+
+/**
+ * Auto-refund helper — processes a full Razorpay refund when a booking is
+ * rejected or cancelled, similar to Swiggy/UrbanCompany instant refunds.
+ *
+ * Non-blocking: refund failures don't break the reject/cancel response.
+ * If the Razorpay API call fails, a RefundRequest record is created so
+ * admins can process it manually.
+ *
+ * @param {Object} booking - The booking document (must have _id, user, price, serviceName)
+ * @param {string} triggerReason - Why the refund is happening (e.g. 'Booking rejected by artisan')
+ */
+async function processAutoRefund(booking, triggerReason) {
+  try {
+    // Find the captured payment linked to this booking
+    const payment = await Payment.findOne({
+      'metadata.bookingId': booking._id.toString(),
+      status: 'captured',
+    });
+
+    if (!payment || !payment.razorpayPaymentId) return; // No paid payment to refund
+
+    // Process refund via Razorpay
+    const refund = await refundPayment(payment.razorpayPaymentId, payment.amount);
+
+    if (refund) {
+      // Razorpay refund initiated — update payment record
+      payment.status = 'refunded';
+      payment.refundId = refund.id;
+      payment.refundAmount = payment.amount;
+      payment.refundedAt = new Date();
+      await payment.save();
+
+      // Create RefundRequest for audit trail (auto-approved, already processed)
+      await RefundRequest.create({
+        payment: payment._id,
+        booking: booking._id,
+        requestedBy: booking.user,
+        requestedByModel: 'User',
+        amount: payment.amount,
+        reason: `Automatic: ${triggerReason}`,
+        status: 'processed',
+        razorpayRefundId: refund.id,
+        razorpayRefundStatus: refund.status || 'processed',
+        processedAt: new Date(),
+      });
+
+      // Notify the customer about the automatic refund
+      createNotification({
+        ownerId: booking.user,
+        ownerType: 'user',
+        title: 'Refund Initiated',
+        text: `Your payment of Rs.${payment.amount} for ${booking.serviceName || 'a service'} will be refunded to your original payment method within 5-7 business days.`,
+        url: '/dashboard/bookings',
+      }).catch(() => {});
+    } else {
+      // Razorpay call failed — create pending RefundRequest for admin follow-up
+      await RefundRequest.create({
+        payment: payment._id,
+        booking: booking._id,
+        requestedBy: booking.user,
+        requestedByModel: 'User',
+        amount: payment.amount,
+        reason: `Automatic: ${triggerReason} (Razorpay API failed, needs manual processing)`,
+        status: 'pending',
+      });
+
+      createNotification({
+        ownerId: booking.user,
+        ownerType: 'user',
+        title: 'Refund Pending',
+        text: `Your refund of Rs.${payment.amount} for ${booking.serviceName || 'a service'} is being processed. You'll be notified once it's complete.`,
+        url: '/dashboard/bookings',
+      }).catch(() => {});
+    }
+  } catch (err) {
+    // Non-blocking — log but don't throw
+    console.error('Auto-refund failed for booking', booking._id?.toString(), err.message);
+  }
+}
 
 const createBookingSchema = z.object({
   artisan: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid artisan ID'),
@@ -124,6 +236,20 @@ export const getMyBookings = asyncHandler(async (req, res) => {
     .populate('artisan', 'fullName publicId profileImageUrl')
     .sort({ createdAt: -1 })
     .lean();
+
+  // Attach hasReview flag to completed bookings (single query, not per-booking)
+  const completedIds = list.filter(b => b.status === 'completed').map(b => b._id);
+  if (completedIds.length > 0) {
+    const reviewedBookings = await Review.find(
+      { user: userId, booking: { $in: completedIds } },
+      { booking: 1 }
+    ).lean();
+    const reviewedSet = new Set(reviewedBookings.map(r => String(r.booking)));
+    for (const b of list) {
+      if (b.status === 'completed') b.hasReview = reviewedSet.has(String(b._id));
+    }
+  }
+
   res.json({ success: true, data: list });
 });
 
@@ -153,8 +279,14 @@ export const cancelBooking = asyncHandler(async (req, res) => {
   b.cancelledBy = userId;
   await b.save();
 
-  // Notify the other party about cancellation
+  // Auto-refund if payment was captured (Swiggy/UC-style instant refund)
   const isUserCancelling = String(b.user) === String(userId);
+  if (b.depositPaid) {
+    const cancelledByLabel = isUserCancelling ? 'customer' : 'artisan';
+    processAutoRefund(b, `Booking cancelled by ${cancelledByLabel}${reason ? ': ' + reason : ''}`);
+  }
+
+  // Notify the other party about cancellation
   const notifyId = isUserCancelling ? b.artisan : b.user;
   const notifyType = isUserCancelling ? 'artisan' : 'user';
   createNotification({
@@ -337,12 +469,17 @@ export const respondToBooking = asyncHandler(async (req, res) => {
     booking.rejectionReason = reason || '';
     await booking.save();
 
+    // Auto-refund if payment was captured (Swiggy/UC-style instant refund)
+    if (booking.depositPaid) {
+      processAutoRefund(booking, `Booking rejected by artisan${reason ? ': ' + reason : ''}`);
+    }
+
     // Notify the customer that booking was rejected
     createNotification({
       ownerId: booking.user,
       ownerType: 'user',
       title: 'Booking Declined',
-      text: `Your booking request for ${booking.serviceName || 'a service'} was declined.${reason ? ' Reason: ' + reason : ''}`,
+      text: `Your booking request for ${booking.serviceName || 'a service'} was declined.${reason ? ' Reason: ' + reason : ''} ${booking.depositPaid ? 'Your payment will be refunded automatically.' : ''}`,
       url: '/dashboard/bookings',
     }).catch(() => {}); // non-blocking
 

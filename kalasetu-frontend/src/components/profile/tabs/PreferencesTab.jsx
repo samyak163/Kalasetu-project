@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../lib/axios.js';
 import { ToastContext } from '../../../context/ToastContext.jsx';
+import { Card, Button } from '../../ui';
 
 const PreferencesTab = ({ user, onSave }) => {
   const { showToast } = React.useContext(ToastContext);
@@ -71,7 +72,7 @@ const PreferencesTab = ({ user, onSave }) => {
       });
       showToast('Preferences saved successfully!', 'success');
       onSave?.();
-    } catch (error) {
+    } catch {
       showToast('Failed to save preferences', 'error');
     } finally {
       setLoading(false);
@@ -90,7 +91,7 @@ const PreferencesTab = ({ user, onSave }) => {
       </div>
 
       {/* Email Notifications */}
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+      <Card hover={false}>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Email Notifications
         </h3>
@@ -107,15 +108,15 @@ const PreferencesTab = ({ user, onSave }) => {
                 type="checkbox"
                 checked={value}
                 onChange={() => handleToggle('emailNotifications', key)}
-                className="w-5 h-5 text-[#A55233] rounded focus:ring-[#A55233]"
+                className="w-5 h-5 accent-brand-500 rounded"
               />
             </label>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* SMS Notifications */}
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+      <Card hover={false}>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           SMS Notifications
         </h3>
@@ -132,7 +133,7 @@ const PreferencesTab = ({ user, onSave }) => {
                 type="checkbox"
                 checked={value}
                 onChange={() => handleToggle('smsNotifications', key)}
-                className="w-5 h-5 text-[#A55233] rounded focus:ring-[#A55233]"
+                className="w-5 h-5 accent-brand-500 rounded"
               />
             </label>
           ))}
@@ -140,10 +141,10 @@ const PreferencesTab = ({ user, onSave }) => {
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
           Note: SMS may incur charges
         </p>
-      </div>
+      </Card>
 
       {/* Push Notifications */}
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+      <Card hover={false}>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Push Notifications
         </h3>
@@ -160,12 +161,12 @@ const PreferencesTab = ({ user, onSave }) => {
                 type="checkbox"
                 checked={value}
                 onChange={() => handleToggle('pushNotifications', key)}
-                className="w-5 h-5 text-[#A55233] rounded focus:ring-[#A55233]"
+                className="w-5 h-5 accent-brand-500 rounded"
               />
             </label>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Language & Currency */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -176,7 +177,7 @@ const PreferencesTab = ({ user, onSave }) => {
           <select
             value={preferences.language}
             onChange={e => handleChange('language', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900"
           >
             <option value="en">English</option>
             <option value="hi">Hindi</option>
@@ -189,7 +190,7 @@ const PreferencesTab = ({ user, onSave }) => {
           <select
             value={preferences.currency}
             onChange={e => handleChange('currency', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
+            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900"
           >
             <option value="INR">INR (₹)</option>
             <option value="USD">USD ($)</option>
@@ -199,7 +200,7 @@ const PreferencesTab = ({ user, onSave }) => {
       </div>
 
       {/* Privacy Settings */}
-      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6">
+      <Card hover={false}>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Privacy Settings
         </h3>
@@ -211,7 +212,7 @@ const PreferencesTab = ({ user, onSave }) => {
             <select
               value={preferences.privacy.profileVisibility}
               onChange={e => handlePrivacyChange('profileVisibility', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A55233] dark:bg-white dark:text-gray-900"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 dark:bg-white dark:text-gray-900"
             >
               <option value="public">Public</option>
               <option value="artisans">Artisans Only</option>
@@ -226,21 +227,21 @@ const PreferencesTab = ({ user, onSave }) => {
               type="checkbox"
               checked={preferences.privacy.showPhoneNumber}
               onChange={() => handlePrivacyChange('showPhoneNumber', !preferences.privacy.showPhoneNumber)}
-              className="w-5 h-5 text-[#A55233] rounded focus:ring-[#A55233]"
+              className="w-5 h-5 accent-brand-500 rounded"
             />
           </label>
         </div>
-      </div>
+      </Card>
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <button
+        <Button
+          variant="primary"
           onClick={handleSave}
           disabled={loading}
-          className="px-6 py-3 bg-[#A55233] text-white rounded-lg hover:bg-[#8e462b] transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {loading ? 'Saving...' : 'Save Preferences'}
-        </button>
+        </Button>
       </div>
     </div>
   );

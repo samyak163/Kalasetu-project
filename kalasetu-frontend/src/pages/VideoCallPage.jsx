@@ -56,7 +56,7 @@ const VideoCallPage = () => {
       // Load call history
       loadCallHistory();
     }
-  }, [isAuthenticated, roomNameFromUrl]);
+  }, [isAuthenticated, roomNameFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadArtisans = async () => {
     try {

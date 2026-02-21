@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { X, Check } from 'lucide-react';
+import { Button } from './ui';
 
 const ArtisanInfoModal = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -21,9 +23,7 @@ const ArtisanInfoModal = ({ isOpen, onClose }) => {
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
           aria-label="Close"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X className="w-6 h-6" />
         </button>
 
         {/* Header */}
@@ -35,27 +35,27 @@ const ArtisanInfoModal = ({ isOpen, onClose }) => {
         <div className="px-6 py-5">
           <ul className="space-y-3 text-gray-700">
             <li className="flex items-start gap-3">
-              <span className="text-green-600 font-bold">✓</span>
+              <Check className="w-5 h-5 text-success-500 flex-shrink-0" />
               <span>Reach customers across India</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-green-600 font-bold">✓</span>
+              <Check className="w-5 h-5 text-success-500 flex-shrink-0" />
               <span>Professional portfolio showcase</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-green-600 font-bold">✓</span>
+              <Check className="w-5 h-5 text-success-500 flex-shrink-0" />
               <span>Secure booking & payment system</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-green-600 font-bold">✓</span>
+              <Check className="w-5 h-5 text-success-500 flex-shrink-0" />
               <span>Build your reputation with reviews</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-green-600 font-bold">✓</span>
+              <Check className="w-5 h-5 text-success-500 flex-shrink-0" />
               <span>Flexible scheduling tools</span>
             </li>
             <li className="flex items-start gap-3">
-              <span className="text-green-600 font-bold">✓</span>
+              <Check className="w-5 h-5 text-success-500 flex-shrink-0" />
               <span>No commission fees for first 3 months</span>
             </li>
           </ul>
@@ -63,21 +63,12 @@ const ArtisanInfoModal = ({ isOpen, onClose }) => {
 
         {/* CTA Buttons */}
         <div className="px-6 pb-6 flex gap-3">
-          <button
-            onClick={() => {
-              onClose();
-              navigate('/artisan/register');
-            }}
-            className="flex-1 bg-[#A55233] text-white py-3 px-6 rounded-lg font-semibold hover:bg-[#8e462b] transition-colors"
-          >
+          <Button variant="primary" className="flex-1" onClick={() => { onClose(); navigate('/artisan/register'); }}>
             Get Started
-          </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-          >
+          </Button>
+          <Button variant="secondary" onClick={onClose}>
             Maybe Later
-          </button>
+          </Button>
         </div>
       </div>
     </div>

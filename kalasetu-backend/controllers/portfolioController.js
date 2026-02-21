@@ -1,3 +1,22 @@
+/**
+ * @file portfolioController.js — Artisan Portfolio Management
+ *
+ * CRUD for artisan portfolio projects — showcasing past work with images,
+ * titles, and descriptions. Requires `protect` (artisan-only).
+ *
+ * Endpoints:
+ *  GET    /api/artisan/portfolio/projects      — List artisan's own projects
+ *  GET    /api/artisans/:publicId/portfolio     — Get artisan's public portfolio
+ *  POST   /api/artisan/portfolio/projects      — Create a project
+ *  PUT    /api/artisan/portfolio/projects/:id  — Update a project
+ *  DELETE /api/artisan/portfolio/projects/:id  — Delete a project
+ *
+ * Images are stored as Cloudinary URLs. Each project can have a cover image
+ * and multiple gallery images.
+ *
+ * @see models/Project.js — Portfolio project schema (legacy PascalCase naming)
+ */
+
 import Project from '../models/Project.js';
 import Artisan from '../models/artisanModel.js';
 import asyncHandler from '../utils/asyncHandler.js';
@@ -153,11 +172,18 @@ export const reorderImages = asyncHandler(async (req, res) => {
   }
   
   const project = await Project.findOne({ _id: id, artisan: artisanId });
-  
+
   if (!project) {
     return res.status(404).json({ success: false, error: 'Project not found' });
   }
-  
+
+  // Validate that new array is a permutation of existing images (reorder only, no injection)
+  const existing = [...project.images].sort();
+  const incoming = [...images].sort();
+  if (existing.length !== incoming.length || !existing.every((url, i) => url === incoming[i])) {
+    return res.status(400).json({ success: false, error: 'Images must be a reorder of existing images — cannot add or remove' });
+  }
+
   project.images = images;
   await project.save();
   

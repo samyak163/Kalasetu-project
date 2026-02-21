@@ -1,4 +1,33 @@
-import bcrypt from 'bcryptjs';
+/**
+ * @file authController.js — Artisan Authentication
+ *
+ * Handles registration, login, logout, password reset, and Firebase social auth
+ * for ARTISAN accounts only. Customer auth is in userAuthController.js.
+ *
+ * Endpoints:
+ *  POST /api/auth/register        — Register new artisan (email or phone + password)
+ *  POST /api/auth/login           — Login with email/phone + password
+ *  GET  /api/auth/me              — Get current artisan profile (requires `protect`)
+ *  POST /api/auth/logout          — Clear auth cookie
+ *  POST /api/auth/forgot-password — Send password reset email
+ *  POST /api/auth/reset-password  — Reset password with token
+ *  POST /api/auth/firebase-login  — Social login via Firebase ID token
+ *
+ * On registration:
+ *  - Creates Artisan document (password auto-hashed by pre-save hook)
+ *  - Indexes artisan in Algolia (non-blocking)
+ *  - Sends welcome + verification emails via Resend (non-blocking)
+ *  - Creates onboarding notifications
+ *  - Returns JWT in HTTP-only cookie + CSRF token in response body
+ *
+ * Auth: Uses `protect` middleware (Artisan model only)
+ * Cookie: ks_auth (shared cookie name with users — different model lookups)
+ *
+ * @see userAuthController.js — Customer (User) authentication
+ * @see middleware/authMiddleware.js — `protect` middleware used on /me and /logout
+ * @see utils/generateToken.js — JWT signing and cookie helpers
+ */
+
 import { z } from 'zod';
 import Artisan from '../models/artisanModel.js';
 import { signJwt, setAuthCookie, clearAuthCookie } from '../utils/generateToken.js';
@@ -65,11 +94,9 @@ export const register = async (req, res, next) => {
             return res.status(400).json({ message: 'This phone number is already registered' });
         }
         
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        
         // Create artisan with only provided fields
-        const artisanData = { fullName, password: hashedPassword };
+        // Password hashing is handled by the pre-save hook in artisanModel.js
+        const artisanData = { fullName, password };
         if (email) artisanData.email = email;
         if (phoneNumber) artisanData.phoneNumber = phoneNumber;
         
@@ -185,7 +212,7 @@ export const login = async (req, res, next) => {
             const unlockAt = new Date(artisan.lockUntil).toLocaleTimeString();
             return res.status(423).json({ message: `Account is temporarily locked due to too many failed login attempts. Try again after ${unlockAt}.` });
         }
-        const valid = await bcrypt.compare(password, artisan.password);
+        const valid = await artisan.matchPassword(password);
         if (!valid) {
             await artisan.incLoginAttempts();
             const remaining = 5 - artisan.loginAttempts;
@@ -276,7 +303,8 @@ export const resetPassword = async (req, res, next) => {
     if (!artisan) {
       return res.status(400).json({ message: 'Invalid or expired password reset token.' });
     }
-    artisan.password = await bcrypt.hash(newPassword, 10);
+    // Password hashing is handled by the pre-save hook in artisanModel.js
+    artisan.password = newPassword;
     artisan.resetPasswordToken = undefined;
     artisan.resetPasswordExpires = undefined;
     await artisan.save();
@@ -312,16 +340,16 @@ export const firebaseLogin = async (req, res, next) => {
         let artisan = await Artisan.findOne(findQuery);
 
         if (!artisan) {
-            // Create a new artisan with random password (not used, but required by schema)
+            // Create a new artisan with random password (not used for Firebase auth, but required by schema)
+            // Password hashing is handled by the pre-save hook in artisanModel.js
             const randomPass = crypto.randomBytes(16).toString('hex');
-            const hashedPassword = await bcrypt.hash(randomPass, 10);
 
             artisan = await Artisan.create({
                 firebaseUid: uid,
                 fullName: name || 'KalaSetu User',
                 email: email || undefined,
                 phoneNumber: phoneNumber || undefined,
-                password: hashedPassword,
+                password: randomPass,
                 emailVerified: !!(email && decoded.email_verified),
             });
             

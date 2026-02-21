@@ -1,3 +1,29 @@
+/**
+ * @file bookingRoutes.js — Booking Lifecycle Routes
+ *
+ * Full booking lifecycle from creation through completion/cancellation,
+ * including modification request negotiation. Uses all three auth
+ * middlewares depending on which party (user, artisan, or either) acts.
+ *
+ * Mounted at: /api/bookings
+ *
+ * User routes (userProtect):
+ *  POST /     — Create a new booking
+ *  GET  /me   — List user's bookings
+ *
+ * Artisan routes (protect):
+ *  GET   /artisan       — List artisan's bookings
+ *  PATCH /:id/respond   — Accept/reject booking request
+ *  PATCH /:id/complete  — Mark booking as completed
+ *
+ * Shared routes (protectAny — either user or artisan):
+ *  POST  /:id/modify          — Request modification (reschedule, etc.)
+ *  PATCH /:id/modify/respond  — Accept/reject modification request
+ *  POST  /:id/cancel          — Cancel booking (owner only)
+ *
+ * @see controllers/bookingController.js — Handler implementations
+ * @see models/bookingModel.js — Booking schema with status flow
+ */
 import express from 'express';
 import { protect, protectAny } from '../middleware/authMiddleware.js';
 import { userProtect } from '../middleware/userProtectMiddleware.js';

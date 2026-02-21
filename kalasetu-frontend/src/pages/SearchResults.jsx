@@ -1,23 +1,43 @@
-import { useState, useEffect, useMemo, useContext } from 'react';
+import { useState, useEffect, useMemo, useContext, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Search, SlidersHorizontal, Star } from 'lucide-react';
 import api from '../lib/axios.js';
 import SEO from '../components/SEO.jsx';
 import { optimizeImage } from '../utils/cloudinary.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ToastContext } from '../context/ToastContext.jsx';
-import axios from 'axios';
-import { API_CONFIG } from '../config/env.config.js';
+import { TabBar, FilterChips, ArtisanCard, BottomSheet, EmptyState, Badge } from '../components/ui/index.js';
+import SearchOverlay from '../components/search/SearchOverlay.jsx';
 
-const DEFAULT_STATE = {
-  mode: 'artisan',
-  category: null,
-  services: [],
-  artisans: [],
-};
+const TABS = [
+  { key: 'all', label: 'All' },
+  { key: 'artisans', label: 'Artisans' },
+  { key: 'services', label: 'Services' },
+];
 
+const RATING_OPTIONS = [
+  { value: 0, label: 'All Ratings' },
+  { value: 4.5, label: '4.5+ Stars' },
+  { value: 4, label: '4+ Stars' },
+  { value: 3, label: '3+ Stars' },
+];
+
+const SORT_OPTIONS = [
+  { value: 'relevance', label: 'Relevance' },
+  { value: 'rating', label: 'Highest Rated' },
+  { value: 'newest', label: 'Newest' },
+];
+
+/**
+ * Rebuilt SearchResults page with:
+ * - TabBar (All / Artisans / Services)
+ * - FilterChips (Sort, Rating, Verified)
+ * - BottomSheet for sort/rating selection
+ * - Design system ArtisanCard grid for artisan results
+ * - SearchOverlay for re-searching from this page
+ */
 const SearchResults = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { userType } = useAuth();
   const { showToast } = useContext(ToastContext);
 
@@ -25,37 +45,25 @@ const SearchResults = () => {
   const categoryParam = searchParams.get('category') || '';
   const serviceParam = searchParams.get('service') || '';
 
-  const [results, setResults] = useState(DEFAULT_STATE);
+  const [results, setResults] = useState({ mode: 'artisan', category: null, services: [], artisans: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bookingTarget, setBookingTarget] = useState(null);
-  const [filters, setFilters] = useState({
-    q: query,
-    craft: '',
-    city: '',
-    state: '',
-    minRating: 0,
-    aroundRadius: '',
-  });
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(categoryParam || '');
-  const [selectedService, setSelectedService] = useState(serviceParam || '');
-  const [minRatingFilter, setMinRatingFilter] = useState(0);
+  const [searchOpen, setSearchOpen] = useState(false);
 
-  // Fetch categories for filter
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await axios.get(`${API_CONFIG.BASE_URL}/api/categories`);
-        const list = res.data?.data || res.data;
-        setCategories(Array.isArray(list) ? list : []);
-      } catch (err) {
-        console.error('Failed to load categories:', err);
-      }
-    };
-    fetchCategories();
-  }, []);
+  // Filter state
+  const [activeTab, setActiveTab] = useState('all');
+  const [sortBy, setSortBy] = useState('relevance');
+  const [minRating, setMinRating] = useState(0);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
 
+  // BottomSheet states
+  const [sortSheetOpen, setSortSheetOpen] = useState(false);
+  const [ratingSheetOpen, setRatingSheetOpen] = useState(false);
+
+  const closeSearch = useCallback(() => setSearchOpen(false), []);
+
+  // Fetch results
   useEffect(() => {
     const controller = new AbortController();
     const fetchResults = async () => {
@@ -66,221 +74,238 @@ const SearchResults = () => {
         if (query) params.set('q', query);
         if (categoryParam) params.set('category', categoryParam);
         if (serviceParam) params.set('service', serviceParam);
-        if (filters.craft) params.set('craft', filters.craft);
-        if (filters.city) params.set('city', filters.city);
-        if (filters.state) params.set('state', filters.state);
-        if (filters.minRating > 0) params.set('minRating', filters.minRating);
 
-        const response = await api.get(`/api/search?${params.toString()}`, { signal: controller.signal });
+        const { data } = await api.get(`/api/search?${params.toString()}`, { signal: controller.signal });
         if (controller.signal.aborted) return;
-        if (response.data?.success) {
+        if (data?.success) {
           setResults({
-            mode: response.data.mode || 'artisan',
-            category: response.data.category || null,
-            services: response.data.services || [],
-            artisans: response.data.artisans || [],
+            mode: data.mode || 'artisan',
+            category: data.category || null,
+            services: data.services || [],
+            artisans: data.artisans || [],
           });
         } else {
-          setResults(DEFAULT_STATE);
+          setResults({ mode: 'artisan', category: null, services: [], artisans: [] });
         }
       } catch (err) {
         if (controller.signal.aborted) return;
-        console.error('Search error:', err);
         setError(err);
-        setResults(DEFAULT_STATE);
+        setResults({ mode: 'artisan', category: null, services: [], artisans: [] });
       } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
-
     fetchResults();
     return () => controller.abort();
-  }, [query, categoryParam, serviceParam, filters]);
+  }, [query, categoryParam, serviceParam]);
 
+  // Heading
   const heading = useMemo(() => {
-    if (results.mode === 'category' && results.category) {
-      return `${results.category.name} Services`;
-    }
-    if (results.mode === 'service' && results.services[0]?.name) {
-      return `${results.services[0].name} Providers`;
-    }
-    if (categoryParam) {
-      return `${categoryParam} Artisans`;
-    }
-    if (query) {
-      return `Results for "${query}"`;
-    }
-    return 'Artisans';
+    if (results.mode === 'category' && results.category) return `${results.category.name} Services`;
+    if (results.mode === 'service' && results.services[0]?.name) return `${results.services[0].name} Providers`;
+    if (categoryParam) return `${categoryParam} Artisans`;
+    if (query) return `Results for "${query}"`;
+    return 'Browse Artisans';
   }, [results, categoryParam, query]);
 
-  const totalCount = useMemo(() => {
-    if (results.mode === 'artisan') return results.artisans.length;
-    if (results.mode === 'service') return results.services.length;
-    if (results.mode === 'category') {
-      return results.services.reduce((acc, service) => acc + (service.offerings?.length || 0), 0);
-    }
-    return 0;
-  }, [results]);
+  // Filtered + sorted artisans
+  const filteredArtisans = useMemo(() => {
+    let list = [...results.artisans];
+    if (verifiedOnly) list = list.filter((a) => a.verified);
+    if (minRating > 0) list = list.filter((a) => (a.averageRating || 0) >= minRating);
+    if (sortBy === 'rating') list.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+    if (sortBy === 'newest') list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    return list;
+  }, [results.artisans, verifiedOnly, minRating, sortBy]);
 
-  // Services for the currently selected category
-  const categoryServices = useMemo(() => {
-    if (!selectedCategory) return [];
-    const cat = categories.find(c => (c.slug || c.name) === selectedCategory);
-    return cat?.suggestedServices || [];
-  }, [selectedCategory, categories]);
+  // Filtered services
+  const filteredServices = useMemo(() => {
+    let list = results.mode === 'category'
+      ? results.services.flatMap((s) => (s.offerings || []).map((o) => ({ ...o, groupName: s.name })))
+      : [...results.services];
+    if (verifiedOnly) list = list.filter((s) => s.artisan?.verified);
+    if (sortBy === 'rating') list.sort((a, b) => (b.artisan?.averageRating || 0) - (a.artisan?.averageRating || 0));
+    return list;
+  }, [results.services, results.mode, verifiedOnly, sortBy]);
 
-  const handleCategoryFilter = (categorySlug) => {
-    setSelectedCategory(categorySlug);
-    setSelectedService(''); // reset service when category changes
-    const newParams = new URLSearchParams(searchParams);
-    if (categorySlug) {
-      newParams.set('category', categorySlug);
-    } else {
-      newParams.delete('category');
-    }
-    newParams.delete('service');
-    setSearchParams(newParams);
-  };
+  // Tab counts
+  const tabsWithCounts = useMemo(() => TABS.map((tab) => {
+    if (tab.key === 'all') return { ...tab, count: filteredArtisans.length + filteredServices.length };
+    if (tab.key === 'artisans') return { ...tab, count: filteredArtisans.length };
+    if (tab.key === 'services') return { ...tab, count: filteredServices.length };
+    return tab;
+  }), [filteredArtisans.length, filteredServices.length]);
 
-  const handleServiceFilter = (serviceName) => {
-    setSelectedService(serviceName);
-    const newParams = new URLSearchParams(searchParams);
-    if (serviceName) {
-      newParams.set('service', serviceName);
-    } else {
-      newParams.delete('service');
-    }
-    setSearchParams(newParams);
-  };
+  // Filter chips
+  const filterChips = useMemo(() => [
+    {
+      key: 'sort',
+      label: `Sort: ${SORT_OPTIONS.find((o) => o.value === sortBy)?.label || 'Relevance'}`,
+      active: sortBy !== 'relevance',
+      onClick: () => setSortSheetOpen(true),
+    },
+    {
+      key: 'rating',
+      label: minRating > 0 ? `${minRating}+ Stars` : 'Rating',
+      active: minRating > 0,
+      onClick: () => setRatingSheetOpen(true),
+    },
+    {
+      key: 'verified',
+      label: 'Verified',
+      active: verifiedOnly,
+      onClick: () => setVerifiedOnly((v) => !v),
+    },
+  ], [sortBy, minRating, verifiedOnly]);
 
-  const handleRatingFilter = (rating) => {
-    setMinRatingFilter(rating);
-    setFilters({ ...filters, minRating: rating });
-  };
-
-  const handleViewProfile = (artisan) => {
-    if (artisan.publicId) {
-      navigate(`/${artisan.publicId}`);
-    } else {
-      showToast('Profile not available', 'error');
-    }
-  };
-
-  const handleChat = (artisan) => {
-    if (userType !== 'user') {
-      showToast('Please log in as a customer to chat with artisans', 'error');
-      return;
-    }
-    navigate(`/messages?artisan=${artisan._id || artisan.publicId}`);
-  };
-
-  const handleBook = (artisan, service = null) => {
+  const handleBook = useCallback((artisan, service = null) => {
     if (userType !== 'user') {
       showToast('Please log in as a customer to book services', 'error');
       return;
     }
     setBookingTarget({ artisan, service });
-  };
+  }, [userType, showToast]);
+
+  const showArtisans = activeTab === 'all' || activeTab === 'artisans';
+  const showServices = activeTab === 'all' || activeTab === 'services';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <SEO
-        title={`${heading} | KalaSetu`}
-        description={`Find artisans and services for ${heading}`}
-      />
+    <div className="min-h-screen bg-surface-muted">
+      <SEO title={`${heading} | KalaSetu`} description={`Find artisans and services for ${heading}`} />
 
-      <div className="container mx-auto px-4 py-8">
-        <header className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{heading}</h1>
-          <p className="text-gray-600">
-            {loading ? 'Fetching live data...' : `Showing ${totalCount} result${totalCount === 1 ? '' : 's'}`}
-          </p>
-          {error && (
-            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              Something went wrong while fetching results. Please try again.
-            </div>
-          )}
-        </header>
-
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Left Sidebar - Filters */}
-          <aside className="w-full md:w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-sm p-4 space-y-4 sticky top-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Filters</h2>
-              
-              {/* Search by Category */}
-              <div>
-                <label className="block text-sm font-semibold mb-2">Search by Category</label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => handleCategoryFilter(e.target.value)}
-                  className="w-full border rounded px-3 py-2 text-sm"
-                >
-                  <option value="">All Categories</option>
-                  {categories.map((cat) => (
-                    <option key={cat._id || cat.slug} value={cat.slug || cat.name}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Search by Service (shows when category is selected) */}
-              {categoryServices.length > 0 && (
-                <div>
-                  <label className="block text-sm font-semibold mb-2">Service</label>
-                  <select
-                    value={selectedService}
-                    onChange={(e) => handleServiceFilter(e.target.value)}
-                    className="w-full border rounded px-3 py-2 text-sm"
-                  >
-                    <option value="">All Services</option>
-                    {categoryServices.map((svc) => (
-                      <option key={svc.name} value={svc.name}>
-                        {svc.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Search by Rating */}
-              <div>
-                <label className="block text-sm font-semibold mb-2">Search by Rating</label>
-                <select
-                  value={minRatingFilter}
-                  onChange={(e) => handleRatingFilter(Number(e.target.value))}
-                  className="w-full border rounded px-3 py-2 text-sm"
-                >
-                  <option value={0}>All Ratings</option>
-                  <option value={4.5}>4.5+ Stars</option>
-                  <option value={4}>4+ Stars</option>
-                  <option value={3}>3+ Stars</option>
-                  <option value={2}>2+ Stars</option>
-                  <option value={1}>1+ Star</option>
-                </select>
-              </div>
-            </div>
-          </aside>
-
-          {/* Main Content */}
-          <main className="flex-1">
-            {loading ? (
-              <LoadingState mode={results.mode} />
-            ) : (
-              <ResultsView
-                results={results}
-                onBook={handleBook}
-                onChat={handleChat}
-                onViewProfile={handleViewProfile}
-              />
-            )}
-          </main>
-        </div>
+      {/* Tappable search header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <button
+          onClick={() => setSearchOpen(true)}
+          className="w-full flex items-center gap-3 px-4 py-2.5 bg-gray-100 rounded-card text-left text-sm text-gray-500 hover:bg-gray-200 transition-colors max-w-container mx-auto"
+        >
+          <Search className="h-4 w-4 text-gray-400" />
+          {query || 'Search for artisans, services...'}
+        </button>
       </div>
 
+      <SearchOverlay open={searchOpen} onClose={closeSearch} />
+
+      {/* Tabs */}
+      <TabBar tabs={tabsWithCounts} activeTab={activeTab} onTabChange={setActiveTab} />
+
+      {/* Filter chips */}
+      <div className="px-4 py-2 max-w-container mx-auto">
+        <FilterChips chips={filterChips} />
+      </div>
+
+      {/* Header */}
+      <div className="px-4 max-w-container mx-auto">
+        <div className="flex items-center justify-between py-3">
+          <div>
+            <h1 className="text-lg font-display font-bold text-gray-900">{heading}</h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {loading ? 'Searching...' : `${filteredArtisans.length + filteredServices.length} results`}
+            </p>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mb-4 rounded-card border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700">
+            Something went wrong. Please try again.
+          </div>
+        )}
+      </div>
+
+      {/* Results */}
+      <main className="px-4 pb-8 max-w-container mx-auto">
+        {loading ? (
+          <SkeletonGrid />
+        ) : (
+          <>
+            {/* Artisan results */}
+            {showArtisans && filteredArtisans.length > 0 && (
+              <section>
+                {activeTab === 'all' && (
+                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Artisans</h2>
+                )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+                  {filteredArtisans.map((artisan) => (
+                    <ArtisanCard key={artisan.publicId || artisan._id} artisan={artisan} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Service results */}
+            {showServices && filteredServices.length > 0 && (
+              <section>
+                {activeTab === 'all' && (
+                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Services</h2>
+                )}
+                <div className="space-y-3">
+                  {filteredServices.map((service) => (
+                    <ServiceCard
+                      key={service.serviceId || `${service.name}-${service.artisan?._id}`}
+                      service={service}
+                      onBook={handleBook}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Empty state */}
+            {!loading && filteredArtisans.length === 0 && filteredServices.length === 0 && (
+              <EmptyState
+                icon={<Search className="h-12 w-12" />}
+                title="No results found"
+                description={query ? `We couldn't find anything for "${query}". Try different keywords.` : 'Try searching for an artisan or service.'}
+                action={
+                  <button
+                    onClick={() => setSearchOpen(true)}
+                    className="px-4 py-2 bg-brand-500 text-white rounded-card text-sm font-medium hover:bg-brand-600 transition-colors"
+                  >
+                    Search Again
+                  </button>
+                }
+              />
+            )}
+          </>
+        )}
+      </main>
+
+      {/* Sort BottomSheet */}
+      <BottomSheet open={sortSheetOpen} onClose={() => setSortSheetOpen(false)} title="Sort By">
+        <div className="space-y-1">
+          {SORT_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { setSortBy(opt.value); setSortSheetOpen(false); }}
+              className={`w-full text-left px-3 py-3 rounded-lg text-sm transition-colors ${
+                sortBy === opt.value ? 'bg-brand-50 text-brand-600 font-medium' : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </BottomSheet>
+
+      {/* Rating BottomSheet */}
+      <BottomSheet open={ratingSheetOpen} onClose={() => setRatingSheetOpen(false)} title="Minimum Rating">
+        <div className="space-y-1">
+          {RATING_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { setMinRating(opt.value); setRatingSheetOpen(false); }}
+              className={`w-full text-left px-3 py-3 rounded-lg text-sm flex items-center gap-2 transition-colors ${
+                minRating === opt.value ? 'bg-brand-50 text-brand-600 font-medium' : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {opt.value > 0 && <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />}
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </BottomSheet>
+
+      {/* Booking modal */}
       {bookingTarget && (
         <BookServiceModal
           target={bookingTarget}
@@ -293,285 +318,69 @@ const SearchResults = () => {
   );
 };
 
-const LoadingState = ({ mode }) => {
-  const placeholderCount = mode === 'artisan' ? 6 : 3;
-  return (
-    <div className="grid gap-6 md:grid-cols-1">
-      {Array.from({ length: placeholderCount }).map((_, index) => (
-        <div key={`loading-${index}`} className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
-          <div className="flex gap-6">
-            <div className="w-24 h-24 bg-gray-200 rounded-lg"></div>
-            <div className="flex-1 space-y-3">
-              <div className="h-5 bg-gray-200 rounded w-1/3"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-            </div>
-          </div>
+/* ─── Skeleton loading grid ─── */
+const SkeletonGrid = () => (
+  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+    {Array.from({ length: 8 }).map((_, i) => (
+      <div key={i} className="rounded-card bg-white shadow-card overflow-hidden animate-pulse">
+        <div className="aspect-[4/3] bg-gray-200" />
+        <div className="p-3 space-y-2">
+          <div className="h-3.5 bg-gray-200 rounded w-3/4" />
+          <div className="h-3 bg-gray-200 rounded w-1/2" />
+          <div className="h-3 bg-gray-200 rounded w-1/3" />
         </div>
-      ))}
-    </div>
-  );
-};
-
-const ResultsView = ({ results, onBook, onChat, onViewProfile }) => {
-  if (results.mode === 'category') {
-    if (results.services.length === 0) {
-      return <EmptyState message="No services found for this category yet." />;
-    }
-    return (
-      <div className="space-y-8">
-        {results.services.map((service) => (
-          <section key={service.name}>
-            <header className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-900">{service.name}</h2>
-                <p className="text-sm text-gray-500">
-                  {service.offerings?.length || 0} artisan{service.offerings?.length === 1 ? '' : 's'} available
-                </p>
-              </div>
-            </header>
-            <div className="space-y-4">
-              {service.offerings?.map((offering) => (
-                <ServiceCard key={offering.serviceId} service={offering} onBook={onBook} />
-              ))}
-            </div>
-          </section>
-        ))}
       </div>
-    );
-  }
-
-  if (results.mode === 'service') {
-    if (results.services.length === 0) {
-      return <EmptyState message="No artisans currently offer this service." />;
-    }
-    return (
-      <div className="space-y-4">
-        {results.services.map((service) => (
-          <ServiceCard key={service.serviceId} service={service} onBook={onBook} />
-        ))}
-      </div>
-    );
-  }
-
-  if (results.artisans.length === 0) {
-    return <EmptyState message="No artisans matched your search yet." />;
-  }
-
-  return (
-    <div className="space-y-4">
-      {results.artisans.map((artisan) => (
-        <ArtisanCard
-          key={artisan.publicId || artisan._id}
-          artisan={artisan}
-          onBook={onBook}
-          onChat={onChat}
-          onViewProfile={onViewProfile}
-        />
-      ))}
-    </div>
-  );
-};
-
-const StarRating = ({ rating, count }) => (
-  <div className="flex items-center gap-1.5">
-    <div className="flex items-center">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <svg
-          key={star}
-          className={`w-4 h-4 ${star <= Math.round(rating || 0) ? 'text-yellow-400' : 'text-gray-200'}`}
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-        </svg>
-      ))}
-    </div>
-    <span className="text-sm font-medium text-gray-700">{(rating || 0).toFixed(1)}</span>
-    {count !== undefined && <span className="text-sm text-gray-400">({count})</span>}
+    ))}
   </div>
 );
 
-const ArtisanCard = ({ artisan, onBook, onChat, onViewProfile }) => {
-  const [services, setServices] = useState([]);
-  const [loadingServices, setLoadingServices] = useState(true);
-
-  useEffect(() => {
-    const fetchServices = async () => {
-      if (!artisan.publicId) {
-        setLoadingServices(false);
-        return;
-      }
-      try {
-        const res = await axios.get(`${API_CONFIG.BASE_URL}/api/services/artisan/${artisan.publicId}`);
-        if (res.data.success) {
-          setServices(res.data.data || []);
-        }
-      } catch (err) {
-        if (import.meta.env.DEV) console.error('Failed to load services:', err);
-      } finally {
-        setLoadingServices(false);
-      }
-    };
-    fetchServices();
-  }, [artisan.publicId]);
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-      <div className="flex flex-col md:flex-row">
-        {/* Left Side - Profile Picture */}
-        <div className="w-full md:w-40 h-40 md:h-auto bg-gray-100 flex-shrink-0">
-          <img
-            src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 160, height: 160 })}
-            alt={artisan.fullName}
-            className="w-full h-full object-cover"
-            onError={(e) => { e.target.src = '/default-avatar.png'; }}
-          />
-        </div>
-
-        {/* Right Side - Content */}
-        <div className="flex-1 p-5">
-          {/* Name + Verification */}
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-xl font-semibold text-gray-900">{artisan.fullName}</h3>
-            {artisan.verified && (
-              <svg className="w-5 h-5 text-brand-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-label="Verified artisan">
-                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-            )}
-          </div>
-
-          {/* Rating */}
-          <div className="mb-3">
-            <StarRating rating={artisan.averageRating} count={artisan.totalReviews} />
-          </div>
-
-          {/* Craft Badge */}
-          {artisan.craft && (
-            <span className="inline-block px-2.5 py-0.5 bg-brand-50 text-brand-700 text-xs font-medium rounded-full mb-3">
-              {artisan.craft}
-            </span>
-          )}
-
-          {/* Bio */}
-          <p className="text-sm text-gray-600 line-clamp-2 mb-4">
-            {artisan.bio || 'Experienced artisan delivering quality craftsmanship.'}
-          </p>
-
-          {/* Services Section */}
-          <div className="mb-4">
-            <p className="text-sm font-medium text-gray-700 mb-1.5">Services:</p>
-            {loadingServices ? (
-              <p className="text-xs text-gray-400">Loading...</p>
-            ) : services.length > 0 ? (
-              <div className="space-y-0.5">
-                {services.slice(0, 3).map((service) => (
-                  <div key={service._id} className="text-xs text-gray-600">
-                    • {service.name} – ₹{service.price || 'Contact for pricing'} ({service.durationMinutes || 60} min)
-                  </div>
-                ))}
-                {services.length > 3 && (
-                  <p className="text-xs text-gray-400">+ {services.length - 3} more</p>
-                )}
-              </div>
-            ) : (
-              <p className="text-xs text-gray-400">No services listed yet.</p>
-            )}
-          </div>
-
-          {/* Portfolio Images */}
-          {artisan.portfolioImageUrls && artisan.portfolioImageUrls.length > 0 && (
-            <div className="mb-4">
-              <p className="text-sm font-medium text-gray-700 mb-1.5">Portfolio:</p>
-              <div className="flex gap-2 flex-wrap">
-                {artisan.portfolioImageUrls.slice(0, 4).map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={optimizeImage(img, { width: 96, height: 96, crop: 'fill' })}
-                    alt={`Portfolio ${idx + 1}`}
-                    className="w-24 h-24 object-cover rounded-lg border border-gray-200"
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
-            <button
-              onClick={() => onViewProfile(artisan)}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-            >
-              View Profile
-            </button>
-            <button
-              onClick={() => onChat(artisan)}
-              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors text-sm font-medium"
-            >
-              Chat
-            </button>
-            <button
-              onClick={() => onBook(artisan)}
-              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors text-sm font-medium"
-            >
-              Book
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
+/* ─── Service result card ─── */
 const ServiceCard = ({ service, onBook }) => {
   const navigate = useNavigate();
   const artisan = service.artisan || {};
   const serviceName = service.name || service.serviceName;
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
-      <div className="flex items-start gap-4">
+    <div className="bg-white rounded-card shadow-card p-4 hover:shadow-card-hover transition-shadow">
+      <div className="flex items-start gap-3">
         <img
-          src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 72, height: 72 })}
+          src={optimizeImage(artisan.profileImage || artisan.profileImageUrl || '/default-avatar.png', { width: 64, height: 64 })}
           alt={artisan.fullName}
-          className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+          className="w-14 h-14 rounded-card object-cover shrink-0"
           onError={(e) => { e.target.src = '/default-avatar.png'; }}
         />
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900">{serviceName}</h3>
-          <p className="text-sm text-gray-500">
-            by <span className="font-medium text-gray-800">{artisan.fullName}</span>
+          <h3 className="text-sm font-semibold text-gray-900 truncate">{serviceName}</h3>
+          <p className="text-xs text-gray-500">
+            by <span className="font-medium text-gray-700">{artisan.fullName}</span>
           </p>
-          {(artisan.averageRating > 0 || artisan.totalReviews > 0) && (
+          {artisan.averageRating > 0 && (
             <div className="mt-1">
-              <StarRating rating={artisan.averageRating} count={artisan.totalReviews} />
+              <Badge variant="rating" rating={artisan.averageRating} count={artisan.totalReviews} />
             </div>
           )}
-          <p className="mt-2 text-sm text-gray-600 line-clamp-2">{service.description || artisan.bio || 'Trusted local artisan offering professional services.'}</p>
         </div>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-gray-100">
-        <div className="text-sm text-gray-600">
-          <div>
-            <span className="font-medium text-gray-800">Price:</span> ₹{service.price || 0}
-          </div>
-          <div>
-            <span className="font-medium text-gray-800">Duration:</span> {service.durationMinutes || 60} minutes
-          </div>
+
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        <div className="text-sm">
+          <span className="font-semibold text-gray-900">&#8377;{service.price || 0}</span>
+          <span className="text-gray-400 ml-1 text-xs">{service.durationMinutes || 60} min</span>
         </div>
         <div className="flex gap-2">
           {artisan.publicId && (
             <button
               type="button"
               onClick={() => navigate(`/${artisan.publicId}`)}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-card hover:bg-gray-200 transition-colors"
             >
-              View Profile
+              Profile
             </button>
           )}
           <button
             type="button"
-            onClick={() => onBook({ service, artisan })}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors text-sm font-medium"
+            onClick={() => onBook(artisan, service)}
+            className="px-3 py-1.5 text-xs font-medium text-white bg-brand-500 rounded-card hover:bg-brand-600 transition-colors"
           >
             Book
           </button>
@@ -581,12 +390,7 @@ const ServiceCard = ({ service, onBook }) => {
   );
 };
 
-const EmptyState = ({ message }) => (
-  <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
-    {message}
-  </div>
-);
-
+/* ─── Booking modal (preserved from original) ─── */
 const BookServiceModal = ({ target, onClose, userType, showToast }) => {
   const [startTime, setStartTime] = useState('');
   const [notes, setNotes] = useState('');
@@ -604,12 +408,16 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
       showToast?.('Please log in as a customer to book a service.', 'error');
       return;
     }
+    const artisanId = artisan?._id || artisan?.id;
+    if (!artisanId) {
+      showToast?.('Cannot identify this artisan. Try booking from their profile page.', 'error');
+      return;
+    }
     setSubmitting(true);
     try {
       const start = new Date(startTime);
-      // End time will be calculated by backend based on service duration
       await api.post('/api/bookings', {
-        artisan: artisan._id || artisan.id,
+        artisan: artisanId,
         serviceId: service?.serviceId || service?._id,
         start,
         notes,
@@ -618,7 +426,6 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
       showToast?.('Booking request sent to the artisan!', 'success');
       onClose();
     } catch (err) {
-      console.error('Booking error:', err);
       const message = err.response?.data?.message || 'Failed to create booking. Please try again.';
       showToast?.(message, 'error');
     } finally {
@@ -627,63 +434,50 @@ const BookServiceModal = ({ target, onClose, userType, showToast }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-lg rounded-lg bg-white shadow-2xl">
-        <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">Book {service?.name || 'Service'}</h3>
-            <p className="text-sm text-gray-500">With {artisan?.fullName}</p>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
-        </header>
-        <form onSubmit={handleSubmit} className="px-6 py-6 space-y-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">
-              Preferred start time {service && `(Duration: ${service.durationMinutes || 60} minutes)`}
-            </label>
-            <input
-              type="datetime-local"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-              required
-            />
-            {service && (
-              <p className="text-xs text-gray-500 mt-1">
-                End time will be calculated automatically based on service duration
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">Notes for the artisan (optional)</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-              placeholder="Share any specifics, venue details, or questions."
-            />
-          </div>
-          <footer className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg"
-              disabled={submitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors disabled:opacity-60"
-              disabled={submitting}
-            >
-              {submitting ? 'Sending...' : 'Confirm Booking'}
-            </button>
-          </footer>
-        </form>
-      </div>
-    </div>
+    <BottomSheet open={true} onClose={onClose} title={`Book ${service?.name || 'Service'}`}>
+      <p className="text-sm text-gray-500 mb-4">With {artisan?.fullName}</p>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="text-sm font-medium text-gray-700 block mb-1">
+            Preferred start time {service && `(${service.durationMinutes || 60} min)`}
+          </label>
+          <input
+            type="datetime-local"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+            className="w-full rounded-card border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+            required
+          />
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-700 block mb-1">Notes (optional)</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            className="w-full rounded-card border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+            placeholder="Share any specifics, venue details, or questions."
+          />
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 rounded-card hover:bg-gray-200 transition-colors"
+            disabled={submitting}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="flex-1 px-4 py-2.5 text-sm font-medium text-white bg-brand-500 rounded-card hover:bg-brand-600 transition-colors disabled:opacity-60"
+            disabled={submitting}
+          >
+            {submitting ? 'Sending...' : 'Confirm Booking'}
+          </button>
+        </div>
+      </form>
+    </BottomSheet>
   );
 };
 

@@ -14,7 +14,7 @@ const defaultCenter = {
 };
 
 export default function ArtisanMap({ artisans, onMarkerClick }) {
-  const [map, setMap] = useState(null);
+  const [, setMap] = useState(null);
   const [selectedArtisan, setSelectedArtisan] = useState(null);
 
   const safeArtisans = Array.isArray(artisans) ? artisans : [];
@@ -42,7 +42,7 @@ export default function ArtisanMap({ artisans, onMarkerClick }) {
         mapInstance.fitBounds(bounds);
       }
     }
-  }, [artisans]);
+  }, [artisans]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onUnmount = useCallback(() => {
     setMap(null);

@@ -1,9 +1,33 @@
+/**
+ * @file notificationController.js — In-App & Push Notifications
+ *
+ * Manages in-app notification listing, read status, and push notification
+ * sending via OneSignal. Uses `protectAny` for in-app notifications and
+ * `protectAdmin` for broadcast push notifications.
+ *
+ * Endpoints:
+ *  GET    /api/notifications           — List notifications for current user (protectAny)
+ *  GET    /api/notifications/unread    — Get unread notification count
+ *  PUT    /api/notifications/:id/read  — Mark a notification as read
+ *  PUT    /api/notifications/read-all  — Mark all notifications as read
+ *  DELETE /api/notifications/:id       — Delete a notification
+ *  POST   /api/notifications/push      — Send push notification (protectAdmin)
+ *  POST   /api/notifications/broadcast — Broadcast push to all users (protectAdmin)
+ *
+ * In-app notifications are stored in MongoDB (notificationModel).
+ * Push notifications are sent via OneSignal (utils/onesignal.js).
+ *
+ * @see utils/notificationService.js — Creates in-app notifications
+ * @see utils/onesignal.js — OneSignal push integration
+ * @see kalasetu-frontend/src/context/NotificationContext.jsx — Frontend polling
+ */
+
 import asyncHandler from '../utils/asyncHandler.js';
-import { 
-  sendNotificationToUser, 
+import {
+  sendNotificationToUser,
   sendNotificationToUsers,
   sendBroadcastNotification,
-  oneSignalClient 
+  oneSignalClient
 } from '../utils/onesignal.js';
 import Notification from '../models/notificationModel.js';
 
@@ -82,7 +106,9 @@ export const sendToUsers = asyncHandler(async (req, res) => {
     url: url || '',
   }));
 
-  await Notification.insertMany(docs, { ordered: false }).catch(() => {});
+  await Notification.insertMany(docs, { ordered: false }).catch((err) => {
+    console.error('Failed to insert some notifications:', err.message);
+  });
 
   const result = await sendNotificationToUsers(ids, {
     title,

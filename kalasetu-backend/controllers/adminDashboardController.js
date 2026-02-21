@@ -1,3 +1,31 @@
+/**
+ * @file adminDashboardController.js — Admin Panel Operations
+ *
+ * Comprehensive admin panel — dashboard analytics, user/artisan management,
+ * booking oversight, payment management, review moderation, refund processing,
+ * and support ticket management. All endpoints require `protectAdmin`.
+ *
+ * Dashboard Endpoints:
+ *  GET /api/admin/dashboard/stats      — Platform-wide counts and revenue
+ *  GET /api/admin/dashboard/analytics  — Time-series data for charts
+ *
+ * Management Endpoints:
+ *  GET/PUT/DELETE /api/admin/artisans/*  — Artisan management (verify, suspend)
+ *  GET/PUT/DELETE /api/admin/users/*     — User management
+ *  GET/PUT        /api/admin/bookings/*  — Booking oversight
+ *  GET            /api/admin/payments/*  — Payment history
+ *  GET/PUT        /api/admin/reviews/*   — Review moderation (flag, remove)
+ *  GET/PUT        /api/admin/refunds/*   — Process refund requests
+ *  GET/PUT        /api/admin/support/*   — Support ticket management
+ *
+ * This is the largest controller file — it consolidates all admin operations
+ * to keep the admin routing simple (single controller for the admin panel).
+ *
+ * @see routes/adminRoutes.js — All admin route definitions
+ * @see middleware/authMiddleware.js — `protectAdmin` + `checkPermission`
+ * @see kalasetu-frontend/src/pages/admin/ — Admin panel frontend
+ */
+
 import Admin from '../models/adminModel.js';
 import Artisan from '../models/artisanModel.js';
 import User from '../models/userModel.js';
@@ -13,6 +41,22 @@ import Notification from '../models/notificationModel.js';
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Escape a value for CSV output to prevent formula injection (=, +, -, @) */
+function csvEscape(val) {
+  const s = String(val ?? '').replace(/"/g, '""');
+  return `"${s}"`;
+}
+
+// Sanitize sort param: only allow field names with optional - prefix, space-separated
+// Prevents NoSQL injection via sort (e.g. {$where: "sleep(5000)"})
+function sanitizeSort(sort, fallback = '-createdAt') {
+  if (typeof sort !== 'string') return fallback;
+  // Each token must be an optional - followed by alphanumeric/underscores/dots
+  const tokens = sort.trim().split(/\s+/);
+  const safe = tokens.every(t => /^-?[a-zA-Z_][\w.]*$/.test(t));
+  return safe ? sort : fallback;
 }
 
 export const getDashboardStats = async (req, res) => {
@@ -132,7 +176,7 @@ export const getAllArtisans = async (req, res) => {
     }
     if (status !== 'all') query.isActive = status === 'active';
     if (verified !== 'all') query.isVerified = verified === 'verified';
-    const artisans = await Artisan.find(query).select('-password').sort(sort).limit(limit * 1).skip((page - 1) * limit).lean();
+    const artisans = await Artisan.find(query).select('-password').sort(sanitizeSort(sort)).limit(limit * 1).skip((page - 1) * limit).lean();
     const count = await Artisan.countDocuments(query);
     res.status(200).json({ success: true, data: artisans, pagination: { total: count, page: parseInt(page), pages: Math.ceil(count / limit) } });
   } catch (error) {
@@ -152,7 +196,7 @@ export const getAllUsers = async (req, res) => {
         { email: { $regex: escaped, $options: 'i' } }
       ];
     }
-    const users = await User.find(query).select('-password').sort(sort).limit(limit * 1).skip((page - 1) * limit).lean();
+    const users = await User.find(query).select('-password').sort(sanitizeSort(sort)).limit(limit * 1).skip((page - 1) * limit).lean();
     const count = await User.countDocuments(query);
     res.status(200).json({ success: true, data: users, pagination: { total: count, page: parseInt(page), pages: Math.ceil(count / limit) } });
   } catch (error) {
@@ -251,7 +295,7 @@ export const getAllReviews = async (req, res) => {
     const reviews = await Review.find(query)
       .populate('artisan', 'fullName email')
       .populate('user', 'fullName email')
-      .sort(sort)
+      .sort(sanitizeSort(sort))
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .lean();
@@ -267,7 +311,7 @@ export const moderateReview = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, reason } = req.body;
-    const review = await Review.findByIdAndUpdate(id, { status }, { new: true });
+    const review = await Review.findByIdAndUpdate(id, { status }, { new: true, runValidators: true });
     if (!review) return res.status(404).json({ success: false, message: 'Review not found' });
     await req.user.logActivity('moderate_review', 'review', id, { status, reason });
     res.status(200).json({ success: true, data: review, message: 'Review moderated successfully' });
@@ -281,7 +325,7 @@ export const deleteReview = async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body || {};
-    const review = await Review.findByIdAndUpdate(id, { status: 'removed' }, { new: true });
+    const review = await Review.findByIdAndUpdate(id, { status: 'removed' }, { new: true, runValidators: true });
     if (!review) return res.status(404).json({ success: false, message: 'Review not found' });
     await req.user.logActivity('delete_review', 'review', id, { reason });
     res.status(200).json({ success: true, message: 'Review removed successfully' });
@@ -319,7 +363,7 @@ export const getReviewsStats = async (req, res) => {
 export const restoreReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const review = await Review.findByIdAndUpdate(id, { status: 'active' }, { new: true });
+    const review = await Review.findByIdAndUpdate(id, { status: 'active' }, { new: true, runValidators: true });
     if (!review) return res.status(404).json({ success: false, message: 'Review not found' });
     await req.user.logActivity('restore_review', 'review', id);
     res.status(200).json({ success: true, data: review, message: 'Review restored successfully' });
@@ -393,7 +437,7 @@ export const getAllPayments = async (req, res) => {
       // Simple CSV implementation
       let csv = 'ID,User,Artisan,Amount,Status,Date,Payment ID\n';
       payments.forEach(p => {
-        csv += `${p._id},${p.user?.fullName || ''},${p.artisan?.fullName || ''},${p.amount},${p.status},${p.createdAt},${p.razorpayPaymentId || ''}\n`;
+        csv += `${csvEscape(p._id)},${csvEscape(p.user?.fullName)},${csvEscape(p.artisan?.fullName)},${p.amount},${csvEscape(p.status)},${csvEscape(p.createdAt)},${csvEscape(p.razorpayPaymentId)}\n`;
       });
       return res.send(csv);
     }
@@ -456,8 +500,7 @@ export const processRefund = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No Razorpay payment ID — cannot process refund' });
     }
 
-    // Actually call Razorpay refund API before marking as refunded
-    const { refundPayment } = await import('../utils/razorpay.js');
+    // Call Razorpay refund API before marking as refunded (uses static import from top of file)
     const refund = await refundPayment(payment.razorpayPaymentId, payment.amount);
     if (!refund) {
       return res.status(502).json({ success: false, message: 'Razorpay refund failed — payment not modified' });
@@ -539,7 +582,7 @@ export const getAllBookings = async (req, res) => {
       bookings.forEach(b => {
         const start = new Date(b.start);
         const duration = b.end ? Math.round((new Date(b.end) - start) / 60000) : 0;
-        csv += `${b._id},${b.user?.fullName || ''},${b.artisan?.fullName || ''},${start.toLocaleDateString()},${start.toLocaleTimeString()},${duration}min,${b.price},${b.status}\n`;
+        csv += `${csvEscape(b._id)},${csvEscape(b.user?.fullName)},${csvEscape(b.artisan?.fullName)},${csvEscape(start.toLocaleDateString())},${csvEscape(start.toLocaleTimeString())},${duration},${b.price},${csvEscape(b.status)}\n`;
       });
       return res.send(csv);
     }
@@ -585,8 +628,13 @@ export const getBookingsStats = async (req, res) => {
 export const cancelBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const booking = await Booking.findByIdAndUpdate(id, { status: 'cancelled' }, { new: true });
+    const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    if (booking.status === 'cancelled' || booking.status === 'completed') {
+      return res.status(400).json({ success: false, message: `Cannot cancel a ${booking.status} booking` });
+    }
+    booking.status = 'cancelled';
+    await booking.save();
     await req.user.logActivity('cancel_booking', 'booking', id);
     res.status(200).json({ success: true, data: booking, message: 'Booking cancelled successfully' });
   } catch (error) {
@@ -640,11 +688,32 @@ export const getSettings = async (req, res) => {
   }
 };
 
+// Whitelist of allowed settings keys to prevent mass assignment
+const ALLOWED_SETTINGS_KEYS = new Set([
+  'platformName', 'supportEmail', 'supportPhone',
+  'platformCommissionRate', 'currency', 'timezone',
+  'minimumBookingNotice', 'maximumAdvanceBooking', 'defaultBookingDuration',
+  'allowSameDayBookings', 'autoConfirmBookings', 'cancellationPolicy',
+  'paymentGateway', 'testMode', 'autoPayoutToArtisans', 'payoutSchedule', 'minimumPayoutAmount',
+  'emailProvider', 'fromName', 'fromEmail',
+  'enableReviews', 'enableVideoCalls', 'enableChat', 'enableLocationSearch',
+  'maintenanceMode',
+]);
+
 export const updateSettings = async (req, res) => {
   try {
-    const newSettings = req.body;
-    // In a real app, save to database
-    // For now, update cache
+    // Only allow whitelisted keys through
+    const newSettings = {};
+    for (const [key, value] of Object.entries(req.body)) {
+      if (ALLOWED_SETTINGS_KEYS.has(key)) {
+        newSettings[key] = value;
+      }
+    }
+
+    if (Object.keys(newSettings).length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid settings provided' });
+    }
+
     settingsCache = { ...settingsCache, ...newSettings };
     await req.user.logActivity('update_settings', 'settings', null, { settings: Object.keys(newSettings) });
     res.status(200).json({
@@ -831,10 +900,10 @@ export const approveRefundRequest = async (req, res) => {
       refundRequest.failureReason = razorpayError.message;
       await refundRequest.save();
 
+      console.error('Razorpay refund failed:', razorpayError.message);
       res.status(500).json({
         success: false,
         message: 'Failed to process refund with payment gateway',
-        error: razorpayError.message
       });
     }
   } catch (error) {
@@ -1275,7 +1344,8 @@ export const getAllSupportTickets = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Admin support error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to process support request' });
   }
 };
 
@@ -1323,7 +1393,8 @@ export const getSupportTicketsStats = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Admin support error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to process support request' });
   }
 };
 
@@ -1436,7 +1507,8 @@ export const respondToTicket = async (req, res) => {
       data: ticket
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Admin support error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to process support request' });
   }
 };
 
@@ -1533,7 +1605,8 @@ export const updateTicketStatus = async (req, res) => {
       data: ticket
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Admin support error:', error.message);
+    res.status(500).json({ success: false, message: 'Failed to process support request' });
   }
 };
 

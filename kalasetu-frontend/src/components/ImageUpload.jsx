@@ -16,7 +16,7 @@ export default function ImageUpload({ onUploadSuccess, currentImage, folder = 'a
       const sigRes = await fetch(`/api/uploads/signature?folder=${encodeURIComponent(folder)}`, {
         credentials: 'include',
       });
-      const { timestamp, signature, api_key, cloud_name, folder } = await sigRes.json();
+      const { timestamp, signature, api_key, cloud_name, folder: uploadFolder, allowed_formats } = await sigRes.json();
 
       // 2) Upload directly to Cloudinary with signature
       const formData = new FormData();
@@ -24,7 +24,8 @@ export default function ImageUpload({ onUploadSuccess, currentImage, folder = 'a
       formData.append('api_key', api_key);
       formData.append('timestamp', timestamp);
       formData.append('signature', signature);
-      formData.append('folder', folder);
+      formData.append('folder', uploadFolder);
+      if (allowed_formats) formData.append('allowed_formats', allowed_formats);
 
       const uploadUrl = `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`;
       const res = await fetch(uploadUrl, { method: 'POST', body: formData });

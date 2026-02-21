@@ -1,4 +1,40 @@
-﻿import bcrypt from 'bcryptjs';
+﻿/**
+ * @file userAuthController.js — Customer (User) Authentication & Profile
+ *
+ * Handles registration, login, logout, password reset, profile management,
+ * bookmarks, ratings, and support for CUSTOMER accounts only.
+ * Artisan auth is in authController.js.
+ *
+ * Auth Endpoints:
+ *  POST /api/users/register        — Register new customer
+ *  POST /api/users/login           — Login with email/phone + password
+ *  GET  /api/users/me              — Get current user profile (requires `userProtect`)
+ *  POST /api/users/logout          — Clear auth cookie
+ *  POST /api/users/forgot-password — Send password reset email
+ *  POST /api/users/reset-password  — Reset password with token
+ *
+ * Profile Endpoints:
+ *  PUT    /api/users/profile       — Update profile (fullName, bio, image)
+ *  POST   /api/users/change-password — Change password (requires current password)
+ *
+ * Bookmark Endpoints:
+ *  GET    /api/users/bookmarks            — List saved artisans
+ *  POST   /api/users/bookmarks/:artisanId — Save an artisan
+ *  DELETE /api/users/bookmarks/:artisanId — Remove saved artisan
+ *
+ * Other Endpoints:
+ *  GET  /api/users/ratings          — User's review statistics
+ *  GET  /api/users/orders           — Order history (placeholder)
+ *  POST /api/users/support/contact  — Create support ticket
+ *  POST /api/users/support/report   — Report an issue
+ *
+ * Auth: Uses `userProtect` middleware (User model only)
+ *
+ * @see authController.js — Artisan authentication
+ * @see middleware/userProtectMiddleware.js — `userProtect` used on protected routes
+ */
+
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import User from '../models/userModel.js';
 import { signJwt, setAuthCookie, clearAuthCookie } from '../utils/generateToken.js';
@@ -79,7 +115,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
   const user = await User.create(userData);
 
   if (user) {
-    const token = signJwt(user._id);
+    const token = signJwt(user._id, 'user');
     setAuthCookie(res, token); // Set HTTP-only cookie
 
     // Send welcome email and verification email
@@ -167,7 +203,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
     throw new Error(`Invalid credentials. ${remaining > 0 ? `${remaining} login attempt(s) left before lockout.` : 'Account locked.'}`);
   }
   await user.resetLoginAttempts();
-  const token = signJwt(user._id);
+  const token = signJwt(user._id, 'user');
   setAuthCookie(res, token); // Set HTTP-only cookie
   res.json({
     _id: user._id,
@@ -344,15 +380,16 @@ export const getOrders = asyncHandler(async (req, res) => {
 // --- Support ---
 // @route POST /api/users/support/contact
 export const contactSupport = asyncHandler(async (req, res) => {
-  const { subject, message, priority } = req.body;
+  const { subject, message, priority, category } = req.body;
   if (!subject || !message) {
     return res.status(400).json({ success: false, message: 'Subject and message are required' });
   }
+  const validCategories = ['booking', 'payment', 'refund', 'technical', 'account', 'other'];
   const SupportTicket = (await import('../models/supportTicketModel.js')).default;
   const ticket = await SupportTicket.create({
     subject,
     description: message,
-    category: 'other',
+    category: validCategories.includes(category) ? category : 'other',
     priority: priority || 'medium',
     createdBy: {
       userId: req.user._id,

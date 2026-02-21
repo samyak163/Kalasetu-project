@@ -80,8 +80,7 @@ export const upsertStreamUser = async (user) => {
       name: user.fullName || user.username,
       image: user.profileImageUrl || user.profileImage || user.avatar || null,
       role: user.role || 'user',
-      // Custom fields
-      email: user.email,
+      // email intentionally omitted — PII should not be sent to third-party services
       accountType: user.accountType || user.role,
       verified: user.verified || false,
     });

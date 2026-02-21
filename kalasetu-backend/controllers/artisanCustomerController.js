@@ -1,3 +1,21 @@
+/**
+ * @file artisanCustomerController.js — Artisan's Customer List
+ *
+ * Provides artisans with a CRM-like view of their customers, aggregated
+ * from booking history. Requires `protect` (artisan-only).
+ *
+ * Endpoints:
+ *  GET /api/artisan/customers — Customer list with booking stats per customer
+ *
+ * Returns per customer: fullName, contact info, totalBookings, totalSpent,
+ * firstBooking, lastBooking — sorted by highest spending.
+ *
+ * Implementation: Uses MongoDB aggregation on Booking collection grouped by user,
+ * then enriches with User model data via a parallel query.
+ *
+ * @see routes/artisanCustomerRoutes.js — Route definition
+ */
+
 import asyncHandler from '../utils/asyncHandler.js';
 import Booking from '../models/bookingModel.js';
 import User from '../models/userModel.js';

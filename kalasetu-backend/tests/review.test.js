@@ -38,6 +38,9 @@ function mockNext() {
   return fn;
 }
 
+// Valid tags for test reviews (must have 1-5 entries per model validator)
+const SAMPLE_TAGS = ['Excellent Craftsmanship'];
+
 describe('Review', () => {
   let artisan, user;
 
@@ -63,6 +66,7 @@ describe('Review', () => {
         user: user._id,
         rating: 4,
         comment: 'Great craftsmanship!',
+        tags: SAMPLE_TAGS,
       });
 
       expect(review._id).toBeDefined();
@@ -71,41 +75,55 @@ describe('Review', () => {
       expect(review.status).toBe('active');
       expect(review.isVerified).toBe(false);
       expect(review.helpfulVotes).toEqual([]);
+      expect(review.tags).toEqual(SAMPLE_TAGS);
     });
 
     it('should reject review without artisan', async () => {
       await expect(
-        Review.create({ user: user._id, rating: 3, comment: 'No artisan' })
+        Review.create({ user: user._id, rating: 3, comment: 'No artisan', tags: SAMPLE_TAGS })
       ).rejects.toThrow();
     });
 
     it('should reject review without user', async () => {
       await expect(
-        Review.create({ artisan: artisan._id, rating: 3, comment: 'No user' })
+        Review.create({ artisan: artisan._id, rating: 3, comment: 'No user', tags: SAMPLE_TAGS })
       ).rejects.toThrow();
     });
 
     it('should reject review without rating', async () => {
       await expect(
-        Review.create({ artisan: artisan._id, user: user._id, comment: 'No rating' })
+        Review.create({ artisan: artisan._id, user: user._id, comment: 'No rating', tags: SAMPLE_TAGS })
       ).rejects.toThrow();
     });
 
-    it('should reject review without comment', async () => {
+    it('should accept review without comment (defaults to empty string)', async () => {
+      const review = await Review.create({
+        artisan: artisan._id, user: user._id, rating: 3, tags: SAMPLE_TAGS,
+      });
+      expect(review.comment).toBe('');
+    });
+
+    it('should reject review without tags', async () => {
       await expect(
-        Review.create({ artisan: artisan._id, user: user._id, rating: 3 })
+        Review.create({ artisan: artisan._id, user: user._id, rating: 3, comment: 'No tags' })
+      ).rejects.toThrow();
+    });
+
+    it('should reject review with empty tags array', async () => {
+      await expect(
+        Review.create({ artisan: artisan._id, user: user._id, rating: 3, comment: 'Empty tags', tags: [] })
       ).rejects.toThrow();
     });
 
     it('should reject rating below 1', async () => {
       await expect(
-        Review.create({ artisan: artisan._id, user: user._id, rating: 0, comment: 'Bad' })
+        Review.create({ artisan: artisan._id, user: user._id, rating: 0, comment: 'Bad', tags: SAMPLE_TAGS })
       ).rejects.toThrow();
     });
 
     it('should reject rating above 5', async () => {
       await expect(
-        Review.create({ artisan: artisan._id, user: user._id, rating: 6, comment: 'Too high' })
+        Review.create({ artisan: artisan._id, user: user._id, rating: 6, comment: 'Too high', tags: SAMPLE_TAGS })
       ).rejects.toThrow();
     });
 
@@ -115,6 +133,7 @@ describe('Review', () => {
         user: user._id,
         rating: 5,
         comment: 'With images',
+        tags: SAMPLE_TAGS,
         images: ['https://example.com/img1.jpg', 'https://example.com/img2.jpg'],
       });
 
@@ -127,6 +146,7 @@ describe('Review', () => {
         user: user._id,
         rating: 4,
         comment: 'Status check',
+        tags: SAMPLE_TAGS,
       });
 
       expect(review.status).toBe('active');
@@ -142,6 +162,7 @@ describe('Review', () => {
         user: user._id,
         rating: 4,
         comment: 'Good work',
+        tags: SAMPLE_TAGS,
       });
     });
 
@@ -283,6 +304,7 @@ describe('Review', () => {
         booking: booking1._id,
         rating: 5,
         comment: 'Excellent!',
+        tags: SAMPLE_TAGS,
         status: 'active',
       });
 
@@ -292,6 +314,7 @@ describe('Review', () => {
         booking: booking2._id,
         rating: 3,
         comment: 'Average',
+        tags: SAMPLE_TAGS,
         status: 'active',
       });
 
@@ -301,6 +324,7 @@ describe('Review', () => {
         booking: booking3._id,
         rating: 4,
         comment: 'Good',
+        tags: SAMPLE_TAGS,
         status: 'active',
       });
 
@@ -343,6 +367,7 @@ describe('Review', () => {
         user: user._id,
         rating: 5,
         comment: 'Great',
+        tags: SAMPLE_TAGS,
         status: 'active',
       });
 
@@ -357,6 +382,7 @@ describe('Review', () => {
         user: user2._id,
         rating: 1,
         comment: 'Spam review',
+        tags: ['Delayed'],
         status: 'flagged',
       });
 

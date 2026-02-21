@@ -18,22 +18,21 @@ const UserDashboardHome = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [bookingsRes, paymentsRes] = await Promise.all([
+          api.get('/api/bookings/me').catch(() => ({ data: { data: [] } })),
+          api.get('/api/payments?type=sent&limit=5').catch(() => ({ data: { data: [] } })),
+        ]);
+        setBookings(bookingsRes.data.data || []);
+        setPayments(paymentsRes.data.data || []);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchDashboardData();
   }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const [bookingsRes, paymentsRes] = await Promise.all([
-        api.get('/api/bookings/me').catch(() => ({ data: { data: [] } })),
-        api.get('/api/payments?type=sent&limit=5').catch(() => ({ data: { data: [] } })),
-      ]);
-      setBookings(bookingsRes.data.data || []);
-      setPayments(paymentsRes.data.data || []);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const upcomingBookings = bookings
     .filter(b => ['pending', 'confirmed'].includes(b.status))
@@ -41,9 +40,10 @@ const UserDashboardHome = () => {
     .slice(0, 5);
 
   const completedCount = bookings.filter(b => b.status === 'completed').length;
-  const totalSpent = payments
-    .filter(p => p.status === 'captured')
-    .reduce((sum, p) => sum + (p.amount || 0), 0);
+  // Calculate total from bookings (fully loaded) rather than payments (limited to 5)
+  const totalSpent = bookings
+    .filter(b => b.status === 'completed')
+    .reduce((sum, b) => sum + (b.price || 0), 0);
 
   if (loading) {
     return (

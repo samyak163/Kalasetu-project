@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import api from '../../lib/axios';
 import { Users, Briefcase, Star, DollarSign, TrendingUp, TrendingDown, Activity, RefreshCcw } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Card, Alert, Button, LoadingState, Badge } from '../../components/ui';
+
+// Chart-only color constants — intentionally hardcoded for Recharts, not UI tokens
+const CHART_COLORS = ['#A55233', '#D88A6A', '#E9AF96', '#6E3520', '#F3D1C2'];
+const CHART_LINE_PRIMARY = '#A55233';
+const CHART_LINE_SECONDARY = '#D88A6A';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -9,7 +15,7 @@ const AdminDashboard = () => {
   const [error, setError] = useState(null);
   const [period, setPeriod] = useState('30days');
 
-  useEffect(() => { fetchStats(); }, [period]);
+  useEffect(() => { fetchStats(); }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchStats = async () => {
     setLoading(true);
@@ -22,7 +28,6 @@ const AdminDashboard = () => {
         setError(response.data.message || 'Failed to load stats.');
       }
     } catch (err) {
-      // Failed to fetch stats
       setError(err.response?.data?.message || 'An error occurred while fetching dashboard data.');
     } finally {
       setLoading(false);
@@ -30,27 +35,20 @@ const AdminDashboard = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
-      </div>
-    );
+    return <LoadingState message="Loading dashboard..." className="h-64" />;
   }
 
   if (error) {
     return (
       <div className="p-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
-        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4" role="alert">
+        <Alert variant="error">
           <p className="font-bold">Error</p>
           <p>{error}</p>
-          <button 
-            onClick={fetchStats}
-            className="mt-4 px-4 py-2 bg-brand-500 text-white rounded hover:bg-brand-600"
-          >
+          <Button variant="primary" size="sm" className="mt-4" onClick={fetchStats}>
             Retry
-          </button>
-        </div>
+          </Button>
+        </Alert>
       </div>
     );
   }
@@ -65,13 +63,11 @@ const AdminDashboard = () => {
   }
 
   const statCards = [
-    { title: 'Total Artisans', value: stats?.overview.totalArtisans || 0, change: `+${stats?.overview.newArtisans || 0} this period`, icon: Briefcase, color: 'bg-brand-500', trend: 'up' },
-    { title: 'Total Users', value: stats?.overview.totalUsers || 0, change: `+${stats?.overview.newUsers || 0} this period`, icon: Users, color: 'bg-success-500', trend: 'up' },
-    { title: 'Total Reviews', value: stats?.overview.totalReviews || 0, change: 'All time', icon: Star, color: 'bg-warning-500', trend: 'neutral' },
-    { title: 'Revenue', value: `₹${(stats?.overview.totalRevenue || 0).toLocaleString()}`, change: `${stats?.overview.totalTransactions || 0} transactions`, icon: DollarSign, color: 'bg-brand-700', trend: 'up' }
+    { title: 'Total Artisans', value: stats?.overview.totalArtisans || 0, change: `+${stats?.overview.newArtisans || 0} this period`, icon: Briefcase, color: 'bg-brand-500', trend: 'up', href: '/admin/artisans' },
+    { title: 'Total Users', value: stats?.overview.totalUsers || 0, change: `+${stats?.overview.newUsers || 0} this period`, icon: Users, color: 'bg-success-500', trend: 'up', href: '/admin/users' },
+    { title: 'Total Reviews', value: stats?.overview.totalReviews || 0, change: 'All time', icon: Star, color: 'bg-warning-500', trend: 'neutral', href: '/admin/reviews' },
+    { title: 'Revenue', value: `₹${(stats?.overview.totalRevenue || 0).toLocaleString()}`, change: `${stats?.overview.totalTransactions || 0} transactions`, icon: DollarSign, color: 'bg-brand-700', trend: 'up', href: '/admin/payments' }
   ];
-
-  const COLORS = ['#A55233', '#D88A6A', '#E9AF96', '#6E3520', '#F3D1C2'];
 
   return (
     <div className="space-y-6 p-6">
@@ -91,13 +87,10 @@ const AdminDashboard = () => {
             <option value="90days">Last 90 Days</option>
             <option value="1year">Last Year</option>
           </select>
-          <button
-            onClick={fetchStats}
-            className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 flex items-center gap-2 text-sm md:text-base"
-          >
+          <Button variant="primary" onClick={fetchStats}>
             <RefreshCcw className="w-4 h-4" />
             Refresh
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -105,15 +98,10 @@ const AdminDashboard = () => {
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div
+            <Card
               key={index}
-              className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 hover:border-brand-300 cursor-pointer"
-              onClick={() => {
-                if (stat.title.includes('Artisans')) window.location.href = '/admin/artisans';
-                if (stat.title.includes('Users')) window.location.href = '/admin/users';
-                if (stat.title.includes('Reviews')) window.location.href = '/admin/reviews';
-                if (stat.title.includes('Revenue')) window.location.href = '/admin/payments';
-              }}
+              interactive
+              onClick={() => { window.location.href = stat.href; }}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`${stat.color} p-3 rounded-lg shadow-sm`}>
@@ -126,13 +114,13 @@ const AdminDashboard = () => {
               <h3 className="text-2xl font-bold text-gray-800 mb-1 truncate">{stat.value}</h3>
               <p className="text-sm font-medium text-gray-600 truncate">{stat.title}</p>
               <p className="text-xs text-gray-500 mt-2 truncate">{stat.change}</p>
-            </div>
+            </Card>
           );
         })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <Card hover={false}>
           <h3 className="text-lg font-semibold text-gray-800 mb-4">User Growth (Last 7 Days)</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={stats?.growth || []}>
@@ -141,26 +129,26 @@ const AdminDashboard = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="artisans" stroke="#A55233" strokeWidth={2} name="Artisans" />
-              <Line type="monotone" dataKey="users" stroke="#D88A6A" strokeWidth={2} name="Users" />
+              <Line type="monotone" dataKey="artisans" stroke={CHART_LINE_PRIMARY} strokeWidth={2} name="Artisans" />
+              <Line type="monotone" dataKey="users" stroke={CHART_LINE_SECONDARY} strokeWidth={2} name="Users" />
             </LineChart>
           </ResponsiveContainer>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        </Card>
+        <Card hover={false}>
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Categories</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie data={stats?.topCategories || []} cx="50%" cy="50%" labelLine={false} label={(entry) => entry._id} outerRadius={80} fill="#8884d8" dataKey="count">
-                {(stats?.topCategories || []).map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
+                {(stats?.topCategories || []).map((entry, index) => (<Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />))}
               </Pie>
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-        </div>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <Card hover={false}>
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Artisans</h3>
           <div className="space-y-3">
             {(stats?.recentActivity?.artisans || []).map((artisan) => (
@@ -173,14 +161,16 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className={`inline-block px-2 py-1 text-xs rounded-full ${artisan.isVerified ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{artisan.isVerified ? 'Verified' : 'Pending'}</span>
+                  <Badge status={artisan.isVerified ? 'completed' : 'pending'}>
+                    {artisan.isVerified ? 'Verified' : 'Pending'}
+                  </Badge>
                   <p className="text-xs text-gray-500 mt-1">{new Date(artisan.createdAt).toLocaleDateString()}</p>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        </Card>
+        <Card hover={false}>
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Users</h3>
           <div className="space-y-3">
             {(stats?.recentActivity?.users || []).map((user) => (
@@ -196,7 +186,7 @@ const AdminDashboard = () => {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
 
       <div className="bg-gradient-to-r from-brand-600 to-brand-800 p-6 rounded-xl shadow-lg text-white">
@@ -224,5 +214,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
-

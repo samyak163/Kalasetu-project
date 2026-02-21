@@ -1,72 +1,51 @@
-﻿import React, { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import api from '../../../lib/axios.js';
-import { LoadingState } from '../../ui';
+import { Card, Skeleton, StarRating, FilterChips, EmptyState, Button, Input } from '../../ui';
+import ReviewCard from '../../ui/ReviewCard.jsx';
+import { Star, MessageSquare } from 'lucide-react';
+
+const SORT_OPTIONS = [
+  { key: 'recent', label: 'Recent' },
+  { key: 'highest', label: 'Highest' },
+  { key: 'lowest', label: 'Lowest' },
+  { key: 'needs-reply', label: 'Needs Reply' },
+];
 
 const ReviewsTab = () => {
   const { showToast } = useContext(ToastContext);
   const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
-  const [stats, setStats] = useState(null);
+  const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('recent');
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
+  const [replyLoading, setReplyLoading] = useState(false);
 
   useEffect(() => {
-    fetchReviews();
-  }, []);
+    if (user?._id) fetchData();
+  }, [user?._id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchReviews = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      if (!user?._id) {
-        throw new Error('User not authenticated');
+      if (!user?._id) return;
+
+      const [reviewsRes, tagsRes] = await Promise.all([
+        api.get(`/api/reviews/artisan/${user._id}`),
+        api.get(`/api/reviews/artisan/${user._id}/tags`).catch(() => ({ data: { data: [] } })),
+      ]);
+
+      if (reviewsRes.data.success) {
+        setReviews(reviewsRes.data.data || []);
       }
-      
-      // Fetch real reviews from backend
-      const response = await api.get(`/api/reviews/artisan/${user._id}`);
-      if (response.data.success) {
-        const fetchedReviews = response.data.data || [];
-        setReviews(fetchedReviews);
-        
-        // Calculate stats from reviews
-        const totalReviews = fetchedReviews.length;
-        if (totalReviews > 0) {
-          const avgRating = fetchedReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
-          const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-          for (const r of fetchedReviews) {
-            if (r.rating >= 1 && r.rating <= 5) {
-              ratingCounts[r.rating]++;
-            }
-          }
-          
-          setStats({
-            averageRating: avgRating,
-            totalReviews,
-            oneStar: ratingCounts[1],
-            twoStar: ratingCounts[2],
-            threeStar: ratingCounts[3],
-            fourStar: ratingCounts[4],
-            fiveStar: ratingCounts[5]
-          });
-        } else {
-          setStats({
-            averageRating: 0,
-            totalReviews: 0,
-            oneStar: 0,
-            twoStar: 0,
-            threeStar: 0,
-            fourStar: 0,
-            fiveStar: 0
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load reviews:', error);
-      showToast(error.response?.data?.message || 'Failed to load reviews', 'error');
+      setTags(tagsRes.data.data || []);
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to load reviews', 'error');
       setReviews([]);
-      setStats({});
+      setTags([]);
     } finally {
       setLoading(false);
     }
@@ -78,9 +57,9 @@ const ReviewsTab = () => {
       return;
     }
     try {
+      setReplyLoading(true);
       const res = await api.patch(`/api/reviews/${reviewId}/respond`, { text: replyText.trim() });
       if (res.data.success) {
-        // Update the review in local state with the response
         setReviews(prev => prev.map(r =>
           r._id === reviewId ? { ...r, response: res.data.data.response } : r
         ));
@@ -88,160 +67,194 @@ const ReviewsTab = () => {
         setReplyingTo(null);
         setReplyText('');
       }
-    } catch (error) {
-      showToast(error.response?.data?.message || 'Failed to post reply', 'error');
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Failed to post reply', 'error');
+    } finally {
+      setReplyLoading(false);
     }
   };
 
-  const renderStars = (rating) => {
-    return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map(star => (
-          <span key={star} className={star <= rating ? 'text-yellow-400' : 'text-gray-300'}>
-            ⭐
-          </span>
-        ))}
-      </div>
-    );
+  // Compute stats from reviews
+  const totalReviews = reviews.length;
+  const avgRating = totalReviews > 0
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+    : 0;
+  const ratingCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+  for (const r of reviews) {
+    if (r.rating >= 1 && r.rating <= 5) ratingCounts[r.rating]++;
+  }
+
+  // Sort/filter reviews
+  const getSortedReviews = () => {
+    let sorted = [...reviews];
+    switch (sortBy) {
+      case 'highest':
+        sorted.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'lowest':
+        sorted.sort((a, b) => a.rating - b.rating);
+        break;
+      case 'needs-reply':
+        sorted = sorted.filter(r => !r.response?.text);
+        break;
+      default: // recent
+        sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+    return sorted;
   };
 
-  const getRatingPercentage = (count) => {
-    return stats ? Math.round((count / stats.totalReviews) * 100) : 0;
-  };
+  const sortedReviews = getSortedReviews();
+
+  const filterChips = SORT_OPTIONS.map(opt => ({
+    key: opt.key,
+    label: opt.key === 'needs-reply'
+      ? `Needs Reply (${reviews.filter(r => !r.response?.text).length})`
+      : opt.label,
+    active: sortBy === opt.key,
+    onClick: () => setSortBy(opt.key),
+  }));
 
   if (loading) {
-    return <LoadingState message="Loading reviews..." />;
+    return (
+      <div className="space-y-4">
+        <Skeleton variant="rect" height="28px" width="200px" />
+        <Skeleton variant="rect" height="160px" />
+        <Skeleton variant="rect" height="200px" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Reviews & Ratings</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          See what clients are saying about your services
-        </p>
+        <h2 className="text-xl font-bold font-display text-gray-900">Reviews & Ratings</h2>
+        <p className="text-sm text-gray-500 mt-1">See what clients are saying about your services</p>
       </div>
 
-      {/* Rating Overview */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+      {/* Rating overview */}
+      <Card hover={false}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Overall Rating */}
+          {/* Overall rating */}
           <div className="text-center">
-            <div className="text-5xl font-bold text-gray-900 dark:text-white mb-2">
-              {stats?.averageRating?.toFixed(1)}
+            <p className="text-5xl font-bold text-gray-900 mb-2">{avgRating.toFixed(1)}</p>
+            <div className="flex justify-center mb-2">
+              <StarRating value={Math.round(avgRating)} size="md" readOnly showLabel={false} />
             </div>
-            <div className="flex justify-center mb-2">{renderStars(Math.round(stats?.averageRating))}</div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Based on {stats?.totalReviews} reviews
-            </div>
+            <p className="text-sm text-gray-500">Based on {totalReviews} review{totalReviews !== 1 ? 's' : ''}</p>
           </div>
 
-          {/* Rating Breakdown */}
+          {/* Rating breakdown */}
           <div className="space-y-2">
             {[5, 4, 3, 2, 1].map(star => {
-              const count = stats?.[`${['oneStar', 'twoStar', 'threeStar', 'fourStar', 'fiveStar'][star - 1]}`] || 0;
+              const count = ratingCounts[star];
+              const pct = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
               return (
                 <div key={star} className="flex items-center gap-3">
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 w-12">
-                    {star} ⭐
-                  </div>
-                  <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div 
-                      className="bg-yellow-400 h-2 rounded-full"
-                      style={{ width: `${getRatingPercentage(count)}%` }}
+                  <span className="text-sm font-medium text-gray-700 w-6 text-right">{star}</span>
+                  <Star className="h-4 w-4 text-amber-400 fill-amber-400 shrink-0" />
+                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-amber-400 h-2 rounded-full transition-all"
+                      style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 w-12 text-right">
-                    {count}
-                  </div>
+                  <span className="text-sm text-gray-500 w-8 text-right">{count}</span>
                 </div>
               );
             })}
           </div>
         </div>
-      </div>
+      </Card>
 
-      {/* Reviews List */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Customer Reviews</h3>
-        {reviews.length > 0 ? (
-          <div className="space-y-4">
-            {reviews.map(review => (
-              <div key={review._id || review.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">{review.user?.fullName || 'Anonymous'}</div>
-                    <div className="flex items-center gap-2 mt-1">
-                      {renderStars(review.rating)}
-                      <span className="text-xs text-gray-500 dark:text-gray-400">• {new Date(review.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  {review.isVerified && (
-                    <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">✓ Verified</div>
-                  )}
-                </div>
+      {/* Tag summary */}
+      {tags.length > 0 && (
+        <Card hover={false}>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Common Feedback Tags</h3>
+          <div className="flex flex-wrap gap-2">
+            {tags.map(t => (
+              <span
+                key={t.tag}
+                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  t.sentiment === 'positive' ? 'bg-success-50 text-success-700'
+                    : t.sentiment === 'negative' ? 'bg-error-50 text-error-700'
+                    : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                {t.tag} ({t.count})
+              </span>
+            ))}
+          </div>
+        </Card>
+      )}
 
-                <p className="text-gray-700 dark:text-gray-300 mb-4">{review.comment}</p>
+      {/* Filter chips */}
+      <FilterChips chips={filterChips} />
 
-                {review.response?.text ? (
-                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border-l-4 border-[#A55233]">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">Your Reply:</div>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{review.response.text}</p>
-                  </div>
-                ) : (
-                  <>
+      {/* Reviews list */}
+      {sortedReviews.length > 0 ? (
+        <Card hover={false} padding={false}>
+          <div className="px-4">
+            {sortedReviews.map(review => (
+              <div key={review._id}>
+                <ReviewCard review={review} />
+
+                {/* Reply form (only for reviews without response) */}
+                {!review.response?.text && (
+                  <div className="pb-4 pl-4">
                     {replyingTo === review._id ? (
                       <div className="space-y-2">
-                        <textarea
+                        <Input
+                          as="textarea"
                           value={replyText}
                           onChange={(e) => setReplyText(e.target.value)}
                           placeholder="Write your reply..."
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#A55233] bg-white dark:bg-white text-gray-900 dark:text-gray-900"
-                          rows="3"
+                          rows={3}
                         />
                         <div className="flex gap-2">
-                          <button
+                          <Button
+                            size="sm"
                             onClick={() => handleReply(review._id)}
-                            className="px-4 py-2 bg-[#A55233] text-white rounded-lg hover:bg-[#8a4329] text-sm"
+                            loading={replyLoading}
                           >
                             Post Reply
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => {
                               setReplyingTo(null);
                               setReplyText('');
                             }}
-                            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-sm"
                           >
                             Cancel
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     ) : (
                       <button
-                        onClick={() => setReplyingTo(review._id)}
-                        className="text-sm text-[#A55233] hover:underline"
+                        onClick={() => {
+                          setReplyingTo(review._id);
+                          setReplyText('');
+                        }}
+                        className="text-sm text-brand-500 hover:text-brand-600 font-medium flex items-center gap-1"
                       >
+                        <MessageSquare className="h-3.5 w-3.5" />
                         Reply to this review
                       </button>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-            <div className="text-4xl mb-4">⭐</div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No reviews yet
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Complete bookings to start receiving reviews
-            </p>
-          </div>
-        )}
-      </div>
+        </Card>
+      ) : (
+        <EmptyState
+          icon={<Star className="h-12 w-12" />}
+          title={sortBy === 'needs-reply' ? 'All reviews have replies' : 'No reviews yet'}
+          description={sortBy === 'needs-reply' ? 'Great job keeping up with your responses!' : 'Complete bookings to start receiving reviews'}
+        />
+      )}
     </div>
   );
 };

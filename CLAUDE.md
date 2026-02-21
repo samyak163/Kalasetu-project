@@ -12,8 +12,7 @@ KalaSetu is a full-stack artisan marketplace platform connecting traditional art
 ```bash
 npm run dev          # Start development server with nodemon (port 5000)
 npm start            # Start production server
-npm run seed:core    # Seed core data (categories, demo accounts)
-npm run create:admin # Create admin account
+npm run seed         # Wipe DB + seed showcase data (1 artisan, 1 user, 1 admin)
 npm run cleanup:dry  # Preview what cleanup would delete
 npm run cleanup      # Remove non-demo artisans and all users
 npm run check:artisans # Verify artisan data
@@ -95,11 +94,11 @@ Frontend requires: `VITE_API_URL` and various `VITE_*` keys for Firebase, Algoli
 - Backend has no test suite configured yet (CI checks for test script existence)
 - Frontend linting runs in CI with `continue-on-error: true`
 
-## Demo Accounts
+## Demo Accounts (via `npm run seed`)
 
-- Artisan: `showcase.artisan@demo.kalasetu.com` / `Demo@1234`
-- User: `showcase.user@kalasetu.com` / `Demo@1234`
-- Admin: `showcase.admin@kalasetu.com` / `SuperAdmin@123`
+- Artisan: `priya@kalasetu.demo` / `Demo@1234` (Priya Sharma — Mehendi Artist, publicId: auto-generated)
+- User: `rahul@kalasetu.demo` / `Demo@1234` (Rahul Deshmukh)
+- Admin: `admin@kalasetu.demo` / `Admin@1234` (KalaSetu Admin)
 
 ## Security Rules
 
