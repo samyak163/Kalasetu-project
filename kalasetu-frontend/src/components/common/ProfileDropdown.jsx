@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { ChevronDown, User, Settings, HelpCircle, LogOut } from 'lucide-react';
+import { Avatar } from '../ui';
 
 const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,13 +17,6 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    const parts = name.trim().split(' ');
-    if (parts.length === 1) return parts[0][0].toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
 
   const handleLogout = async () => {
     setIsOpen(false);
@@ -60,41 +55,16 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 px-3 py-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#A55233] focus:ring-offset-2"
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
         aria-haspopup="true"
         aria-expanded={isOpen}
         aria-label="Profile menu"
       >
-        <div className="h-10 w-10 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center flex-shrink-0">
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={displayName}
-              className="h-full w-full object-cover"
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-          ) : null}
-          <div
-            className="h-full w-full bg-[#A55233] text-white flex items-center justify-center text-sm font-semibold"
-            style={{ display: avatarUrl ? 'none' : 'flex' }}
-          >
-            {getInitials(displayName)}
-          </div>
-        </div>
+        <Avatar name={displayName} src={avatarUrl} size="sm" />
         <span className="hidden md:block text-sm font-semibold text-gray-700 max-w-[160px] truncate">
           {truncatedName}
         </span>
-        <svg
-          className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
@@ -105,25 +75,7 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
           {/* User Info Section */}
           <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center flex-shrink-0">
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt={displayName}
-                    className="h-full w-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-                <div
-                  className="h-full w-full bg-[#A55233] text-white flex items-center justify-center text-sm font-semibold"
-                  style={{ display: avatarUrl ? 'none' : 'flex' }}
-                >
-                  {getInitials(displayName)}
-                </div>
-              </div>
+              <Avatar name={displayName} src={avatarUrl} size="md" />
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 truncate">Signed in as</p>
                 <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
@@ -139,21 +91,21 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
               className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50"
               role="menuitem"
             >
-              View Profile
+              <User className="w-4 h-4 mr-2 inline" />View Profile
             </button>
             <button
               onClick={() => handleOpenProfileTab('preferences')}
               className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50"
               role="menuitem"
             >
-              Settings
+              <Settings className="w-4 h-4 mr-2 inline" />Settings
             </button>
             <button
               onClick={() => handleOpenProfileTab('help')}
               className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50"
               role="menuitem"
             >
-              Help & Support
+              <HelpCircle className="w-4 h-4 mr-2 inline" />Help & Support
             </button>
           </div>
 
@@ -164,10 +116,10 @@ const ProfileDropdown = ({ user, userType, onLogout, onOpenProfile }) => {
           <div className="py-1">
             <button
               onClick={handleLogout}
-              className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors focus:outline-none focus:bg-red-50"
+              className="w-full text-left px-4 py-3 text-sm text-error-600 hover:bg-error-50 transition-colors focus:outline-none focus:bg-error-50"
               role="menuitem"
             >
-              Sign Out
+              <LogOut className="w-4 h-4 mr-2 inline" />Sign Out
             </button>
           </div>
         </div>

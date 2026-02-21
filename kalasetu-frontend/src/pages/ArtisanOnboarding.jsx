@@ -1,10 +1,10 @@
 import React, { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ToastContext } from '../context/ToastContext.jsx';
 import api from '../lib/axios.js';
-
-const BRAND = '#A55233';
+import { Button, Card, Input } from '../components/ui';
 
 const CATEGORIES = [
   'Pottery', 'Weaving', 'Jewelry Making', 'Woodwork', 'Painting',
@@ -184,7 +184,9 @@ const ArtisanOnboarding = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center space-y-6">
-          <div className="text-6xl">&#10024;&#127881;&#10024;</div>
+          <div className="w-16 h-16 rounded-full bg-brand-500 flex items-center justify-center mx-auto">
+            <Check className="w-8 h-8 text-white" />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900">
             Your Profile is Live!
           </h1>
@@ -194,10 +196,7 @@ const ArtisanOnboarding = () => {
           </p>
           <Link
             to="/artisan/dashboard"
-            className="inline-block px-6 py-3 rounded-lg text-white font-semibold transition-colors"
-            style={{ backgroundColor: BRAND }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.9')}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+            className="inline-block px-6 py-3 rounded-lg text-white font-semibold bg-brand-500 hover:bg-brand-600 transition-colors"
           >
             Go to Dashboard
           </Link>
@@ -228,37 +227,25 @@ const ArtisanOnboarding = () => {
                   <div
                     className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
                       isActive
-                        ? 'text-white'
+                        ? 'bg-brand-500 text-white'
                         : isDone
-                        ? 'text-white'
+                        ? 'bg-brand-400 text-white'
                         : 'bg-gray-200 text-gray-500'
                     }`}
-                    style={
-                      isActive
-                        ? { backgroundColor: BRAND }
-                        : isDone
-                        ? { backgroundColor: BRAND, opacity: 0.7 }
-                        : undefined
-                    }
                   >
-                    {isDone ? '\u2713' : s.num}
+                    {isDone ? <Check className="w-4 h-4" /> : s.num}
                   </div>
                   <span
                     className={`text-xs mt-1 ${
-                      isActive ? 'font-semibold' : 'text-gray-400'
+                      isActive ? 'text-brand-500 font-semibold' : 'text-gray-400'
                     }`}
-                    style={isActive ? { color: BRAND } : undefined}
                   >
                     {s.label}
                   </span>
                 </div>
                 {i < STEPS.length - 1 && (
                   <div
-                    className="flex-1 h-0.5 mx-2"
-                    style={{
-                      backgroundColor: s.num < step ? BRAND : '#e5e7eb',
-                      opacity: s.num < step ? 0.7 : 1,
-                    }}
+                    className={`flex-1 h-0.5 mx-2 ${s.num < step ? 'bg-brand-400' : 'bg-gray-200'}`}
                   />
                 )}
               </React.Fragment>
@@ -267,7 +254,7 @@ const ArtisanOnboarding = () => {
         </div>
 
         {/* Step Card */}
-        <div className="bg-white rounded-xl shadow-md p-6 space-y-5">
+        <Card padding={false} className="p-6 space-y-5">
           {/* Step 1: Profile Basics */}
           {step === 1 && (
             <>
@@ -278,21 +265,17 @@ const ArtisanOnboarding = () => {
                 </p>
               </div>
               <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Full Name *</label>
-                  <input
-                    type="text"
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
-                    style={{ '--tw-ring-color': BRAND }}
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your full name"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Bio</label>
-                  <textarea
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
+                <Input
+                  label="Full Name *"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Your full name"
+                />
+                <div>
+                  <Input
+                    label="Bio"
+                    as="textarea"
                     rows={3}
                     maxLength={500}
                     value={bio}
@@ -301,37 +284,28 @@ const ArtisanOnboarding = () => {
                   />
                   <p className="text-xs text-gray-400 text-right">{bio.length}/500</p>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Profile Image URL</label>
-                  <input
-                    type="text"
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
-                    value={profileImageUrl}
-                    onChange={(e) => setProfileImageUrl(e.target.value)}
-                    placeholder="https://res.cloudinary.com/..."
-                  />
-                </div>
+                <Input
+                  label="Profile Image URL"
+                  type="text"
+                  value={profileImageUrl}
+                  onChange={(e) => setProfileImageUrl(e.target.value)}
+                  placeholder="https://res.cloudinary.com/..."
+                />
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">City</label>
-                    <input
-                      type="text"
-                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="e.g. Jaipur"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">State</label>
-                    <input
-                      type="text"
-                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
-                      placeholder="e.g. Rajasthan"
-                    />
-                  </div>
+                  <Input
+                    label="City"
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="e.g. Jaipur"
+                  />
+                  <Input
+                    label="State"
+                    type="text"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    placeholder="e.g. Rajasthan"
+                  />
                 </div>
               </div>
             </>
@@ -347,69 +321,53 @@ const ArtisanOnboarding = () => {
                 </p>
               </div>
               <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Craft Category *</label>
-                  <select
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 bg-white"
-                    value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
-                  >
-                    <option value="">Select a category</option>
-                    {CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <Input
+                  label="Craft Category *"
+                  as="select"
+                  value={categoryName}
+                  onChange={(e) => setCategoryName(e.target.value)}
+                  options={[
+                    { value: '', label: 'Select a category' },
+                    ...CATEGORIES.map((cat) => ({ value: cat, label: cat })),
+                  ]}
+                />
                 <hr className="border-gray-100" />
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                   First Service
                 </h3>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Service Name *</label>
-                  <input
-                    type="text"
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
-                    value={serviceName}
-                    onChange={(e) => setServiceName(e.target.value)}
-                    placeholder="e.g. Custom Pottery Piece"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Description</label>
-                  <textarea
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
-                    rows={2}
-                    value={serviceDescription}
-                    onChange={(e) => setServiceDescription(e.target.value)}
-                    placeholder="What does this service include?"
-                  />
-                </div>
+                <Input
+                  label="Service Name *"
+                  type="text"
+                  value={serviceName}
+                  onChange={(e) => setServiceName(e.target.value)}
+                  placeholder="e.g. Custom Pottery Piece"
+                />
+                <Input
+                  label="Description"
+                  as="textarea"
+                  rows={2}
+                  value={serviceDescription}
+                  onChange={(e) => setServiceDescription(e.target.value)}
+                  placeholder="What does this service include?"
+                />
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Price (INR) *</label>
-                    <input
-                      type="number"
-                      min="1"
-                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
-                      value={servicePrice}
-                      onChange={(e) => setServicePrice(e.target.value)}
-                      placeholder="500"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Duration (mins)</label>
-                    <input
-                      type="number"
-                      min="15"
-                      step="15"
-                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
-                      value={serviceDuration}
-                      onChange={(e) => setServiceDuration(e.target.value)}
-                      placeholder="60"
-                    />
-                  </div>
+                  <Input
+                    label="Price (INR) *"
+                    type="number"
+                    min="1"
+                    value={servicePrice}
+                    onChange={(e) => setServicePrice(e.target.value)}
+                    placeholder="500"
+                  />
+                  <Input
+                    label="Duration (mins)"
+                    type="number"
+                    min="15"
+                    step="15"
+                    value={serviceDuration}
+                    onChange={(e) => setServiceDuration(e.target.value)}
+                    placeholder="60"
+                  />
                 </div>
               </div>
             </>
@@ -438,9 +396,8 @@ const ArtisanOnboarding = () => {
                           type="button"
                           onClick={() => toggleDay(d.key)}
                           className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                            active ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-300'
+                            active ? 'bg-brand-500 text-white border-transparent' : 'bg-white text-gray-600 border-gray-300'
                           }`}
-                          style={active ? { backgroundColor: BRAND } : undefined}
                         >
                           {d.label}
                         </button>
@@ -449,24 +406,18 @@ const ArtisanOnboarding = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Start Time</label>
-                    <input
-                      type="time"
-                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">End Time</label>
-                    <input
-                      type="time"
-                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                    />
-                  </div>
+                  <Input
+                    label="Start Time"
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                  />
+                  <Input
+                    label="End Time"
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                  />
                 </div>
               </div>
             </>
@@ -482,16 +433,14 @@ const ArtisanOnboarding = () => {
                 </p>
               </div>
               <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700">Image URLs</label>
-                  <textarea
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2"
-                    rows={3}
-                    value={portfolioUrls}
-                    onChange={(e) => setPortfolioUrls(e.target.value)}
-                    placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                  />
-                </div>
+                <Input
+                  label="Image URLs"
+                  as="textarea"
+                  rows={3}
+                  value={portfolioUrls}
+                  onChange={(e) => setPortfolioUrls(e.target.value)}
+                  placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                />
                 {portfolioImages.length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-gray-700 mb-2">
@@ -537,7 +486,7 @@ const ArtisanOnboarding = () => {
               <div className="space-y-4">
                 {/* Profile Summary */}
                 <div className="border rounded-lg p-4 space-y-2">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: BRAND }}>
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-brand-500">
                     Profile
                   </h3>
                   <p className="text-gray-800 font-medium">{fullName || '(not set)'}</p>
@@ -551,7 +500,7 @@ const ArtisanOnboarding = () => {
 
                 {/* Craft Summary */}
                 <div className="border rounded-lg p-4 space-y-2">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: BRAND }}>
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-brand-500">
                     Craft & Service
                   </h3>
                   <p className="text-gray-800">
@@ -570,7 +519,7 @@ const ArtisanOnboarding = () => {
 
                 {/* Availability Summary */}
                 <div className="border rounded-lg p-4 space-y-2">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: BRAND }}>
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-brand-500">
                     Availability
                   </h3>
                   <p className="text-gray-800">
@@ -588,7 +537,7 @@ const ArtisanOnboarding = () => {
                 {/* Portfolio Summary */}
                 {portfolioImages.length > 0 && (
                   <div className="border rounded-lg p-4 space-y-2">
-                    <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: BRAND }}>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-brand-500">
                       Portfolio
                     </h3>
                     <div className="flex gap-2 overflow-x-auto">
@@ -615,41 +564,24 @@ const ArtisanOnboarding = () => {
           {/* Navigation Buttons */}
           <div className="flex justify-between pt-4 border-t border-gray-100">
             {step > 1 ? (
-              <button
-                type="button"
-                onClick={handleBack}
-                disabled={saving}
-                className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
+              <Button variant="secondary" onClick={handleBack} disabled={saving}>
                 Back
-              </button>
+              </Button>
             ) : (
               <div />
             )}
 
             {step < 5 ? (
-              <button
-                type="button"
-                onClick={handleNext}
-                disabled={saving}
-                className="px-5 py-2.5 rounded-lg text-white font-medium transition-colors disabled:opacity-50"
-                style={{ backgroundColor: BRAND }}
-              >
+              <Button variant="primary" onClick={handleNext} loading={saving}>
                 {saving ? 'Saving...' : 'Next'}
-              </button>
+              </Button>
             ) : (
-              <button
-                type="button"
-                onClick={handlePublish}
-                disabled={saving}
-                className="px-6 py-2.5 rounded-lg text-white font-semibold transition-colors disabled:opacity-50"
-                style={{ backgroundColor: BRAND }}
-              >
+              <Button variant="primary" onClick={handlePublish} loading={saving}>
                 {saving ? 'Publishing...' : 'Publish My Profile'}
-              </button>
+              </Button>
             )}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );
