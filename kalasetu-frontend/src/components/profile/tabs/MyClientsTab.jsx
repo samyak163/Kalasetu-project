@@ -1,10 +1,12 @@
 import { useEffect, useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 import api from '../../../lib/axios.js';
 import { LoadingState, EmptyState, Avatar, Card, Button, Input } from '../../ui';
 import { Search, Phone, Mail, Calendar, Users } from 'lucide-react';
 
 const MyClientsTab = () => {
+  const navigate = useNavigate();
   const { showToast } = useContext(ToastContext);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -134,11 +136,11 @@ const MyClientsTab = () => {
               </div>
 
               <div className="flex gap-2 pt-4 border-t border-gray-100">
-                <Button variant="primary" size="sm">View History</Button>
+                <Button variant="primary" size="sm" onClick={() => navigate('/artisan/dashboard#bookings')}>View History</Button>
                 {(client.phoneNumber || client.phone) && (
-                  <Button variant="secondary" size="sm">Call</Button>
+                  <Button variant="secondary" size="sm" onClick={() => window.open(`tel:${client.phoneNumber || client.phone}`)}>Call</Button>
                 )}
-                <Button variant="secondary" size="sm">Message</Button>
+                <Button variant="secondary" size="sm" onClick={() => navigate('/messages')}>Message</Button>
               </div>
             </div>
           ))}

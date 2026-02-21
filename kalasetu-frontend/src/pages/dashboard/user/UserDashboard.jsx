@@ -5,7 +5,7 @@ import { useAuth } from '../../../context/AuthContext.jsx';
 const navLinkClass = ({ isActive }) =>
   `block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
     isActive
-      ? 'bg-[#A55233]/10 text-[#A55233]'
+      ? 'bg-brand-50 text-brand-500'
       : 'text-gray-700 hover:bg-gray-100'
   }`;
 
