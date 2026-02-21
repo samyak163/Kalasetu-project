@@ -31,7 +31,7 @@ const PortfolioTab = () => {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchProjects = async () => {
     try {

@@ -21,7 +21,7 @@ const AdminReviews = () => {
   useEffect(() => {
     fetchReviews();
     fetchStats();
-  }, [page, status, rating, startDate, endDate, search]);
+  }, [page, status, rating, startDate, endDate, search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchReviews = async () => {
     setLoading(true);
@@ -58,8 +58,8 @@ const AdminReviews = () => {
       if (response.data.success) {
         setStats(response.data.data);
       }
-    } catch (err) {
-      // Log stats error
+    } catch {
+      // Stats error — non-critical
     }
   };
 

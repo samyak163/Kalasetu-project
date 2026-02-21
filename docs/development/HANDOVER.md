@@ -10,10 +10,10 @@
 | Field | Value |
 |-------|-------|
 | **Date** | 2026-02-21 |
-| **Branch** | `feat/ui-overhaul` (100 commits ahead of main) |
-| **Build status** | passing (frontend builds cleanly, 81 precache entries) |
+| **Branch** | `feat/ui-overhaul` (110 commits ahead of main) |
+| **Build status** | passing (frontend builds cleanly) |
 | **PR** | PR #1 open (draft) on samyak163/Kalasetu-project |
-| **Session mood** | Phases 1-9 complete + code review fixes applied, ready for Phase 10 |
+| **Session mood** | Phases 1-10 complete, ready for Phase 11 |
 
 ---
 
@@ -43,7 +43,7 @@ StarRating component, review tag constants (rating-dependent positive/negative t
 ### Phase 8: Chat Integration
 `useChatUnread` hook, chat unread badge on Header, MessagesPage rewrite (mobile-first WhatsApp-style layout, custom channel previews, EmptyState, TypingIndicator)
 
-### Phase 9: Artisan Dashboard Rebuild (JUST COMPLETED)
+### Phase 9: Artisan Dashboard Rebuild
 
 Full sweep: 6 tab rebuilds, 3 tab polish, container rebuild, 2 shared components, dead code cleanup. Then comprehensive code review + 19 fixes.
 
@@ -68,16 +68,39 @@ b6187c8 feat(dashboard): rebuild ReviewsTab with design system
 124f11a fix(dashboard): fix 12 review issues across 8 dashboard tabs
 ```
 
+### Phase 10: User Dashboard Rebuild (JUST COMPLETED)
+
+Rebuilt 7 files: UserProfilePage container, ProfileModal, and 5 user tabs. Executed via agent team (wave-based parallel execution).
+
+**Implementation (9 commits):**
+```
+ef99b90 feat(dashboard): rebuild UserProfilePage container
+89409f3 feat(dashboard): rebuild ProfileModal with design tokens
+071b450 feat(dashboard): rebuild ProfileTab with design system
+a912e19 feat(dashboard): rebuild RatingsTab with design system
+054a06c feat(dashboard): rebuild BookmarksTab with design system
+87f5f2a feat(dashboard): rebuild OrderHistoryTab with design system
+78bd47a feat(dashboard): rebuild PreferencesTab with design system
+dc4e7f4 docs: add Phase 10 user dashboard design and implementation plan
+92fb3cf fix(lint): suppress fetchPayments exhaustive-deps warnings
+```
+
 **Key changes:**
-- ArtisanAccountPage: URL hash navigation (#dashboard, #earnings, etc.), mobile horizontal icon tab bar, desktop sidebar with brand accent
-- DashboardOverviewTab: Smart dashboard with greeting, ProfileCompletionCard, 4 stats cards, IncomeChart (6 months), pending actions, recent bookings
-- EarningsTab: Balance cards, IncomeChart (12 months), transaction history with correct type-based icons
-- ReviewsTab: StarRating + ReviewCard from design system, tag summary from API, FilterChips, reply form
-- ArtisanProfileTab: Avatar, Input, Button throughout, bio clearing works (fixed `||` to `??`)
-- PortfolioTab: BottomSheet for create/edit, Card for projects, Cloudinary upload fully fixed (cloud_name, folder, allowed_formats, response checking)
-- AvailabilityTab: Design tokens, Card/Badge/Button/Input, time slot validation
-- Polish: MyClientsTab, AppearanceTab, HelpSupportTab — component swaps, removed dead accessibility checkboxes, fixed support endpoints
-- New shared: IncomeChart (pure CSS bar chart), ProfileCompletionCard (dismissible via localStorage)
+- **UserProfilePage:** URL hash navigation (`#profile`, `#ratings`, `#saved`, `#orders`), mobile horizontal icon tab bar, desktop sidebar with brand accent bar, Avatar in header — matches ArtisanAccountPage pattern from Phase 9
+- **ProfileModal:** Emoji icons (👤⭐🔖📋⚙️🎨❓) replaced with Lucide icons (User, Star, Bookmark, ClipboardList, Bell, SunMoon, HelpCircle), all hardcoded `#A55233` → design tokens, X close button from Lucide
+- **ProfileTab:** Avatar for profile photo (replaces raw img), Input/Button/Card throughout, Spinner for upload, password strength with semantic colors (`error-500`/`warning-500`/`success-500`)
+- **RatingsTab:** Text stars (★/☆) → StarRating component, Card for categories, Badge with status mapping (rating >= 4 → "completed", >= 3 → "pending", > 0 → "cancelled"), Alert for info section, EmptyState
+- **BookmarksTab:** Card for artisan cards, Avatar (replaces img+placehold.co fallback), Badge for ratings, Button for View Profile/Contact, EmptyState with Bookmark icon
+- **OrderHistoryTab:** Largest rebuild (443 lines). StatusBadge for order status, Badge for refund status, Avatar for artisan photos. **Refund modal migrated from fixed-position div → BottomSheet component**. Button variants: primary (Rate/Refund), secondary (Details), ghost (Rebook)
+- **PreferencesTab:** Minimal change — Card hover={false}, Button variant="primary", `accent-brand-500` on checkboxes, `focus:ring-brand-500` on selects
+
+**Design decisions:**
+- Keep both UserProfilePage (full page) and ProfileModal (overlay) — they serve different UX contexts
+- URL hash navigation added to UserProfilePage (matches Phase 9 ArtisanAccountPage pattern)
+- BottomSheet for refund modal (consistent with booking cancellation pattern from Phase 6)
+- Styled native checkboxes with `accent-brand-500` (no custom Toggle — YAGNI)
+
+**Verification:** Build passes, zero hardcoded `#A55233` colors, zero emoji icons, zero text stars across all 7 files.
 
 ### Additional Completed Work
 - ServiceDetailSheet with ImageCarousel, per-service stats API
@@ -101,15 +124,8 @@ b53f2f7 fix(reviews): address code review findings — hasReview API, sort bug, 
 
 ## What's Remaining
 
-### Phase 10: User Dashboard Rebuild (NEXT UP)
-Rebuild user dashboard pages using design system components. This covers `UserProfilePage.jsx` and its tabs:
-- ProfileTab, RatingsTab, BookmarksTab, OrderHistoryTab, PreferencesTab (imported by UserProfilePage + ProfileModal)
-- These are the 5 files that were initially misidentified as "orphaned" in Phase 9 — they belong to the customer side
-
-**Key context:** These user-facing tabs share the same `components/profile/tabs/` directory as the artisan tabs but are imported by different page components (`UserProfilePage.jsx`, `ProfileModal.jsx`).
-
-### Phase 11: Remaining Integrations & Global Polish
-Error states, notifications, 404 page, global polish.
+### Phase 11: Remaining Integrations & Global Polish (NEXT UP)
+Error states, notifications, 404 page, global polish. Specific scope TBD via brainstorming.
 
 ### Open Non-Blocking Items (from code review)
 - Add Zod schemas to `createService`/`updateService` (compliance, not runtime issue)
@@ -134,11 +150,14 @@ Error states, notifications, 404 page, global polish.
 | Chat unread | Stream Chat events | `notification.message_new`, `notification.mark_read` provide `total_unread_count` |
 | MessagesPage | Mobile-first with showChat toggle | WhatsApp pattern: channel list <-> chat area swap on mobile |
 | Service picker | BottomSheet with all services | Generic "Book Now" opens picker when artisan has 2+ services |
-| Phase 9 scope | Full sweep (Approach B) | 6 rebuilds + 3 polish + container + shared components + backend enhancement discovery (tag endpoint already existed) |
-| Orphaned files | Only USERsTab deleted | 5 of 6 "orphaned" tabs are imported by UserProfilePage/ProfileModal — they're Phase 10 scope |
+| Phase 9 scope | Full sweep (Approach B) | 6 rebuilds + 3 polish + container + shared components |
+| Orphaned files | Only USERsTab deleted | 5 of 6 "orphaned" tabs are imported by UserProfilePage/ProfileModal — Phase 10 scope |
 | IncomeChart | Pure CSS bar chart | No charting library dependency (~40KB savings vs recharts) |
-| ProfileCompletionCard errors | Silent fail with console.error | Non-critical supplemental card — toast would be UX overkill |
-| Review evaluate rejections | 4 reviewer suggestions rejected | `user` prop (React ignores extras), `months` prop (orthogonal controls), `userType` guard (route-level auth sufficient), file validation (multer handles it) |
+| Phase 10 architecture | Keep both containers | UserProfilePage (full page for logged-in users) + ProfileModal (overlay for quick access) |
+| Phase 10 navigation | URL hash navigation | Matches Phase 9 ArtisanAccountPage pattern, enables deep-linking to tabs |
+| Phase 10 refund UX | BottomSheet component | Consistent with CancellationSheet pattern from Phase 6 |
+| Phase 10 toggles | Styled native checkboxes | `accent-brand-500` — no custom Toggle needed (YAGNI) |
+| Phase 10 execution | Agent team (wave-based) | Wave 1: 2 containers parallel, Wave 2: 5 tabs parallel, Wave 3: verification |
 
 ---
 
@@ -155,11 +174,12 @@ Error states, notifications, 404 page, global polish.
 - Review model now requires `tags` (1-5 entries) — any `Review.create()` call needs tags
 - Admin `findByIdAndUpdate` on reviews uses `runValidators: true` — don't remove it
 - `comment` field defaults to `''` (empty string) — it is NOT required
-- **Phase 9 specific:** User-facing tabs (ProfileTab, RatingsTab, BookmarksTab, OrderHistoryTab, PreferencesTab) still have hardcoded `#A55233` — these are Phase 10 scope, don't touch during Phase 9 fixes
-- **Phase 9 specific:** Cloudinary signed uploads require `allowed_formats` in BOTH the signature params AND the formData POST — omitting it from formData causes signature mismatch
-- **Phase 9 specific:** Backend upload route returns `cloud_name` (snake_case) — always destructure accordingly, not `cloudName`
-- **Phase 9 specific:** `useEffect` with `[]` deps that reads `user._id` from `useAuth()` will NOT re-run when auth resolves — always add `user?._id` to deps if fetching user-specific data
+- Cloudinary signed uploads require `allowed_formats` in BOTH the signature params AND the formData POST — omitting it from formData causes signature mismatch
+- Backend upload route returns `cloud_name` (snake_case) — always destructure accordingly, not `cloudName`
+- `useEffect` with `[]` deps that reads `user._id` from `useAuth()` will NOT re-run when auth resolves — always add `user?._id` to deps if fetching user-specific data
 - **Pre-existing:** ThemeContext calls `/api/users/profile` (userProtect) for theme saves — artisan theme changes fail silently
+- **Phase 10:** Badge uses `status` prop (completed/pending/cancelled) not `variant` — map rating values accordingly
+- **Phase 10:** ProfileModal uses custom event `open-profile` + body scroll lock — don't refactor away the event system
 
 ---
 
@@ -167,49 +187,45 @@ Error states, notifications, 404 page, global polish.
 
 | Branch | HEAD | Status |
 |--------|------|--------|
-| `feat/ui-overhaul` | `124f11a` | 100 commits ahead of main |
+| `feat/ui-overhaul` | `92fb3cf` | 110 commits ahead of main |
 | `main` | `4242c6c` | Stable |
 
 ---
 
-## Next Steps: Phase 10 — User Dashboard Rebuild
+## Next Steps: Phase 11 — Remaining Integrations & Global Polish
 
-### Scope
+### Scope (TBD via brainstorming)
 
-Rebuild the customer/user dashboard using design system components. The user dashboard lives in:
-- `kalasetu-frontend/src/pages/UserProfilePage.jsx` — main container
-- `kalasetu-frontend/src/components/ProfileModal.jsx` — modal variant
-- 5 tab files in `components/profile/tabs/`: ProfileTab, RatingsTab, BookmarksTab, OrderHistoryTab, PreferencesTab
-
-These tabs currently use pre-design-system code (raw HTML, hardcoded `#A55233`, emoji icons).
+Potential areas:
+- Error boundary / error states for all pages
+- Notification pages (OneSignal integration UI)
+- 404 page redesign
+- Global polish (loading states, transitions, accessibility)
+- Wire up MyClientsTab action buttons (View History, Call, Message)
+- Address open non-blocking code review items
 
 ### Workflow
 
-Use the superpowers brainstorming → planning → execution pipeline:
+Use the superpowers brainstorming -> planning -> execution pipeline:
 
 ```
-Start Phase 10: User Dashboard Rebuild.
+Start Phase 11: Remaining Integrations & Global Polish.
 
-Read the handover at docs/development/HANDOVER.md. Phase 9 (artisan dashboard) is complete.
-Phase 10 covers rebuilding the user/customer dashboard (UserProfilePage.jsx + its 5 tabs).
-Use /brainstorming to explore scope, then /writing-plans, then execute with agent teams.
+Read the handover at docs/development/HANDOVER.md. Phase 10 (user dashboard) is complete.
+Phase 11 covers error states, notifications, 404, and global polish.
+Use /brainstorming to define scope, then /writing-plans, then execute.
 ```
 
 ### Reference Files
 
 | File | Purpose |
 |------|---------|
-| `docs/plans/2026-02-21-artisan-dashboard-design.md` | Phase 9 design (reference for patterns) |
-| `docs/plans/2026-02-21-artisan-dashboard-plan.md` | Phase 9 plan (reference for task structure) |
+| `docs/plans/2026-02-21-user-dashboard-design.md` | Phase 10 design (latest reference) |
+| `docs/plans/2026-02-21-user-dashboard-plan.md` | Phase 10 plan (latest reference) |
 | `kalasetu-frontend/src/components/ui/index.js` | Design system barrel exports |
-| `kalasetu-frontend/src/pages/UserProfilePage.jsx` | User dashboard container |
-| `kalasetu-frontend/src/components/ProfileModal.jsx` | Modal variant of user profile |
-| `kalasetu-frontend/src/components/profile/tabs/ProfileTab.jsx` | User profile editing |
-| `kalasetu-frontend/src/components/profile/tabs/RatingsTab.jsx` | User's given ratings |
-| `kalasetu-frontend/src/components/profile/tabs/BookmarksTab.jsx` | Saved artisans |
-| `kalasetu-frontend/src/components/profile/tabs/OrderHistoryTab.jsx` | Past bookings |
-| `kalasetu-frontend/src/components/profile/tabs/PreferencesTab.jsx` | User preferences |
-| `kalasetu-frontend/src/pages/ArtisanAccountPage.jsx` | Phase 9 container (reference for hash nav pattern) |
+| `kalasetu-frontend/src/pages/NotFoundPage.jsx` | Current 404 page |
+| `kalasetu-frontend/src/components/Header.jsx` | Global header (chat badge already added) |
+| `kalasetu-frontend/src/components/BottomNav.jsx` | Mobile bottom navigation |
 
 ---
 

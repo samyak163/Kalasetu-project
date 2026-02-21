@@ -18,7 +18,7 @@ const LoginPage = () => {
         setLoading(true);
         setError(null);
         try {
-            const user = await artisanLogin({ loginIdentifier, password });
+            await artisanLogin({ loginIdentifier, password });
             // After successful login, take artisans to their account page
             navigate('/artisan/dashboard/account');
         } catch (err) {

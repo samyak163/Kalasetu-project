@@ -37,14 +37,14 @@ export const AuthContextProvider = ({ children }) => {
       if (userRes.data.csrfToken) setCsrfToken(userRes.data.csrfToken);
       setAuth({ user: userRes.data, userType: 'user' });
       setSentryUser(userRes.data);
-    } catch (userErr) {
+    } catch {
       // 2. If no USER, try to get an ARTISAN user
       try {
         const artisanRes = await api.get("/api/auth/me");
         if (artisanRes.data.csrfToken) setCsrfToken(artisanRes.data.csrfToken);
         setAuth({ user: artisanRes.data, userType: 'artisan' });
         setSentryUser(artisanRes.data);
-      } catch (artisanErr) {
+      } catch {
         // 3. If neither, we are logged out.
         setAuth(initialAuthState);
         setCsrfToken(null);

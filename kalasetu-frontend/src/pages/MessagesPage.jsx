@@ -43,7 +43,7 @@ const InitialsAvatar = ({ name, size = 'w-12 h-12 text-lg' }) => {
 
 const MessagesPage = () => {
   const { user, isAuthenticated } = useAuth();
-  const { client, isLoading, error, isUnavailable } = useChat();
+  const { client, isLoading, isUnavailable } = useChat();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 

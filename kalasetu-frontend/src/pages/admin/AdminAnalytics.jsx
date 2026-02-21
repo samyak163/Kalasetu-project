@@ -28,7 +28,7 @@ const statusColor = (name) => STATUS_COLORS[name?.toLowerCase()] || 'bg-gray-400
 // Reusable UI pieces
 // ---------------------------------------------------------------------------
 
-const StatCard = ({ icon: Icon, label, value, sub, iconBg = 'bg-brand-500' }) => (
+const StatCard = ({ icon: Icon, label, value, sub, iconBg = 'bg-brand-500' }) => ( // eslint-disable-line no-unused-vars
   <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
     <div className="flex items-center gap-3 mb-3">
       <div className={`${iconBg} p-2.5 rounded-lg`}>

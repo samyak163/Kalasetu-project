@@ -39,10 +39,9 @@ export default function UserBookings() {
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only fetch
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Deep link: ?review=bookingId opens ReviewSheet automatically
   useEffect(() => {

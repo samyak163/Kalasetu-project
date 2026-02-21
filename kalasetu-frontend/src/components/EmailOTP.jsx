@@ -28,7 +28,7 @@ export default function EmailOTP() {
   };
 
   // Optional: helper if you want to verify on this component too
-  const verifyOnThisPage = async () => {
+  const _verifyOnThisPage = async () => {
     try {
       if (isSignInWithEmailLink(auth, window.location.href)) {
         let emailToVerify = window.localStorage.getItem('emailForSignIn');

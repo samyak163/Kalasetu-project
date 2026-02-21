@@ -12,7 +12,7 @@ import api from '../../lib/axios.js';
  * Stats (bookingCount, averageRating, reviewCount) are fetched lazily from
  * GET /api/services/:serviceId/stats when the sheet opens.
  */
-export default function ServiceDetailSheet({ service, artisan, open, onClose, onBook }) {
+export default function ServiceDetailSheet({ service, artisan: _artisan, open, onClose, onBook }) {
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
 

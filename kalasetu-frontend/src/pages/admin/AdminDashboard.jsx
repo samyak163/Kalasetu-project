@@ -9,7 +9,7 @@ const AdminDashboard = () => {
   const [error, setError] = useState(null);
   const [period, setPeriod] = useState('30days');
 
-  useEffect(() => { fetchStats(); }, [period]);
+  useEffect(() => { fetchStats(); }, [period]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchStats = async () => {
     setLoading(true);

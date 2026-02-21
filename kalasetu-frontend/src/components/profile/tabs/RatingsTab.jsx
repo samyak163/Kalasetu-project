@@ -3,7 +3,7 @@ import api from '../../../lib/axios.js';
 import { Card, Badge, Alert, EmptyState, Skeleton, StarRating } from '../../ui';
 import { Star, Info } from 'lucide-react';
 
-const RatingsTab = ({ user }) => {
+const RatingsTab = () => {
   const [ratings, setRatings] = useState(null);
   const [loading, setLoading] = useState(true);
 

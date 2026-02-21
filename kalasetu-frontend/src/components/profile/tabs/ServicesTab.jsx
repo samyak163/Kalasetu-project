@@ -37,7 +37,7 @@ const ServicesTab = () => {
     if (authLoading) return;
     if (userType !== 'artisan') { setLoading(false); return; }
     fetchAll();
-  }, [userType, authLoading, artisanId]);
+  }, [userType, authLoading, artisanId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAll = async () => {
     if (!artisanId) return;

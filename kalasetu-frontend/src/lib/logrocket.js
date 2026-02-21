@@ -41,7 +41,7 @@ export const initLogRocket = () => {
               if (body.token) body.token = '[REDACTED]';
               if (body.password) body.password = '[REDACTED]';
               response.body = JSON.stringify(body);
-            } catch (e) {
+            } catch {
               // Not JSON, leave as is
             }
           }
@@ -65,7 +65,7 @@ export const initLogRocket = () => {
     // Setup React integration (gracefully handle version mismatches)
     try {
       setupLogRocketReact(LogRocket);
-    } catch (reactError) {
+    } catch {
       // LogRocket React wrapper may not be compatible with this React version
       if (import.meta.env.DEV) {
         console.warn('⚠️ LogRocket React wrapper not compatible, continuing with core LogRocket');

@@ -12,7 +12,7 @@ const MyClientsTab = () => {
 
   useEffect(() => {
     fetchClients();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchClients = async () => {
     try {

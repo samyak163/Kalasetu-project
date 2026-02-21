@@ -5,7 +5,7 @@ import { ToastContext } from '../../../context/ToastContext.jsx';
 import { Card, Avatar, Badge, Button, Input, StatusBadge, BottomSheet, EmptyState, Skeleton } from '../../ui';
 import { ShoppingBag, IndianRupee, Calculator } from 'lucide-react';
 
-const OrderHistoryTab = ({ user }) => {
+const OrderHistoryTab = () => {
   const { showToast } = React.useContext(ToastContext);
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
@@ -27,7 +27,7 @@ const OrderHistoryTab = ({ user }) => {
       const res = await api.get('/api/bookings/me');
       const data = res.data?.data || res.data || [];
       setOrders(Array.isArray(data) ? data : []);
-    } catch (error) {
+    } catch {
       showToast('Failed to load order history', 'error');
     } finally {
       setLoading(false);
@@ -60,7 +60,7 @@ const OrderHistoryTab = ({ user }) => {
   useEffect(() => {
     fetchOrders();
     fetchRefundRequests();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredOrders = orders
     .filter(order => {

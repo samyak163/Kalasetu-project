@@ -11,7 +11,7 @@ const EarningsTab = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchEarnings(); }, []);
+  useEffect(() => { fetchEarnings(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchEarnings = async () => {
     try {
@@ -57,7 +57,7 @@ const EarningsTab = () => {
 
       {/* Balance cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {balanceCards.map(({ label, value, icon: Icon, color, bg, subtitle }) => (
+        {balanceCards.map(({ label, value, icon: Icon, color, bg, subtitle }) => ( // eslint-disable-line no-unused-vars
           <Card key={label} hover={false}>
             <div className="flex items-start justify-between">
               <div>

@@ -164,7 +164,7 @@ export default function AboutTab({ artisan, className = '' }) {
   );
 }
 
-function InfoChip({ icon: Icon, label, value }) {
+function InfoChip({ icon: Icon, label, value }) { // eslint-disable-line no-unused-vars
   return (
     <div className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
       <Icon className="h-4 w-4 text-brand-500 mt-0.5 shrink-0" />

@@ -37,8 +37,7 @@ const SORT_OPTIONS = [
  * - SearchOverlay for re-searching from this page
  */
 const SearchResults = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { userType } = useAuth();
   const { showToast } = useContext(ToastContext);
 

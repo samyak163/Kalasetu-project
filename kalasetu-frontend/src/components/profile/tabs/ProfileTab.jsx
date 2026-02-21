@@ -18,7 +18,7 @@ const ProfileTab = ({ user, onSave }) => {
   });
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [, setUploadProgress] = useState(0);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -119,7 +119,7 @@ const ProfileTab = ({ user, onSave }) => {
 
     setLoading(true);
     try {
-      const response = await api.put('/api/users/profile', {
+      await api.put('/api/users/profile', {
         fullName: formData.fullName.trim(),
         bio: formData.bio.trim(),
         profileImageUrl: formData.profileImageUrl,

@@ -95,7 +95,7 @@ export default function ProfileHeader({ artisan, serviceCount = 0, onChat, onBoo
 }
 
 /** Small inline stat chip for the stats row */
-function StatChip({ icon: Icon, value }) {
+function StatChip({ icon: Icon, value }) { // eslint-disable-line no-unused-vars
   return (
     <span className="inline-flex items-center gap-1 text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-full">
       <Icon className="h-3 w-3 text-gray-400" />

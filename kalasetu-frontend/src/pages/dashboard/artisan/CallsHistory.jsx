@@ -13,7 +13,7 @@ export default function CallsHistory() {
       try {
         const res = await axios.get('/api/calls/history', { withCredentials: true });
         setList(res.data?.data || []);
-      } catch (_) {
+      } catch {
         setList([]);
       } finally {
         setLoading(false);

@@ -22,7 +22,7 @@ const AdminBookings = () => {
   useEffect(() => {
     fetchBookings();
     fetchStats();
-  }, [page, status, startDate, endDate, artisanFilter, search]);
+  }, [page, status, startDate, endDate, artisanFilter, search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -58,8 +58,8 @@ const AdminBookings = () => {
       if (response.data.success) {
         setStats(response.data.data);
       }
-    } catch (err) {
-      // Log stats error
+    } catch {
+      // Stats error — non-critical
     }
   };
 
@@ -100,7 +100,7 @@ const AdminBookings = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (err) {
+    } catch {
       alert('Failed to export CSV');
     }
   };

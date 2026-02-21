@@ -44,7 +44,7 @@ export default function ProfileCompletionCard({ onNavigateTab }) {
 
   const handleDismiss = () => {
     setDismissed(true);
-    try { localStorage.setItem(DISMISS_KEY, 'true'); } catch {}
+    try { localStorage.setItem(DISMISS_KEY, 'true'); } catch { /* ignored */ }
   };
 
   return (

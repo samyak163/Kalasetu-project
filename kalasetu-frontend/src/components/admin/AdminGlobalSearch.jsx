@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Search, LayoutDashboard, Briefcase, Users, Star, DollarSign, MessageSquare, Settings, X, Clock } from 'lucide-react';
-import api from '../../lib/axios';
 
 const AdminGlobalSearch = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -11,7 +10,6 @@ const AdminGlobalSearch = () => {
   const searchRef = useRef(null);
   const suggestionsRef = useRef(null);
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Navigation items with icons and keywords
   const navigationItems = [
@@ -106,7 +104,7 @@ const AdminGlobalSearch = () => {
 
     setSuggestions(matched.slice(0, 8));
     setShowSuggestions(matched.length > 0);
-  }, [searchQuery, recentSearches]);
+  }, [searchQuery, recentSearches]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close suggestions when clicking outside
   useEffect(() => {

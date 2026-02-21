@@ -3,7 +3,7 @@ import { ThemeContext } from '../../../context/ThemeContext.jsx';
 import { ToastContext } from '../../../context/ToastContext.jsx';
 import { Card } from '../../ui';
 
-const AppearanceTab = ({ user }) => {
+const AppearanceTab = () => {
   const { theme, fontSize, updateTheme, updateFontSize } = useContext(ThemeContext);
   const { showToast } = useContext(ToastContext);
 

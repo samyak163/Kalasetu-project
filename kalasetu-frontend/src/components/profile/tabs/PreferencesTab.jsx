@@ -72,7 +72,7 @@ const PreferencesTab = ({ user, onSave }) => {
       });
       showToast('Preferences saved successfully!', 'success');
       onSave?.();
-    } catch (error) {
+    } catch {
       showToast('Failed to save preferences', 'error');
     } finally {
       setLoading(false);

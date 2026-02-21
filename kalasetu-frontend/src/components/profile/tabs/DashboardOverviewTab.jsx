@@ -25,7 +25,7 @@ const DashboardOverviewTab = ({ onNavigateTab }) => {
   const [recentBookings, setRecentBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchDashboardData(); }, []);
+  useEffect(() => { fetchDashboardData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDashboardData = async () => {
     try {
@@ -85,7 +85,7 @@ const DashboardOverviewTab = ({ onNavigateTab }) => {
 
       {/* Stats cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {statCards.map(({ label, value, icon: Icon, color, bg, isRating, reviewCount }) => (
+        {statCards.map(({ label, value, icon: Icon, color, bg, isRating, reviewCount }) => ( // eslint-disable-line no-unused-vars
           <Card key={label} hover={false} compact>
             <div className="flex items-start justify-between">
               <div>

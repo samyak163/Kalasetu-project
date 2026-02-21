@@ -84,7 +84,7 @@ export default function SearchOverlay({ open, onClose }) {
           signal: controller.signal,
         });
         setSuggestions(data?.suggestions || EMPTY_SUGGESTIONS);
-      } catch (err) {
+      } catch {
         if (!controller.signal.aborted) {
           setSuggestions(EMPTY_SUGGESTIONS);
         }

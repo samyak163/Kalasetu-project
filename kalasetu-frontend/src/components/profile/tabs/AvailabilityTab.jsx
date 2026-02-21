@@ -9,7 +9,7 @@ const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const AvailabilityTab = () => {
   const { showToast } = useContext(ToastContext);
-  const [availability, setAvailability] = useState(null);
+  const [, setAvailability] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -23,7 +23,7 @@ const AvailabilityTab = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     try {
@@ -48,7 +48,7 @@ const AvailabilityTab = () => {
       }
 
       setBookings(bookingsRes.data.data || []);
-    } catch (err) {
+    } catch {
       showToast('Failed to load availability', 'error');
     } finally {
       setLoading(false);

@@ -33,7 +33,7 @@ const BookingsTab = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchBookings = async ({ silent = false } = {}) => {
     try {

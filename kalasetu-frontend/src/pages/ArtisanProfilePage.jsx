@@ -114,12 +114,11 @@ const ArtisanProfilePage = () => {
   }, [services, artisan?.totalReviews]);
 
   // Default to first tab with content when tab list changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- activeTab read inside but shouldn't trigger re-run
   useEffect(() => {
     if (!loading && tabs.length > 0 && !tabs.find(t => t.key === activeTab)) {
       setActiveTab(tabs[0].key);
     }
-  }, [loading, tabs]); // activeTab intentionally excluded to avoid extra render cycle
+  }, [loading, tabs]); // eslint-disable-line react-hooks/exhaustive-deps -- activeTab intentionally excluded
 
   // ---------- Action handlers ----------
 

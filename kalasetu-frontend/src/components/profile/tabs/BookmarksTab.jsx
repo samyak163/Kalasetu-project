@@ -5,7 +5,7 @@ import { ToastContext } from '../../../context/ToastContext.jsx';
 import { Card, Avatar, Badge, Button, Input, EmptyState, Skeleton } from '../../ui';
 import { Heart, Bookmark, Search } from 'lucide-react';
 
-const BookmarksTab = ({ user }) => {
+const BookmarksTab = () => {
   const { showToast } = React.useContext(ToastContext);
   const navigate = useNavigate();
   const [bookmarks, setBookmarks] = useState([]);
@@ -16,7 +16,7 @@ const BookmarksTab = ({ user }) => {
 
   useEffect(() => {
     fetchBookmarks();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchBookmarks = async () => {
     try {
@@ -24,7 +24,7 @@ const BookmarksTab = ({ user }) => {
       const data = res?.data;
       // Filter out null entries (deleted artisans)
       setBookmarks(Array.isArray(data) ? data.filter(Boolean) : []);
-    } catch (error) {
+    } catch {
       showToast('Failed to load bookmarks', 'error');
     } finally {
       setLoading(false);
@@ -38,7 +38,7 @@ const BookmarksTab = ({ user }) => {
       await api.delete(`/api/users/bookmarks/${artisanId}`);
       setBookmarks(prev => prev.filter(a => a._id !== artisanId));
       showToast('Bookmark removed successfully', 'success');
-    } catch (error) {
+    } catch {
       showToast('Failed to remove bookmark', 'error');
     }
   };
