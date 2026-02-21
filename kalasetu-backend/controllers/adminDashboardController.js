@@ -95,7 +95,7 @@ export const getDashboardStats = async (req, res) => {
     let paymentStats = { totalRevenue: 0, totalTransactions: 0 };
     try {
       const payments = await Payment.aggregate([
-        { $match: { status: 'completed' } },
+        { $match: { status: { $in: ['captured', 'paid'] } } },
         { $group: { _id: null, totalRevenue: { $sum: '$amount' }, totalTransactions: { $sum: 1 } } }
       ]);
       if (payments.length > 0) paymentStats = payments[0];
@@ -128,7 +128,7 @@ export const getDashboardStats = async (req, res) => {
 
     const topCategories = await Artisan.aggregate([
       { $match: { isActive: true } },
-      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $group: { _id: '$craft', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 5 }
     ]);
