@@ -8,19 +8,23 @@ import OrderHistoryTab from './tabs/OrderHistoryTab.jsx';
 import PreferencesTab from './tabs/PreferencesTab.jsx';
 import AppearanceTab from './tabs/AppearanceTab.jsx';
 import HelpSupportTab from './tabs/HelpSupportTab.jsx';
+import {
+  User, Star, Bookmark, ClipboardList,
+  Bell, SunMoon, HelpCircle, X,
+} from 'lucide-react';
 
 const tabs = [
-  { key: 'profile', label: 'Your Profile', icon: '👤' },
-  { key: 'ratings', label: 'Your Rating', icon: '⭐' },
-  { key: 'bookmarks', label: 'Collections', icon: '🔖' },
-  { key: 'history', label: 'History', icon: '📋' },
-  { key: 'preferences', label: 'Preferences', icon: '⚙️' },
-  { key: 'appearance', label: 'Appearance', icon: '🎨' },
-  { key: 'help', label: 'Help & Support', icon: '❓' },
+  { key: 'profile', label: 'Your Profile', icon: User },
+  { key: 'ratings', label: 'Your Rating', icon: Star },
+  { key: 'bookmarks', label: 'Collections', icon: Bookmark },
+  { key: 'history', label: 'History', icon: ClipboardList },
+  { key: 'preferences', label: 'Preferences', icon: Bell },
+  { key: 'appearance', label: 'Appearance', icon: SunMoon },
+  { key: 'help', label: 'Help & Support', icon: HelpCircle },
 ];
 
 const ProfileModal = () => {
-  const { auth, logout } = useContext(AuthContext);
+  const { auth } = useContext(AuthContext);
   const { showToast } = useContext(ToastContext);
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
@@ -28,7 +32,6 @@ const ProfileModal = () => {
   useEffect(() => {
     const handleOpenProfile = (event) => {
       setIsOpen(true);
-      // If event has a tab detail, use it, otherwise default to 'profile'
       const tab = event.detail?.tab || 'profile';
       setActiveTab(tab);
     };
@@ -37,7 +40,6 @@ const ProfileModal = () => {
   }, []);
 
   useEffect(() => {
-    // Prevent body scroll when modal is open
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -59,7 +61,7 @@ const ProfileModal = () => {
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
@@ -70,7 +72,7 @@ const ProfileModal = () => {
     >
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
-      
+
       {/* Modal Container */}
       <div className="relative bg-white dark:bg-gray-900 w-full max-w-7xl mx-4 mt-8 mb-8 rounded-xl shadow-2xl overflow-hidden animate-scale-in">
         {/* Header */}
@@ -83,57 +85,61 @@ const ProfileModal = () => {
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
             aria-label="Close profile modal"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         <div className="flex flex-col md:flex-row h-[calc(100vh-8rem)] max-h-[800px]">
           {/* Sidebar Tabs - Desktop */}
           <aside className="hidden md:flex w-64 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-4 flex-col gap-2 overflow-y-auto">
-            {tabs.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`
-                  w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all
-                  flex items-center gap-3
-                  ${
-                    activeTab === tab.key
-                      ? 'bg-[#F3E9E5] dark:bg-[#2A1810] text-[#A55233] dark:text-[#D4A574] shadow-sm'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  }
-                `}
-                aria-pressed={activeTab === tab.key}
-              >
-                <span className="text-lg">{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
+            {tabs.map(tab => {
+              const IconComp = tab.icon;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`
+                    w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all
+                    flex items-center gap-3
+                    ${
+                      activeTab === tab.key
+                        ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300 shadow-sm'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }
+                  `}
+                  aria-pressed={activeTab === tab.key}
+                >
+                  <IconComp className="h-5 w-5 shrink-0" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </aside>
 
           {/* Mobile Tabs - Horizontal Scroll */}
           <div className="md:hidden border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 overflow-x-auto">
             <div className="flex gap-2 p-4 min-w-max">
-              {tabs.map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`
-                    px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all
-                    flex items-center gap-2
-                    ${
-                      activeTab === tab.key
-                        ? 'bg-[#A55233] text-white shadow-sm'
-                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
-                    }
-                  `}
-                >
-                  <span>{tab.icon}</span>
-                  <span>{tab.label}</span>
-                </button>
-              ))}
+              {tabs.map(tab => {
+                const IconComp = tab.icon;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`
+                      px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all
+                      flex items-center gap-2
+                      ${
+                        activeTab === tab.key
+                          ? 'bg-brand-500 text-white shadow-sm'
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                      }
+                    `}
+                  >
+                    <IconComp className="h-4 w-4" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
