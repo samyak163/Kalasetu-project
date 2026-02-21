@@ -32,7 +32,7 @@ export default function RegisterSelector() {
 
         <div className="text-center mt-8 text-sm text-gray-700">
           Already have an account?{' '}
-          <Link to="/artisan/login" className="text-brand-500 hover:text-brand-600 font-semibold hover:underline">Log In</Link>
+          <Link to="/login" className="text-brand-500 hover:text-brand-600 font-semibold hover:underline">Log In</Link>
         </div>
       </div>
     </div>

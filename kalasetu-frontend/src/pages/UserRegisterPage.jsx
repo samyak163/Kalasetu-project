@@ -74,7 +74,7 @@ const UserRegisterPage = () => {
                 captureException(err, { context: 'post_registration_notification_refresh', component: 'UserRegisterPage' });
             }
 
-            showToast('A verification link has been sent to your Gmail. Please verify to continue.', 'info', 6000);
+            showToast('A verification link has been sent to your email. Please verify to continue.', 'info', 6000);
             navigate('/', { replace: true });
         } catch (err) {
             console.error('Registration error:', err);

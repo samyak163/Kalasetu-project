@@ -69,7 +69,7 @@ const RegisterPage = () => {
                     captureException(err, { context: 'post_registration_notification_refresh', component: 'RegisterPage' });
                 }
 
-                showToast('A verification link has been sent to your Gmail. Please verify to continue.', 'info', 6000);
+                showToast('A verification link has been sent to your email. Please verify to continue.', 'info', 6000);
                 
                 // Track with PostHog if available
                 if (window.posthog) {
