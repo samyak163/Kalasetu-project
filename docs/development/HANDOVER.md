@@ -9,11 +9,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Date** | 2026-02-20 |
-| **Branch** | `feat/ui-overhaul` (84 commits ahead of main, pushed to origin) |
-| **Build status** | passing (frontend builds, backend starts clean) |
+| **Date** | 2026-02-21 |
+| **Branch** | `feat/ui-overhaul` (100 commits ahead of main) |
+| **Build status** | passing (frontend builds cleanly, 81 precache entries) |
 | **PR** | PR #1 open (draft) on samyak163/Kalasetu-project |
-| **Session mood** | Phases 1-8 complete, all code review fixes applied, ready for Phase 9 |
+| **Session mood** | Phases 1-9 complete + code review fixes applied, ready for Phase 10 |
 
 ---
 
@@ -43,13 +43,49 @@ StarRating component, review tag constants (rating-dependent positive/negative t
 ### Phase 8: Chat Integration
 `useChatUnread` hook, chat unread badge on Header, MessagesPage rewrite (mobile-first WhatsApp-style layout, custom channel previews, EmptyState, TypingIndicator)
 
+### Phase 9: Artisan Dashboard Rebuild (JUST COMPLETED)
+
+Full sweep: 6 tab rebuilds, 3 tab polish, container rebuild, 2 shared components, dead code cleanup. Then comprehensive code review + 19 fixes.
+
+**Implementation (13 commits):**
+```
+7d71176 chore: delete orphaned USERsTab.jsx
+5daeb51 feat(dashboard): rebuild ArtisanAccountPage container
+0b0888b feat(dashboard): add IncomeChart shared component
+e71fc05 feat(dashboard): rebuild ArtisanProfileTab with design system
+abde069 feat(dashboard): add ProfileCompletionCard shared component
+efbe810 feat(dashboard): rebuild PortfolioTab with design system
+42535b5 feat(dashboard): rebuild DashboardOverviewTab with smart features
+b29d63f feat(dashboard): rebuild AvailabilityTab with design system
+f0cfe0c feat(dashboard): rebuild EarningsTab with design system
+b6187c8 feat(dashboard): rebuild ReviewsTab with design system
+024e6e9 feat(dashboard): polish MyClientsTab, AppearanceTab, HelpSupportTab
+```
+
+**Code review fixes (2 commits):**
+```
+4bde5cc fix(dashboard): fix 7 PortfolioTab issues from code review
+124f11a fix(dashboard): fix 12 review issues across 8 dashboard tabs
+```
+
+**Key changes:**
+- ArtisanAccountPage: URL hash navigation (#dashboard, #earnings, etc.), mobile horizontal icon tab bar, desktop sidebar with brand accent
+- DashboardOverviewTab: Smart dashboard with greeting, ProfileCompletionCard, 4 stats cards, IncomeChart (6 months), pending actions, recent bookings
+- EarningsTab: Balance cards, IncomeChart (12 months), transaction history with correct type-based icons
+- ReviewsTab: StarRating + ReviewCard from design system, tag summary from API, FilterChips, reply form
+- ArtisanProfileTab: Avatar, Input, Button throughout, bio clearing works (fixed `||` to `??`)
+- PortfolioTab: BottomSheet for create/edit, Card for projects, Cloudinary upload fully fixed (cloud_name, folder, allowed_formats, response checking)
+- AvailabilityTab: Design tokens, Card/Badge/Button/Input, time slot validation
+- Polish: MyClientsTab, AppearanceTab, HelpSupportTab — component swaps, removed dead accessibility checkboxes, fixed support endpoints
+- New shared: IncomeChart (pure CSS bar chart), ProfileCompletionCard (dismissible via localStorage)
+
 ### Additional Completed Work
 - ServiceDetailSheet with ImageCarousel, per-service stats API
 - ServiceFormSheet with live preview, MultiImageUpload, management ServicesTab
 - Search suggestions for `suggestedServices` from categories
 - Price removed from Book buttons (misleading with multi-service artisans)
 
-### Code Review Fixes (8 commits)
+### Code Review Fixes (Phases 1-8: 8 commits)
 ```
 22a0747 fix: align tests, seed data, and admin controller with tags-required schema
 f0eb0ce fix(reviews): block helpful votes on flagged/removed reviews, suppress lint warning
@@ -65,19 +101,12 @@ b53f2f7 fix(reviews): address code review findings — hasReview API, sort bug, 
 
 ## What's Remaining
 
-### Phase 9: Artisan Dashboard Rebuild (NEXT UP)
-Rebuild artisan dashboard tabs using the design system. 2 tasks in the plan:
+### Phase 10: User Dashboard Rebuild (NEXT UP)
+Rebuild user dashboard pages using design system components. This covers `UserProfilePage.jsx` and its tabs:
+- ProfileTab, RatingsTab, BookmarksTab, OrderHistoryTab, PreferencesTab (imported by UserProfilePage + ProfileModal)
+- These are the 5 files that were initially misidentified as "orphaned" in Phase 9 — they belong to the customer side
 
-| Task | Scope | Files |
-|------|-------|-------|
-| Task 29 | DashboardOverviewTab — stats cards, today's bookings, quick actions | `components/profile/tabs/DashboardOverviewTab.jsx` |
-| Task 30 | EarningsTab + ReviewsTab (artisan view) — payment history, respond to reviews | `components/profile/tabs/EarningsTab.jsx`, `components/profile/tabs/ReviewsTab.jsx` |
-
-**Existing artisan dashboard tabs** (17 total in `components/profile/tabs/`):
-DashboardOverviewTab, BookingsTab, EarningsTab, ReviewsTab, ServicesTab (already rebuilt), AvailabilityTab, PortfolioTab, MyClientsTab, ArtisanProfileTab, ProfileTab, AppearanceTab, PreferencesTab, HelpSupportTab, OrderHistoryTab, BookmarksTab, RatingsTab, USERsTab
-
-### Phase 10: User Dashboard Rebuild
-Rebuild user dashboard pages using design system components.
+**Key context:** These user-facing tabs share the same `components/profile/tabs/` directory as the artisan tabs but are imported by different page components (`UserProfilePage.jsx`, `ProfileModal.jsx`).
 
 ### Phase 11: Remaining Integrations & Global Polish
 Error states, notifications, 404 page, global polish.
@@ -90,6 +119,8 @@ Error states, notifications, 404 page, global polish.
 - Artisan IDs stored in `helpfulVotes` ref:'User' field (protectAny allows artisans)
 - Inline safeParse in reviewController vs validateRequest middleware pattern
 - Cloudinary `allowed_formats` on review photo upload signatures
+- ThemeContext calls `/api/users/profile` for artisans — should branch by userType (pre-existing bug, not Phase 9)
+- MyClientsTab action buttons (View History, Call, Message) have no handlers — wire up or remove in Phase 11
 
 ---
 
@@ -103,6 +134,11 @@ Error states, notifications, 404 page, global polish.
 | Chat unread | Stream Chat events | `notification.message_new`, `notification.mark_read` provide `total_unread_count` |
 | MessagesPage | Mobile-first with showChat toggle | WhatsApp pattern: channel list <-> chat area swap on mobile |
 | Service picker | BottomSheet with all services | Generic "Book Now" opens picker when artisan has 2+ services |
+| Phase 9 scope | Full sweep (Approach B) | 6 rebuilds + 3 polish + container + shared components + backend enhancement discovery (tag endpoint already existed) |
+| Orphaned files | Only USERsTab deleted | 5 of 6 "orphaned" tabs are imported by UserProfilePage/ProfileModal — they're Phase 10 scope |
+| IncomeChart | Pure CSS bar chart | No charting library dependency (~40KB savings vs recharts) |
+| ProfileCompletionCard errors | Silent fail with console.error | Non-critical supplemental card — toast would be UX overkill |
+| Review evaluate rejections | 4 reviewer suggestions rejected | `user` prop (React ignores extras), `months` prop (orthogonal controls), `userType` guard (route-level auth sufficient), file validation (multer handles it) |
 
 ---
 
@@ -119,6 +155,11 @@ Error states, notifications, 404 page, global polish.
 - Review model now requires `tags` (1-5 entries) — any `Review.create()` call needs tags
 - Admin `findByIdAndUpdate` on reviews uses `runValidators: true` — don't remove it
 - `comment` field defaults to `''` (empty string) — it is NOT required
+- **Phase 9 specific:** User-facing tabs (ProfileTab, RatingsTab, BookmarksTab, OrderHistoryTab, PreferencesTab) still have hardcoded `#A55233` — these are Phase 10 scope, don't touch during Phase 9 fixes
+- **Phase 9 specific:** Cloudinary signed uploads require `allowed_formats` in BOTH the signature params AND the formData POST — omitting it from formData causes signature mismatch
+- **Phase 9 specific:** Backend upload route returns `cloud_name` (snake_case) — always destructure accordingly, not `cloudName`
+- **Phase 9 specific:** `useEffect` with `[]` deps that reads `user._id` from `useAuth()` will NOT re-run when auth resolves — always add `user?._id` to deps if fetching user-specific data
+- **Pre-existing:** ThemeContext calls `/api/users/profile` (userProtect) for theme saves — artisan theme changes fail silently
 
 ---
 
@@ -126,98 +167,51 @@ Error states, notifications, 404 page, global polish.
 
 | Branch | HEAD | Status |
 |--------|------|--------|
-| `feat/ui-overhaul` | `22a0747` | 84 commits ahead of main (pushed to origin) |
+| `feat/ui-overhaul` | `124f11a` | 100 commits ahead of main |
 | `main` | `4242c6c` | Stable |
 
 ---
 
-## Next Steps: Phase 9 — Artisan Dashboard Rebuild
+## Next Steps: Phase 10 — User Dashboard Rebuild
 
-### IMPORTANT: Required Workflow Using Superpowers Skills
+### Scope
 
-Phase 9 should follow the full superpowers workflow. Use these skills in order:
+Rebuild the customer/user dashboard using design system components. The user dashboard lives in:
+- `kalasetu-frontend/src/pages/UserProfilePage.jsx` — main container
+- `kalasetu-frontend/src/components/ProfileModal.jsx` — modal variant
+- 5 tab files in `components/profile/tabs/`: ProfileTab, RatingsTab, BookmarksTab, OrderHistoryTab, PreferencesTab
 
-#### 1. Brainstorm First (REQUIRED)
-```
-/brainstorming Phase 9 of the KalaSetu UI/UX overhaul — Artisan Dashboard Rebuild.
-Phases 1-8 are complete. Phase 9 covers rebuilding artisan dashboard tabs
-(DashboardOverviewTab, EarningsTab, ReviewsTab) with the design system.
-The existing plan has 2 tasks but the artisan dashboard has 17 tabs total —
-brainstorm which tabs actually need rebuilding vs which are fine as-is.
-```
+These tabs currently use pre-design-system code (raw HTML, hardcoded `#A55233`, emoji icons).
 
-Why brainstorm first: The original plan only covers 3 tabs (Tasks 29-30), but there are 17 artisan dashboard tabs. Some may already be good enough, some may need full rewrites, some may need minor tweaks. Brainstorming will identify the real scope before committing to a plan.
+### Workflow
 
-#### 2. Write a Detailed Plan
-```
-/writing-plans Create an implementation plan for Phase 9 based on the brainstorming output.
-```
-
-This creates a bite-sized task plan with TDD steps, exact file paths, and commit points.
-
-#### 3. Execute the Plan
-```
-/executing-plans Execute the Phase 9 plan at docs/plans/YYYY-MM-DD-artisan-dashboard-plan.md
-```
-
-Or use `/subagent-driven-development` for parallel agent execution within the session.
-
-#### 4. Review Before Committing
-```
-/requesting-code-review Review Phase 9 artisan dashboard changes
-```
-
-Then use `/review-code` on individual files after writing them.
-
-#### 5. Verify Before Claiming Done
-```
-/verification-before-completion Verify Phase 9 artisan dashboard rebuild
-```
-
-### Quick Start (Copy-Paste Ready)
+Use the superpowers brainstorming → planning → execution pipeline:
 
 ```
-Start Phase 9: Artisan Dashboard Rebuild.
+Start Phase 10: User Dashboard Rebuild.
 
-Read the handover at docs/development/HANDOVER.md, then use /brainstorming to explore
-what the artisan dashboard rebuild should cover. The original plan at
-docs/plans/2026-02-18-kalasetu-ui-overhaul-plan.md has Tasks 29-30 for Phase 9,
-but there are 17 tabs in components/profile/tabs/ — brainstorm the actual scope first.
-
-After brainstorming, use /writing-plans to create a detailed implementation plan,
-then /executing-plans to implement it. Use /review-code after each major component
-and /verification-before-completion before the final commit.
+Read the handover at docs/development/HANDOVER.md. Phase 9 (artisan dashboard) is complete.
+Phase 10 covers rebuilding the user/customer dashboard (UserProfilePage.jsx + its 5 tabs).
+Use /brainstorming to explore scope, then /writing-plans, then execute with agent teams.
 ```
 
 ### Reference Files
 
 | File | Purpose |
 |------|---------|
-| `docs/plans/2026-02-18-kalasetu-ui-overhaul-plan.md` | Full implementation plan (11 phases, Tasks 29-30 for Phase 9) |
-| `docs/plans/2026-02-18-kalasetu-ui-overhaul-design.md` | Design document (approved) |
-| `docs/plans/2026-02-18-artisan-offering-redesign-plan.md` | Separate offering system plan (don't duplicate) |
-| `docs/plans/2026-02-20-reviews-flow-design.md` | Phase 7 reviews design (implemented) |
+| `docs/plans/2026-02-21-artisan-dashboard-design.md` | Phase 9 design (reference for patterns) |
+| `docs/plans/2026-02-21-artisan-dashboard-plan.md` | Phase 9 plan (reference for task structure) |
 | `kalasetu-frontend/src/components/ui/index.js` | Design system barrel exports |
-| `kalasetu-frontend/src/components/profile/tabs/` | All 17 artisan dashboard tabs |
-| `kalasetu-frontend/src/pages/ArtisanAccountPage.jsx` | Dashboard page that renders tabs |
-
-### Available Superpowers Skills Reference
-
-| Skill | When to Use |
-|-------|-------------|
-| `/brainstorming` | FIRST — before any creative/feature work. Explores requirements and design. |
-| `/writing-plans` | After brainstorming — creates bite-sized implementation plan with TDD |
-| `/executing-plans` | Execute the plan task-by-task with review checkpoints |
-| `/subagent-driven-development` | Alternative to executing-plans — parallel agents per task |
-| `/review-code` | After writing any code — catches bugs and CLAUDE.md violations |
-| `/review-security` | After auth/payment/upload code changes |
-| `/requesting-code-review` | Before merging — full PR-level review |
-| `/verification-before-completion` | Before claiming work is done — runs actual verification |
-| `/finishing-a-development-branch` | When all phases are complete — merge/PR/cleanup decision |
-| `/second-opinion` | For architecture decisions or design debates |
-| `/systematic-debugging` | When encountering any bug or test failure |
+| `kalasetu-frontend/src/pages/UserProfilePage.jsx` | User dashboard container |
+| `kalasetu-frontend/src/components/ProfileModal.jsx` | Modal variant of user profile |
+| `kalasetu-frontend/src/components/profile/tabs/ProfileTab.jsx` | User profile editing |
+| `kalasetu-frontend/src/components/profile/tabs/RatingsTab.jsx` | User's given ratings |
+| `kalasetu-frontend/src/components/profile/tabs/BookmarksTab.jsx` | Saved artisans |
+| `kalasetu-frontend/src/components/profile/tabs/OrderHistoryTab.jsx` | Past bookings |
+| `kalasetu-frontend/src/components/profile/tabs/PreferencesTab.jsx` | User preferences |
+| `kalasetu-frontend/src/pages/ArtisanAccountPage.jsx` | Phase 9 container (reference for hash nav pattern) |
 
 ---
 
-*Last updated: 2026-02-20*
+*Last updated: 2026-02-21*
 *Updated by: Claude Code*
