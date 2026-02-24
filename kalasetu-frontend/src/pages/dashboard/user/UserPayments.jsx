@@ -36,9 +36,11 @@ const UserPayments = () => {
     try {
       setLoading(true);
       const res = await api.get('/api/payments?type=sent&limit=50');
-      setPayments(res.data.data || []);
+      const data = res.data?.data;
+      setPayments(Array.isArray(data) ? data : []);
     } catch (err) {
       showToast(err.response?.data?.message || 'Failed to load payments', 'error');
+      setPayments([]);
     } finally {
       setLoading(false);
     }
