@@ -54,7 +54,7 @@ export default function AboutTab({ artisan, className = '' }) {
           {/* Quick info grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
             {artisan.yearsOfExperience && (
-              <InfoChip icon={Briefcase} label="Experience" value={artisan.yearsOfExperience} />
+              <InfoChip icon={Briefcase} label="Experience" value={`${artisan.yearsOfExperience} years`} />
             )}
             {artisan.teamSize && (
               <InfoChip icon={Users} label="Team" value={artisan.teamSize} />
