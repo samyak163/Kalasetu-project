@@ -274,7 +274,7 @@ const AdminArtisans = () => {
                           <div className="flex items-center gap-2 truncate max-w-xs"><Phone className="w-4 h-4 text-gray-400 flex-shrink-0" /><span className="truncate">{artisan.phoneNumber}</span></div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap"><span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-brand-50 text-brand-700 truncate max-w-xs">{artisan.category || 'N/A'}</span></td>
+                      <td className="px-6 py-4 whitespace-nowrap"><span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-brand-50 text-brand-700 truncate max-w-xs">{artisan.craft || artisan.category || 'N/A'}</span></td>
                       <td className="px-6 py-4 whitespace-nowrap"><span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${artisan.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{artisan.isActive ? 'Active' : 'Suspended'}</span></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><div className="flex items-center gap-2"><Calendar className="w-4 h-4" />{new Date(artisan.createdAt).toLocaleDateString()}</div></td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

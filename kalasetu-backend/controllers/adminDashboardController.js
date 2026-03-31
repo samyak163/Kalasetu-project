@@ -95,7 +95,7 @@ export const getDashboardStats = async (req, res) => {
     let paymentStats = { totalRevenue: 0, totalTransactions: 0 };
     try {
       const payments = await Payment.aggregate([
-        { $match: { status: 'completed' } },
+        { $match: { status: { $in: ['captured', 'paid'] } } },
         { $group: { _id: null, totalRevenue: { $sum: '$amount' }, totalTransactions: { $sum: 1 } } }
       ]);
       if (payments.length > 0) paymentStats = payments[0];
@@ -128,7 +128,7 @@ export const getDashboardStats = async (req, res) => {
 
     const topCategories = await Artisan.aggregate([
       { $match: { isActive: true } },
-      { $group: { _id: '$category', count: { $sum: 1 } } },
+      { $group: { _id: '$craft', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 5 }
     ]);
@@ -600,15 +600,16 @@ export const getAllBookings = async (req, res) => {
 
 export const getBookingsStats = async (req, res) => {
   try {
-    const [totalBookings, upcoming, completed, cancelled] = await Promise.all([
+    const [totalBookings, upcoming, completed, cancelled, rejected] = await Promise.all([
       Booking.countDocuments(),
       Booking.countDocuments({ status: 'confirmed', start: { $gte: new Date() } }),
       Booking.countDocuments({ status: 'completed' }),
-      Booking.countDocuments({ status: 'cancelled' })
+      Booking.countDocuments({ status: 'cancelled' }),
+      Booking.countDocuments({ status: 'rejected' })
     ]);
-    
-    const cancellationRate = totalBookings > 0 ? (cancelled / totalBookings) * 100 : 0;
-    
+
+    const cancellationRate = totalBookings > 0 ? ((cancelled + rejected) / totalBookings) * 100 : 0;
+
     res.status(200).json({
       success: true,
       data: {
@@ -616,6 +617,7 @@ export const getBookingsStats = async (req, res) => {
         upcoming,
         completed,
         cancelled,
+        rejected,
         cancellationRate
       }
     });

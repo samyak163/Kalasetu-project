@@ -30,10 +30,13 @@ export const AdminAuthProvider = ({ children }) => {
         setAdmin(response.data.admin);
         setIsAuthenticated(true);
       }
-    } catch {
-      setAdmin(null);
-      setIsAuthenticated(false);
-      setCsrfToken(null);
+    } catch (err) {
+      // Only clear auth on 401 (unauthorized) — not on 403 (forbidden)
+      if (err.response?.status !== 403) {
+        setAdmin(null);
+        setIsAuthenticated(false);
+        setCsrfToken(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -99,7 +102,10 @@ export const AdminAuthProvider = ({ children }) => {
   };
 
   const hasPermission = (resource, action) => {
-    if (!admin || !admin.permissions) return false;
+    if (!admin) return false;
+    // super_admin bypasses all permission checks (mirrors backend checkPermission)
+    if (admin.role === 'super_admin') return true;
+    if (!admin.permissions) return false;
     return admin.permissions[resource]?.[action] === true;
   };
 

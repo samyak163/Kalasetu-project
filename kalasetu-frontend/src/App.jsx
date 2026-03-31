@@ -46,6 +46,7 @@ const CallsHistory = lazy(() => import('./pages/dashboard/artisan/CallsHistory')
 
 // Auth Components
 import RequireAuth from './components/RequireAuth';
+import RedirectIfAuth from './components/RedirectIfAuth';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import AdminLayout from './components/admin/AdminLayout';
 import { LoadingState } from './components/ui';
@@ -79,21 +80,21 @@ function App() {
         <Route path="artisan/:publicId" element={<ArtisanProfilePage />} />
 
         {/* Unified Auth Selectors */}
-        <Route path="login" element={<AuthSelector />} />
-        <Route path="register" element={<RegisterSelector />} />
+        <Route path="login" element={<RedirectIfAuth><AuthSelector /></RedirectIfAuth>} />
+        <Route path="register" element={<RedirectIfAuth><RegisterSelector /></RedirectIfAuth>} />
 
         {/* Direct Artisan Auth Routes */}
-        <Route path="artisan/login" element={<LoginPage />} />
-        <Route path="artisan/register" element={<RegisterPage />} />
-        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="artisan/login" element={<RedirectIfAuth><LoginPage /></RedirectIfAuth>} />
+        <Route path="artisan/register" element={<RedirectIfAuth><RegisterPage /></RedirectIfAuth>} />
+        <Route path="forgot-password" element={<RedirectIfAuth><ForgotPassword /></RedirectIfAuth>} />
   {/* Firebase Auth helper pages */}
   <Route path="phone-otp" element={<PhoneOTPPage />} />
   <Route path="verify-email" element={<VerifyEmail />} />
         
         {/* USER Auth Routes (NEW) */}
-        <Route path="user/login" element={<UserLoginPage />} />
-        <Route path="user/register" element={<UserRegisterPage />} />
-        <Route path="user/forgot-password" element={<ForgotPassword USER />} />
+        <Route path="user/login" element={<RedirectIfAuth><UserLoginPage /></RedirectIfAuth>} />
+        <Route path="user/register" element={<RedirectIfAuth><UserRegisterPage /></RedirectIfAuth>} />
+        <Route path="user/forgot-password" element={<RedirectIfAuth><ForgotPassword USER /></RedirectIfAuth>} />
 
         {/* Policy Pages */}
         <Route path="privacy" element={<PrivacyPolicy />} />

@@ -146,9 +146,9 @@ const ArtisanAccountPage = () => {
         </aside>
 
         {/* Tab content */}
-        <main role="tabpanel" className="min-w-0">
+        <div role="tabpanel" className="min-w-0">
           {renderTab()}
-        </main>
+        </div>
       </div>
     </div>
   );

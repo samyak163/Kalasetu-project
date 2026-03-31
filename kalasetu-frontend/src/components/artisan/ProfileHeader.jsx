@@ -65,7 +65,7 @@ export default function ProfileHeader({ artisan, serviceCount = 0, onChat, onBoo
               <StatChip icon={Calendar} value={`${artisan.totalBookings} bookings`} />
             )}
             {artisan.yearsOfExperience && (
-              <StatChip icon={Briefcase} value={`${artisan.yearsOfExperience} exp`} />
+              <StatChip icon={Briefcase} value={`${artisan.yearsOfExperience} yrs`} />
             )}
             {artisan.responseRate > 0 && (
               <StatChip icon={BarChart3} value={`${artisan.responseRate}% response rate`} />

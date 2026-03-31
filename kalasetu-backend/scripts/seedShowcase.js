@@ -407,6 +407,19 @@ async function seedReviews(artisan, user) {
     });
   }
 
+  // Recalculate artisan stats after seeding reviews
+  const reviewStats = await Review.aggregate([
+    { $match: { artisan: artisan._id, status: 'active' } },
+    { $group: { _id: '$artisan', avg: { $avg: '$rating' }, count: { $sum: 1 } } }
+  ]);
+  if (reviewStats.length > 0) {
+    await Artisan.findByIdAndUpdate(artisan._id, {
+      averageRating: Math.round(reviewStats[0].avg * 10) / 10,
+      totalReviews: reviewStats[0].count
+    });
+    console.log(`   Updated artisan rating: ${reviewStats[0].avg.toFixed(1)} (${reviewStats[0].count} reviews)`);
+  }
+
   console.log(`  Created ${reviewsData.length} reviews (avg 4.6 stars)`);
 }
 

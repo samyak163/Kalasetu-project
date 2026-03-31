@@ -200,7 +200,7 @@ const SearchResults = () => {
           <div>
             <h1 className="text-lg font-display font-bold text-gray-900">{heading}</h1>
             <p className="text-xs text-gray-500 mt-0.5">
-              {loading ? 'Searching...' : `${filteredArtisans.length + filteredServices.length} results`}
+              {loading ? 'Searching...' : (() => { const count = filteredArtisans.length + filteredServices.length; return `${count} result${count !== 1 ? 's' : ''}`; })()}
             </p>
           </div>
         </div>
@@ -213,7 +213,7 @@ const SearchResults = () => {
       </div>
 
       {/* Results */}
-      <main className="px-4 pb-8 max-w-container mx-auto">
+      <div className="px-4 pb-8 max-w-container mx-auto">
         {loading ? (
           <SkeletonGrid />
         ) : (
@@ -268,7 +268,7 @@ const SearchResults = () => {
             )}
           </>
         )}
-      </main>
+      </div>
 
       {/* Sort BottomSheet */}
       <BottomSheet open={sortSheetOpen} onClose={() => setSortSheetOpen(false)} title="Sort By">

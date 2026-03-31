@@ -42,14 +42,18 @@ export default function NearbyArtisans() {
         },
       });
 
-      const apiArtisans = Array.isArray(response.data?.artisans) ? response.data.artisans : [];
+      // Handle both direct and cached response shapes:
+      // Direct: { artisans: [...] }  Cached: { cached: true, data: { artisans: [...] } }
+      const nearbyData = response.data?.data ?? response.data;
+      const apiArtisans = Array.isArray(nearbyData?.artisans) ? nearbyData.artisans : [];
 
       if (apiArtisans.length === 0) {
         try {
           const allResponse = await api.get('/api/artisans', {
             params: { limit: 20 }
           });
-          const allArtisans = Array.isArray(allResponse.data?.artisans) ? allResponse.data.artisans : Array.isArray(allResponse.data) ? allResponse.data : [];
+          const d = allResponse.data?.data ?? allResponse.data;
+          const allArtisans = Array.isArray(d?.artisans) ? d.artisans : Array.isArray(d) ? d : [];
           setArtisans(allArtisans.slice(0, 10));
         } catch (fallbackErr) {
           console.warn('Fallback fetch failed:', fallbackErr);
@@ -64,7 +68,8 @@ export default function NearbyArtisans() {
         const allResponse = await api.get('/api/artisans', {
           params: { limit: 20 }
         });
-        const allArtisans = Array.isArray(allResponse.data?.artisans) ? allResponse.data.artisans : Array.isArray(allResponse.data) ? allResponse.data : [];
+        const d = allResponse.data?.data ?? allResponse.data;
+        const allArtisans = Array.isArray(d?.artisans) ? d.artisans : Array.isArray(d) ? d : [];
         setArtisans(allArtisans.slice(0, 10));
       } catch (fallbackErr) {
         console.error('All fallbacks failed:', fallbackErr);

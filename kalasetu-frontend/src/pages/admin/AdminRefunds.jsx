@@ -166,9 +166,6 @@ const AdminRefunds = () => {
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
             <div className="text-sm text-gray-600 truncate">Processed</div>
             <div className="text-2xl font-bold text-green-600 mt-1">{stats.processed || 0}</div>
-            <div className="text-xs text-gray-500 mt-1 truncate">
-              {formatCurrency(stats.processedAmount || 0)}
-            </div>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
             <div className="text-sm text-gray-600 truncate">Rejected</div>

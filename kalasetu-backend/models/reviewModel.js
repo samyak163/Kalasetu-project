@@ -59,5 +59,70 @@ reviewSchema.index({ user: 1, booking: 1 }, { unique: true, partialFilterExpress
 reviewSchema.index({ artisan: 1, status: 1 });
 reviewSchema.index({ service: 1, status: 1 });
 
+// Recalculate artisan's averageRating and totalReviews after review save
+reviewSchema.post('save', async function () {
+  try {
+    const Review = this.constructor;
+    const stats = await Review.aggregate([
+      { $match: { artisan: this.artisan, status: 'active' } },
+      {
+        $group: {
+          _id: '$artisan',
+          averageRating: { $avg: '$rating' },
+          totalReviews: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const Artisan = (await import('./artisanModel.js')).default;
+    if (stats.length > 0) {
+      await Artisan.findByIdAndUpdate(this.artisan, {
+        averageRating: Math.round(stats[0].averageRating * 10) / 10,
+        totalReviews: stats[0].totalReviews
+      });
+    } else {
+      await Artisan.findByIdAndUpdate(this.artisan, {
+        averageRating: 0,
+        totalReviews: 0
+      });
+    }
+  } catch (err) {
+    console.error('Failed to update artisan rating stats:', err.message);
+  }
+});
+
+// Also recalculate after review update (status change, removal)
+reviewSchema.post('findOneAndUpdate', async function (doc) {
+  if (!doc) return;
+  try {
+    const Review = doc.constructor;
+    const stats = await Review.aggregate([
+      { $match: { artisan: doc.artisan, status: 'active' } },
+      {
+        $group: {
+          _id: '$artisan',
+          averageRating: { $avg: '$rating' },
+          totalReviews: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const Artisan = (await import('./artisanModel.js')).default;
+    if (stats.length > 0) {
+      await Artisan.findByIdAndUpdate(doc.artisan, {
+        averageRating: Math.round(stats[0].averageRating * 10) / 10,
+        totalReviews: stats[0].totalReviews
+      });
+    } else {
+      await Artisan.findByIdAndUpdate(doc.artisan, {
+        averageRating: 0,
+        totalReviews: 0
+      });
+    }
+  } catch (err) {
+    console.error('Failed to update artisan rating stats:', err.message);
+  }
+});
+
 const Review = mongoose.model('Review', reviewSchema);
 export default Review;
