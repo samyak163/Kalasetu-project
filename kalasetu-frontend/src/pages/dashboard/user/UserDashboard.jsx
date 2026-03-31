@@ -35,9 +35,9 @@ const UserDashboard = () => {
             </button>
           </div>
         </aside>
-        <main className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0">
           <Outlet />
-        </main>
+        </div>
       </div>
     </div>
   );

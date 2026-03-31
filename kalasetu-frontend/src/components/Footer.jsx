@@ -1,6 +1,12 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const Footer = () => {
+  const { auth } = useAuth();
+  const isLoggedIn = !!auth?.user;
+  const isArtisan = auth?.userType === 'artisan';
+  const isUser = auth?.userType === 'user';
+
   return (
     <footer className="bg-brand-900 text-gray-400" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">Footer</h2>
@@ -26,8 +32,15 @@ const Footer = () => {
               <div className="mt-12 md:mt-0">
                 <h3 className="text-sm font-semibold text-brand-200 tracking-wider uppercase">For Artisans</h3>
                 <ul className="mt-4 space-y-4">
-                  <li><Link to="/artisan/login" className="text-base text-brand-200/60 hover:text-white transition-colors">Artisan Login</Link></li>
-                  <li><Link to="/artisan/register" className="text-base text-brand-200/60 hover:text-white transition-colors">Join as Artisan</Link></li>
+                  {!isLoggedIn && (
+                    <>
+                      <li><Link to="/artisan/login" className="text-base text-brand-200/60 hover:text-white transition-colors">Artisan Login</Link></li>
+                      <li><Link to="/artisan/register" className="text-base text-brand-200/60 hover:text-white transition-colors">Join as Artisan</Link></li>
+                    </>
+                  )}
+                  {isLoggedIn && isArtisan && (
+                    <li><Link to="/artisan/dashboard" className="text-base text-brand-200/60 hover:text-white transition-colors">Dashboard</Link></li>
+                  )}
                 </ul>
               </div>
             </div>
@@ -35,8 +48,15 @@ const Footer = () => {
               <div>
                 <h3 className="text-sm font-semibold text-brand-200 tracking-wider uppercase">For Customers</h3>
                 <ul className="mt-4 space-y-4">
-                  <li><Link to="/user/login" className="text-base text-brand-200/60 hover:text-white transition-colors">Customer Login</Link></li>
-                  <li><Link to="/user/register" className="text-base text-brand-200/60 hover:text-white transition-colors">Sign Up</Link></li>
+                  {!isLoggedIn && (
+                    <>
+                      <li><Link to="/user/login" className="text-base text-brand-200/60 hover:text-white transition-colors">Customer Login</Link></li>
+                      <li><Link to="/user/register" className="text-base text-brand-200/60 hover:text-white transition-colors">Sign Up</Link></li>
+                    </>
+                  )}
+                  {isLoggedIn && isUser && (
+                    <li><Link to="/dashboard" className="text-base text-brand-200/60 hover:text-white transition-colors">Dashboard</Link></li>
+                  )}
                 </ul>
               </div>
               <div className="mt-12 md:mt-0">

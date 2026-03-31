@@ -179,7 +179,7 @@ const ArtisanProfileEditor = () => {
           <div className="text-sm text-gray-500">Profile Editor</div>
         </div>
       </header>
-      <main className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
         <aside className="lg:col-span-1 space-y-4">
           <Section title="Completion">
             <ProfileCompletionBar percent={completion} />
@@ -334,7 +334,7 @@ const ArtisanProfileEditor = () => {
             </form>
           </Section>
         </section>
-      </main>
+      </div>
       {toast && (
         <div className={`fixed bottom-4 right-4 px-4 py-3 rounded shadow text-white ${toast.type==='error'?'bg-red-600':'bg-green-600'}`}>{toast.text}</div>
       )}

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useContext, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../lib/axios.js';
 import SEO from '../components/SEO.jsx';
+import NotFoundPage from './NotFoundPage.jsx';
 import { optimizeImage } from '../utils/cloudinary.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ToastContext } from '../context/ToastContext.jsx';
@@ -198,17 +199,10 @@ const ArtisanProfilePage = () => {
   }
 
   // ---------- Error state ----------
+  // If artisan not found (404 from API or no data), show the global 404 page.
+  // This handles /:publicId matching for non-artisan URLs like /nonexistent-page.
   if (error || !artisan) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Alert type="error" className="max-w-md">
-          <p className="font-medium">{error || 'Artisan not found'}</p>
-          <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate('/')}>
-            Go Home
-          </Button>
-        </Alert>
-      </div>
-    );
+    return <NotFoundPage />;
   }
 
 

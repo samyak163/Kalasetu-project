@@ -89,7 +89,7 @@ const UserLoginPage = () => {
                                 </button>
                             </div>
                             <div className="flex justify-end mb-2">
-                                <Link to="/forgot-password" className="text-xs text-brand-500 hover:underline">Forgot Password?</Link>
+                                <Link to="/user/forgot-password" className="text-xs text-brand-500 hover:underline">Forgot Password?</Link>
                             </div>
                         </div>
 

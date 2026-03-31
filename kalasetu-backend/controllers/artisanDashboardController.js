@@ -16,6 +16,7 @@
  * @see pages/dashboard/artisan/ — Frontend dashboard components consuming this data
  */
 
+import mongoose from 'mongoose';
 import asyncHandler from '../utils/asyncHandler.js';
 import Booking from '../models/bookingModel.js';
 import Review from '../models/reviewModel.js';
@@ -29,7 +30,8 @@ import ArtisanService from '../models/artisanServiceModel.js';
  * @access  Private (Artisan only)
  */
 export const getDashboardStats = asyncHandler(async (req, res) => {
-  const artisanId = req.user._id;
+  // Explicit ObjectId cast — aggregation pipelines do NOT auto-cast like .find()
+  const artisanId = new mongoose.Types.ObjectId(req.user._id);
 
   const today = new Date();
   const lastWeekStart = new Date(today);
@@ -139,7 +141,8 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
  * @access  Private (Artisan only)
  */
 export const getIncomeReport = asyncHandler(async (req, res) => {
-  const artisanId = req.user._id;
+  // Explicit ObjectId cast — aggregation pipelines do NOT auto-cast like .find()
+  const artisanId = new mongoose.Types.ObjectId(req.user._id);
   const period = req.query.period === 'weekly' ? 'weekly' : 'monthly';
 
   const cutoff = new Date();

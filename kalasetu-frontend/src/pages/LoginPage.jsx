@@ -107,7 +107,7 @@ const LoginPage = () => {
                     <div className="mt-6 text-center">
                         <p className="text-sm text-gray-600">
                             Don't have an account?{' '}
-                            <Link to="/register" className="font-semibold text-brand-500 hover:text-brand-600 transition-colors">
+                            <Link to="/artisan/register" className="font-semibold text-brand-500 hover:text-brand-600 transition-colors">
                                 Create new account
                             </Link>
                         </p>

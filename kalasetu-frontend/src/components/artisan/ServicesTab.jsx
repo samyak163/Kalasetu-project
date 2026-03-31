@@ -114,8 +114,9 @@ function ServiceItem({ service, onBook, onDetail }) {
         {/* Price + Duration */}
         <div className="flex items-center gap-4 mt-3 text-sm">
           <span className="inline-flex items-center gap-1 font-bold text-gray-900">
-            <IndianRupee className="h-3.5 w-3.5" />
-            {service.price > 0 ? service.price.toLocaleString('en-IN') : 'Contact'}
+            {service.price != null && service.price > 0
+              ? <><IndianRupee className="h-3.5 w-3.5" />{service.price.toLocaleString('en-IN')}</>
+              : 'Contact for pricing'}
           </span>
           {service.durationMinutes > 0 && (
             <span className="inline-flex items-center gap-1 text-gray-500">

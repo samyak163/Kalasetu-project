@@ -137,6 +137,9 @@ export const protectAdmin = async (req, res, next) => {
  */
 export const checkPermission = (resource, action) => {
     return (req, res, next) => {
+        // super_admin bypasses all permission checks
+        if (req?.user?.role === 'super_admin') return next();
+
         if (!req?.user?.permissions?.[resource] || req.user.permissions[resource][action] !== true) {
             res.status(403);
             return next(new Error('You do not have permission to perform this action'));
