@@ -243,7 +243,7 @@ const AdminBookings = () => {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
             <div className="text-sm text-gray-600 truncate">Total Bookings</div>
             <div className="text-2xl font-bold text-gray-900 mt-1">{stats.totalBookings || 0}</div>
@@ -259,6 +259,10 @@ const AdminBookings = () => {
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
             <div className="text-sm text-gray-600 truncate">Cancelled</div>
             <div className="text-2xl font-bold text-red-600 mt-1">{stats.cancelled || 0}</div>
+          </div>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <div className="text-sm text-gray-600 truncate">Rejected</div>
+            <div className="text-2xl font-bold text-orange-600 mt-1">{stats.rejected || 0}</div>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
             <div className="text-sm text-gray-600 truncate">Cancellation Rate</div>
@@ -294,6 +298,7 @@ const AdminBookings = () => {
             <option value="confirmed">Confirmed</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
+            <option value="rejected">Rejected</option>
           </select>
           <button
             onClick={clearFilters}

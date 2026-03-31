@@ -30,11 +30,13 @@ export default function ServiceFormSheet({ open, onClose, service, categories = 
   const { showToast } = useContext(ToastContext);
   const [form, setForm] = useState(initialForm);
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const editing = Boolean(service);
 
   // Initialize form when sheet opens
   useEffect(() => {
     if (!open) return;
+    setIsDirty(false);
     if (service) {
       setForm({
         categoryId: service.category || '',
@@ -49,12 +51,22 @@ export default function ServiceFormSheet({ open, onClose, service, categories = 
     }
   }, [open, service]);
 
+  // Guarded close — warns if form has unsaved changes
+  const handleClose = () => {
+    if (isDirty && !window.confirm('You have unsaved changes. Discard?')) {
+      return;
+    }
+    onClose();
+  };
+
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    setIsDirty(true);
   };
 
   const handleImagesChange = (urls) => {
     setForm((prev) => ({ ...prev, images: urls }));
+    setIsDirty(true);
   };
 
   // Resolve selected category for suggestions and preview
@@ -91,6 +103,7 @@ export default function ServiceFormSheet({ open, onClose, service, categories = 
         showToast('Service created successfully', 'success');
       }
 
+      setIsDirty(false);
       if (saved) onSave(saved);
       onClose();
     } catch (err) {
@@ -104,7 +117,7 @@ export default function ServiceFormSheet({ open, onClose, service, categories = 
   return (
     <BottomSheet
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title={editing ? 'Edit Service' : 'Create a Service'}
       maxWidth="md:max-w-3xl"
     >
@@ -244,7 +257,7 @@ export default function ServiceFormSheet({ open, onClose, service, categories = 
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
+          <Button type="button" variant="ghost" onClick={handleClose} disabled={saving}>
             Cancel
           </Button>
           <Button type="submit" variant="primary" disabled={saving}>

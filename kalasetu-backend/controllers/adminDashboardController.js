@@ -600,15 +600,16 @@ export const getAllBookings = async (req, res) => {
 
 export const getBookingsStats = async (req, res) => {
   try {
-    const [totalBookings, upcoming, completed, cancelled] = await Promise.all([
+    const [totalBookings, upcoming, completed, cancelled, rejected] = await Promise.all([
       Booking.countDocuments(),
       Booking.countDocuments({ status: 'confirmed', start: { $gte: new Date() } }),
       Booking.countDocuments({ status: 'completed' }),
-      Booking.countDocuments({ status: 'cancelled' })
+      Booking.countDocuments({ status: 'cancelled' }),
+      Booking.countDocuments({ status: 'rejected' })
     ]);
-    
-    const cancellationRate = totalBookings > 0 ? (cancelled / totalBookings) * 100 : 0;
-    
+
+    const cancellationRate = totalBookings > 0 ? ((cancelled + rejected) / totalBookings) * 100 : 0;
+
     res.status(200).json({
       success: true,
       data: {
@@ -616,6 +617,7 @@ export const getBookingsStats = async (req, res) => {
         upcoming,
         completed,
         cancelled,
+        rejected,
         cancellationRate
       }
     });
