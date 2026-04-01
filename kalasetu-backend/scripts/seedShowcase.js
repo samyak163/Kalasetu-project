@@ -2,7 +2,7 @@
  * seedShowcase.js — Creates clean showcase data for UI testing.
  *
  * Wipes ALL accounts and creates:
- *  - 1 Artisan (fully filled profile, 5 services, portfolio, availability, reviews)
+ *  - 3 Artisans (fully filled profiles, services, portfolio, availability, reviews)
  *  - 1 User (customer)
  *  - 1 Admin (super_admin)
  *
@@ -27,7 +27,9 @@ dotenv.config();
 // ──────────────────────────────────────────────
 // Credentials (printed at end)
 // ──────────────────────────────────────────────
-const ARTISAN_EMAIL = 'priya@kalasetu.demo';
+const ARTISAN_1_EMAIL = 'priya@kalasetu.demo';
+const ARTISAN_2_EMAIL = 'ravi@kalasetu.demo';
+const ARTISAN_3_EMAIL = 'lakshmi@kalasetu.demo';
 const ARTISAN_PASSWORD = 'Demo@1234';
 const USER_EMAIL = 'rahul@kalasetu.demo';
 const USER_PASSWORD = 'Demo@1234';
@@ -35,26 +37,57 @@ const ADMIN_EMAIL = 'admin@kalasetu.demo';
 const ADMIN_PASSWORD = 'Admin@1234';
 
 // ──────────────────────────────────────────────
-// Image URLs (picsum.photos — deterministic, reliable)
+// Image URLs (Unsplash — free, real artisan photos)
 // ──────────────────────────────────────────────
 const IMG = {
-  artisanProfile: 'https://picsum.photos/seed/ks-artisan-face/400/400',
-  artisanCover: 'https://picsum.photos/seed/ks-artisan-workshop/1200/500',
-  portfolio: [
-    'https://picsum.photos/seed/ks-portfolio-1/800/600',
-    'https://picsum.photos/seed/ks-portfolio-2/800/600',
-    'https://picsum.photos/seed/ks-portfolio-3/800/600',
-    'https://picsum.photos/seed/ks-portfolio-4/800/600',
-    'https://picsum.photos/seed/ks-portfolio-5/800/600',
-    'https://picsum.photos/seed/ks-portfolio-6/800/600',
-  ],
-  services: [
-    ['https://picsum.photos/seed/ks-svc-mehndi-bridal/600/400', 'https://picsum.photos/seed/ks-svc-mehndi-bridal2/600/400'],
-    ['https://picsum.photos/seed/ks-svc-mehndi-party/600/400', 'https://picsum.photos/seed/ks-svc-mehndi-party2/600/400'],
-    ['https://picsum.photos/seed/ks-svc-mehndi-arabic/600/400', 'https://picsum.photos/seed/ks-svc-mehndi-arabic2/600/400'],
-    ['https://picsum.photos/seed/ks-svc-mehndi-baby/600/400'],
-    ['https://picsum.photos/seed/ks-svc-mehndi-class/600/400', 'https://picsum.photos/seed/ks-svc-mehndi-class2/600/400'],
-  ],
+  // Artisan 1: Priya Sharma — Mehendi Artist
+  priya: {
+    profile: 'https://images.unsplash.com/photo-1580746453801-37b0bc56f3b4?w=400&h=400&fit=crop',
+    cover: 'https://images.unsplash.com/flagged/photo-1557695742-6ddd2cd63a5d?w=1200&h=500&fit=crop',
+    portfolio: [
+      'https://images.unsplash.com/photo-1570105566322-0e5bdccc9501?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1563962750292-d3401f66d46b?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1565368114375-ba1a4db7099f?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1676134014048-bcc764ea015d?w=800&h=600&fit=crop',
+    ],
+    services: [
+      ['https://images.unsplash.com/photo-1676134014048-bcc764ea015d?w=600&h=400&fit=crop', 'https://images.unsplash.com/photo-1676134138844-9a52b5210cf9?w=600&h=400&fit=crop'],
+      ['https://images.unsplash.com/photo-1570105566322-0e5bdccc9501?w=600&h=400&fit=crop'],
+      ['https://images.unsplash.com/photo-1563962750292-d3401f66d46b?w=600&h=400&fit=crop', 'https://images.unsplash.com/photo-1565368114375-ba1a4db7099f?w=600&h=400&fit=crop'],
+    ],
+  },
+  // Artisan 2: Ravi Kumar — Potter
+  ravi: {
+    profile: 'https://images.unsplash.com/photo-1753164725863-d5ddc330978c?w=400&h=400&fit=crop',
+    cover: 'https://images.unsplash.com/photo-1753164725849-98df639afb7a?w=1200&h=500&fit=crop',
+    portfolio: [
+      'https://images.unsplash.com/photo-1510828561531-05a3388f6d3d?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1603972596426-133f7802b856?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1749518295706-dc15ca3b5fd5?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1633112046092-a161d99563d1?w=800&h=600&fit=crop',
+    ],
+    services: [
+      ['https://images.unsplash.com/photo-1633112046092-a161d99563d1?w=600&h=400&fit=crop', 'https://images.unsplash.com/photo-1510828561531-05a3388f6d3d?w=600&h=400&fit=crop'],
+      ['https://images.unsplash.com/photo-1675101337462-a19b63af8b1b?w=600&h=400&fit=crop'],
+      ['https://images.unsplash.com/photo-1603972596426-133f7802b856?w=600&h=400&fit=crop', 'https://images.unsplash.com/photo-1749518295706-dc15ca3b5fd5?w=600&h=400&fit=crop'],
+    ],
+  },
+  // Artisan 3: Lakshmi Devi — Tailor / Textile
+  lakshmi: {
+    profile: 'https://images.unsplash.com/photo-1659451335972-c3f976f4e567?w=400&h=400&fit=crop',
+    cover: 'https://images.unsplash.com/photo-1552710307-537199cd41c0?w=1200&h=500&fit=crop',
+    portfolio: [
+      'https://images.unsplash.com/photo-1466027449668-27f96b692ba4?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1552710307-537199cd41c0?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1545206085-d0e519bdcecd?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1673201229733-69d19c5c4a87?w=800&h=600&fit=crop',
+    ],
+    services: [
+      ['https://images.unsplash.com/photo-1673201229733-69d19c5c4a87?w=600&h=400&fit=crop', 'https://images.unsplash.com/photo-1545206085-d0e519bdcecd?w=600&h=400&fit=crop'],
+      ['https://images.unsplash.com/photo-1653220266006-27b87f590eaf?w=600&h=400&fit=crop'],
+      ['https://images.unsplash.com/photo-1759738096144-b43206226765?w=600&h=400&fit=crop', 'https://images.unsplash.com/photo-1466027449668-27f96b692ba4?w=600&h=400&fit=crop'],
+    ],
+  },
 };
 
 // ──────────────────────────────────────────────
@@ -148,158 +181,288 @@ async function seedCategories() {
 }
 
 // ──────────────────────────────────────────────
-// Create artisan — fully loaded profile
+// Artisan definitions — 3 artisans
 // ──────────────────────────────────────────────
-async function seedArtisan(categories) {
-  const wellnessCategory = categories.find((c) => c.slug === 'wellness-beauty');
+function getArtisanProfiles(categories) {
+  const wellness = categories.find((c) => c.slug === 'wellness-beauty');
+  const handicrafts = categories.find((c) => c.slug === 'handicrafts');
+  const clothing = categories.find((c) => c.slug === 'clothing-tailoring');
 
-  const artisan = await Artisan.create({
-    fullName: 'Priya Sharma',
-    email: ARTISAN_EMAIL,
-    phoneNumber: '+919876543210',
-    password: ARTISAN_PASSWORD, // pre-save hook will hash
-    craft: 'Mehendi Art',
-    businessName: 'Priya Mehendi Studio',
-    tagline: 'Award-winning Mehendi Artist | 8+ Years | Bridal & Events',
-    bio: 'Hi! I\'m Priya, a certified Mehendi artist based in Kothrud, Pune. I specialize in intricate bridal mehndi, Arabic patterns, and fusion designs. Having decorated over 2,000 happy brides and event guests, I bring a blend of traditional Rajasthani motifs with contemporary flair. I use only organic, chemical-free henna paste prepared fresh for every appointment. Whether it\'s your wedding, baby shower, or a festive celebration \u2014 I\'ll make it unforgettable.',
-    yearsOfExperience: '8+ years',
-    teamSize: '2-5',
-    languagesSpoken: ['English', 'Hindi', 'Marathi', 'Gujarati'],
-    emailVerified: true,
-    isVerified: true,
-    isActive: true,
-    profileImageUrl: IMG.artisanProfile,
-    coverImageUrl: IMG.artisanCover,
-    portfolioImageUrls: IMG.portfolio,
-    businessPhone: '+919876543211',
-    whatsappNumber: '+919876543210',
-    location: {
-      type: 'Point',
-      coordinates: [73.8077, 18.5074], // Kothrud, Pune
-      address: '42, Prabhat Road, Kothrud',
-      city: 'Pune',
-      state: 'Maharashtra',
-      country: 'India',
-      postalCode: '411038',
-    },
-    certifications: [
-      {
-        name: 'Certified Mehendi Artist',
-        issuingAuthority: 'Indian Mehendi Arts Academy',
-        certificateNumber: 'IMAA-2019-0842',
-        issueDate: new Date('2019-03-15'),
+  return [
+    // ─── Artisan 1: Priya Sharma — Mehendi Artist ───
+    {
+      profile: {
+        fullName: 'Priya Sharma',
+        email: ARTISAN_1_EMAIL,
+        phoneNumber: '+919876543210',
+        password: ARTISAN_PASSWORD,
+        craft: 'Mehendi Art',
+        businessName: 'Priya Mehendi Studio',
+        tagline: 'Award-winning Mehendi Artist | 8+ Years | Bridal & Events',
+        bio: 'Hi! I\'m Priya, a certified Mehendi artist based in Kothrud, Pune. I specialize in intricate bridal mehndi, Arabic patterns, and fusion designs. Having decorated over 2,000 happy brides and event guests, I bring a blend of traditional Rajasthani motifs with contemporary flair. I use only organic, chemical-free henna paste prepared fresh for every appointment.',
+        yearsOfExperience: '8+ years',
+        teamSize: '2-5',
+        languagesSpoken: ['English', 'Hindi', 'Marathi', 'Gujarati'],
+        emailVerified: true, isVerified: true, isActive: true,
+        profileImageUrl: IMG.priya.profile,
+        coverImageUrl: IMG.priya.cover,
+        portfolioImageUrls: IMG.priya.portfolio,
+        businessPhone: '+919876543211',
+        whatsappNumber: '+919876543210',
+        location: {
+          type: 'Point',
+          coordinates: [73.8077, 18.5074], // Kothrud, Pune
+          address: '42, Prabhat Road, Kothrud',
+          city: 'Pune', state: 'Maharashtra', country: 'India', postalCode: '411038',
+        },
+        certifications: [
+          { name: 'Certified Mehendi Artist', issuingAuthority: 'Indian Mehendi Arts Academy', certificateNumber: 'IMAA-2019-0842', issueDate: new Date('2019-03-15') },
+        ],
+        workingHours: {
+          monday: { start: '09:00', end: '18:00', active: true },
+          tuesday: { start: '09:00', end: '18:00', active: true },
+          wednesday: { start: '09:00', end: '18:00', active: true },
+          thursday: { start: '09:00', end: '18:00', active: true },
+          friday: { start: '09:00', end: '18:00', active: true },
+          saturday: { start: '10:00', end: '16:00', active: true },
+          sunday: { start: '', end: '', active: false },
+        },
+        emergencyServices: true,
+        serviceRadius: 25,
+        minimumBookingNotice: 2,
+        businessType: 'small_business',
+        autoAcceptBookings: true,
+        bufferTimeBetweenBookings: 30,
+        maxBookingsPerDay: 6,
+        profileViews: 1847, totalBookings: 156, completedBookings: 142, cancelledBookings: 3,
+        totalEarnings: 487500, averageRating: 4.7, totalReviews: 28,
+        responseRate: 96, acceptanceRate: 98, lastLoginAt: new Date(),
       },
-      {
-        name: 'Organic Henna Safety Certification',
-        issuingAuthority: 'Natural Beauty Standards Council',
-        certificateNumber: 'NBSC-OH-2022',
-        issueDate: new Date('2022-06-20'),
-        expiryDate: new Date('2027-06-20'),
+      category: wellness,
+      services: [
+        {
+          name: 'Bridal Mehndi \u2014 Full Hands & Feet',
+          description: 'Elaborate bridal mehndi covering both hands (till elbow) and both feet (till ankle). Includes traditional Rajasthani motifs, couple portraits, and custom elements. Organic henna paste, 4\u20135 hour session.',
+          price: 8000, durationMinutes: 270, images: IMG.priya.services[0],
+        },
+        {
+          name: 'Party Mehndi \u2014 Both Hands',
+          description: 'Beautiful party-ready mehndi on both hands. Perfect for festivals, sangeet, or celebrations. Arabic and fusion designs available.',
+          price: 1500, durationMinutes: 60, images: IMG.priya.services[1],
+        },
+        {
+          name: 'Arabic Mehndi \u2014 Single Hand',
+          description: 'Elegant Arabic-style mehndi with bold floral patterns and clean negative space. Popular for Eid, engagements, and corporate events.',
+          price: 500, durationMinutes: 30, images: IMG.priya.services[2],
+        },
+      ],
+      availability: [
+        { dayOfWeek: 1, slots: [{ startTime: '09:00', endTime: '13:00' }, { startTime: '14:00', endTime: '18:00' }] },
+        { dayOfWeek: 2, slots: [{ startTime: '09:00', endTime: '13:00' }, { startTime: '14:00', endTime: '18:00' }] },
+        { dayOfWeek: 3, slots: [{ startTime: '09:00', endTime: '13:00' }, { startTime: '14:00', endTime: '18:00' }] },
+        { dayOfWeek: 4, slots: [{ startTime: '09:00', endTime: '13:00' }, { startTime: '14:00', endTime: '18:00' }] },
+        { dayOfWeek: 5, slots: [{ startTime: '09:00', endTime: '13:00' }, { startTime: '14:00', endTime: '18:00' }] },
+        { dayOfWeek: 6, slots: [{ startTime: '10:00', endTime: '16:00' }] },
+      ],
+    },
+
+    // ─── Artisan 2: Ravi Kumar — Potter ───
+    {
+      profile: {
+        fullName: 'Ravi Kumar',
+        email: ARTISAN_2_EMAIL,
+        phoneNumber: '+919823456701',
+        password: ARTISAN_PASSWORD,
+        craft: 'Pottery & Ceramics',
+        businessName: 'Mitti Studio',
+        tagline: 'Handcrafted Pottery & Ceramics | Workshops | Custom Orders',
+        bio: 'I\'m Ravi, a third-generation potter from Pune. What started as a childhood spent watching my grandfather shape clay has become my life\'s work. At Mitti Studio, I create handcrafted terracotta and stoneware pieces \u2014 from decorative vases and planters to functional kitchenware. I also run pottery workshops for beginners and experienced enthusiasts. Every piece is wheel-thrown, hand-glazed, and kiln-fired in my studio.',
+        yearsOfExperience: '12+ years',
+        teamSize: '2-5',
+        languagesSpoken: ['English', 'Hindi', 'Marathi'],
+        emailVerified: true, isVerified: true, isActive: true,
+        profileImageUrl: IMG.ravi.profile,
+        coverImageUrl: IMG.ravi.cover,
+        portfolioImageUrls: IMG.ravi.portfolio,
+        businessPhone: '+919823456702',
+        whatsappNumber: '+919823456701',
+        location: {
+          type: 'Point',
+          coordinates: [73.8567, 18.5196], // Shivajinagar, Pune
+          address: '15, Shivaji Road, Shivajinagar',
+          city: 'Pune', state: 'Maharashtra', country: 'India', postalCode: '411005',
+        },
+        certifications: [
+          { name: 'Master Craftsman Certificate', issuingAuthority: 'Maharashtra State Handicrafts Board', certificateNumber: 'MSHB-2018-PT-0156', issueDate: new Date('2018-11-10') },
+        ],
+        workingHours: {
+          monday: { start: '08:00', end: '17:00', active: true },
+          tuesday: { start: '08:00', end: '17:00', active: true },
+          wednesday: { start: '08:00', end: '17:00', active: true },
+          thursday: { start: '08:00', end: '17:00', active: true },
+          friday: { start: '08:00', end: '17:00', active: true },
+          saturday: { start: '09:00', end: '14:00', active: true },
+          sunday: { start: '', end: '', active: false },
+        },
+        emergencyServices: false,
+        serviceRadius: 15,
+        minimumBookingNotice: 24,
+        businessType: 'small_business',
+        autoAcceptBookings: false,
+        bufferTimeBetweenBookings: 60,
+        maxBookingsPerDay: 4,
+        profileViews: 923, totalBookings: 87, completedBookings: 79, cancelledBookings: 2,
+        totalEarnings: 312000, averageRating: 4.8, totalReviews: 15,
+        responseRate: 92, acceptanceRate: 95, lastLoginAt: new Date(),
       },
-    ],
-    workingHours: {
-      monday:    { start: '09:00', end: '18:00', active: true },
-      tuesday:   { start: '09:00', end: '18:00', active: true },
-      wednesday: { start: '09:00', end: '18:00', active: true },
-      thursday:  { start: '09:00', end: '18:00', active: true },
-      friday:    { start: '09:00', end: '18:00', active: true },
-      saturday:  { start: '10:00', end: '16:00', active: true },
-      sunday:    { start: '', end: '', active: false },
+      category: handicrafts,
+      services: [
+        {
+          name: 'Custom Pottery \u2014 Handcrafted Piece',
+          description: 'Commission a unique, handcrafted pottery piece \u2014 vases, planters, bowls, or decorative items. Discuss your vision, choose the clay type and glaze. Includes wheel-throwing, drying, glazing, and kiln firing. Ready in 2\u20133 weeks.',
+          price: 2500, durationMinutes: 120, images: IMG.ravi.services[0],
+        },
+        {
+          name: 'Pottery Workshop \u2014 Beginner (2 hours)',
+          description: 'Hands-on pottery workshop for beginners. Learn centering, throwing, and shaping on the potter\'s wheel. Take home your own creation after firing. All materials included. Groups of up to 6.',
+          price: 1200, durationMinutes: 120, images: IMG.ravi.services[1],
+        },
+        {
+          name: 'Terracotta Planter Set (3 pcs)',
+          description: 'Set of 3 hand-thrown terracotta planters in small, medium, and large sizes. Natural terracotta with optional painted designs. Perfect for balcony gardens. Drainage holes included.',
+          price: 1800, durationMinutes: 0, images: IMG.ravi.services[2],
+        },
+      ],
+      availability: [
+        { dayOfWeek: 1, slots: [{ startTime: '08:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }] },
+        { dayOfWeek: 2, slots: [{ startTime: '08:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }] },
+        { dayOfWeek: 3, slots: [{ startTime: '08:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }] },
+        { dayOfWeek: 4, slots: [{ startTime: '08:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }] },
+        { dayOfWeek: 5, slots: [{ startTime: '08:00', endTime: '12:00' }, { startTime: '13:00', endTime: '17:00' }] },
+        { dayOfWeek: 6, slots: [{ startTime: '09:00', endTime: '14:00' }] },
+      ],
     },
-    emergencyServices: true,
-    serviceRadius: 25,
-    minimumBookingNotice: 2, // hours
-    businessType: 'small_business',
-    autoAcceptBookings: true,
-    bufferTimeBetweenBookings: 30,
-    maxBookingsPerDay: 6,
-    // Stats — realistic numbers
-    profileViews: 1847,
-    totalBookings: 156,
-    completedBookings: 142,
-    cancelledBookings: 3,
-    totalEarnings: 487500,
-    averageRating: 4.7,
-    totalReviews: 28,
-    responseRate: 96,
-    acceptanceRate: 98,
-    lastLoginAt: new Date(),
-  });
 
-  console.log(`  Created artisan: ${artisan.fullName} (${artisan.publicId})`);
-
-  // ── Services ──
-  const servicesData = [
+    // ─── Artisan 3: Lakshmi Devi — Tailor / Textile ───
     {
-      name: 'Bridal Mehndi \u2014 Full Hands & Feet',
-      description: 'Elaborate bridal mehndi covering both hands (till elbow) and both feet (till ankle). Includes traditional Rajasthani motifs, couple portraits, wedding date, and custom elements. Organic henna paste, 4\u20135 hour session. Dark stain guaranteed.',
-      price: 8000,
-      durationMinutes: 270,
-      images: IMG.services[0],
-    },
-    {
-      name: 'Party Mehndi \u2014 Single Hand',
-      description: 'Beautiful party-ready mehndi on one hand (front). Perfect for festivals, sangeet, or casual celebrations. Arabic and fusion designs available. Quick application, rich color.',
-      price: 500,
-      durationMinutes: 30,
-      images: IMG.services[1],
-    },
-    {
-      name: 'Arabic Mehndi \u2014 Both Hands',
-      description: 'Elegant Arabic-style mehndi with bold floral patterns and clean negative space. Covers both hand fronts. Popular for Eid, engagements, and corporate events.',
-      price: 1500,
-      durationMinutes: 60,
-      images: IMG.services[2],
-    },
-    {
-      name: 'Baby Shower Mehndi Package',
-      description: 'Mehendi for the mom-to-be (both hands, front & back) plus simple designs for up to 5 guests. Includes baby-themed motifs, name integration, and cute cradle designs.',
-      price: 5000,
-      durationMinutes: 180,
-      images: IMG.services[3],
-    },
-    {
-      name: 'Mehndi Workshop \u2014 Group of 5',
-      description: 'Learn the art of mehndi! 2-hour hands-on workshop for a group of up to 5 people. Includes organic henna cones, practice sheets, design booklet, and guided instruction from basic to intermediate patterns.',
-      price: 0, // Free consultation / contact for pricing
-      durationMinutes: 120,
-      images: IMG.services[4],
+      profile: {
+        fullName: 'Lakshmi Devi',
+        email: ARTISAN_3_EMAIL,
+        phoneNumber: '+919845678901',
+        password: ARTISAN_PASSWORD,
+        craft: 'Tailoring & Embroidery',
+        businessName: 'Lakshmi Boutique',
+        tagline: 'Custom Tailoring | Hand Embroidery | Traditional & Modern Designs',
+        bio: 'Namaste! I\'m Lakshmi, a master tailor and embroidery artist with over 15 years of experience. I specialize in custom-fitted Indian ethnic wear \u2014 saree blouses, lehengas, kurtas, and sherwanis. My hand embroidery work includes zardozi, chikankari, and mirror work. I learned the craft from my mother in Lucknow and now run my boutique in Pune. Every garment is personally cut, stitched, and finished by me or my small team.',
+        yearsOfExperience: '15+ years',
+        teamSize: '2-5',
+        languagesSpoken: ['English', 'Hindi', 'Marathi', 'Urdu'],
+        emailVerified: true, isVerified: true, isActive: true,
+        profileImageUrl: IMG.lakshmi.profile,
+        coverImageUrl: IMG.lakshmi.cover,
+        portfolioImageUrls: IMG.lakshmi.portfolio,
+        businessPhone: '+919845678902',
+        whatsappNumber: '+919845678901',
+        location: {
+          type: 'Point',
+          coordinates: [73.8478, 18.4618], // Swargate, Pune
+          address: '88, Tilak Road, Swargate',
+          city: 'Pune', state: 'Maharashtra', country: 'India', postalCode: '411042',
+        },
+        certifications: [
+          { name: 'National Award for Handicrafts', issuingAuthority: 'Ministry of Textiles, Govt. of India', certificateNumber: 'MOT-NAH-2020-1042', issueDate: new Date('2020-01-26') },
+        ],
+        workingHours: {
+          monday: { start: '10:00', end: '19:00', active: true },
+          tuesday: { start: '10:00', end: '19:00', active: true },
+          wednesday: { start: '10:00', end: '19:00', active: true },
+          thursday: { start: '10:00', end: '19:00', active: true },
+          friday: { start: '10:00', end: '19:00', active: true },
+          saturday: { start: '10:00', end: '17:00', active: true },
+          sunday: { start: '11:00', end: '15:00', active: true },
+        },
+        emergencyServices: true,
+        serviceRadius: 20,
+        minimumBookingNotice: 4,
+        businessType: 'small_business',
+        autoAcceptBookings: true,
+        bufferTimeBetweenBookings: 30,
+        maxBookingsPerDay: 8,
+        profileViews: 2156, totalBookings: 234, completedBookings: 218, cancelledBookings: 5,
+        totalEarnings: 892000, averageRating: 4.9, totalReviews: 42,
+        responseRate: 99, acceptanceRate: 97, lastLoginAt: new Date(),
+      },
+      category: clothing,
+      services: [
+        {
+          name: 'Custom Saree Blouse \u2014 Stitching & Fitting',
+          description: 'Custom-fitted saree blouse with your choice of design \u2014 padded, princess cut, backless, halter, or traditional. Includes measurement, cutting, stitching, and one fitting session. Fabric not included.',
+          price: 1500, durationMinutes: 45, images: IMG.lakshmi.services[0],
+        },
+        {
+          name: 'Hand Embroidery \u2014 Zardozi/Chikankari Work',
+          description: 'Exquisite hand embroidery on your garment. Choose from zardozi (gold thread), chikankari (white thread), or mirror work. Price per panel/motif. Discuss design and timeline during consultation.',
+          price: 3000, durationMinutes: 60, images: IMG.lakshmi.services[1],
+        },
+        {
+          name: 'Lehenga / Sherwani \u2014 Full Custom',
+          description: 'Complete custom lehenga choli or sherwani for weddings and special occasions. Includes design consultation, fabric selection guidance, 2 fitting sessions, and final stitching. Embroidery work quoted separately.',
+          price: 8000, durationMinutes: 90, images: IMG.lakshmi.services[2],
+        },
+      ],
+      availability: [
+        { dayOfWeek: 0, slots: [{ startTime: '11:00', endTime: '15:00' }] },
+        { dayOfWeek: 1, slots: [{ startTime: '10:00', endTime: '13:30' }, { startTime: '14:30', endTime: '19:00' }] },
+        { dayOfWeek: 2, slots: [{ startTime: '10:00', endTime: '13:30' }, { startTime: '14:30', endTime: '19:00' }] },
+        { dayOfWeek: 3, slots: [{ startTime: '10:00', endTime: '13:30' }, { startTime: '14:30', endTime: '19:00' }] },
+        { dayOfWeek: 4, slots: [{ startTime: '10:00', endTime: '13:30' }, { startTime: '14:30', endTime: '19:00' }] },
+        { dayOfWeek: 5, slots: [{ startTime: '10:00', endTime: '13:30' }, { startTime: '14:30', endTime: '19:00' }] },
+        { dayOfWeek: 6, slots: [{ startTime: '10:00', endTime: '17:00' }] },
+      ],
     },
   ];
+}
 
-  const services = [];
-  for (const svc of servicesData) {
-    const doc = await ArtisanService.create({
+// ──────────────────────────────────────────────
+// Seed all artisans
+// ──────────────────────────────────────────────
+async function seedArtisans(categories) {
+  const artisanProfiles = getArtisanProfiles(categories);
+  const results = [];
+
+  for (const def of artisanProfiles) {
+    const artisan = await Artisan.create(def.profile);
+    console.log(`  Created artisan: ${artisan.fullName} (${artisan.publicId})`);
+
+    // Services
+    const services = [];
+    for (const svc of def.services) {
+      const doc = await ArtisanService.create({
+        artisan: artisan._id,
+        category: def.category._id,
+        categoryName: def.category.name,
+        ...svc,
+        isActive: true,
+      });
+      services.push(doc);
+    }
+    console.log(`    ${services.length} services`);
+
+    // Availability
+    await Availability.create({
       artisan: artisan._id,
-      category: wellnessCategory._id,
-      categoryName: wellnessCategory.name,
-      ...svc,
-      isActive: true,
+      recurringSchedule: def.availability,
+      exceptions: [],
+      bufferTime: 30,
+      advanceBookingDays: 30,
+      minNoticeHours: def.profile.minimumBookingNotice || 2,
     });
-    services.push(doc);
+    console.log('    availability schedule');
+
+    results.push({ artisan, services, category: def.category });
   }
-  console.log(`  Created ${services.length} services for ${artisan.fullName}`);
 
-  // ── Availability schedule ──
-  await Availability.create({
-    artisan: artisan._id,
-    recurringSchedule: [
-      { dayOfWeek: 1, slots: [{ startTime: '09:00', endTime: '13:00' }, { startTime: '14:00', endTime: '18:00' }] }, // Mon
-      { dayOfWeek: 2, slots: [{ startTime: '09:00', endTime: '13:00' }, { startTime: '14:00', endTime: '18:00' }] }, // Tue
-      { dayOfWeek: 3, slots: [{ startTime: '09:00', endTime: '13:00' }, { startTime: '14:00', endTime: '18:00' }] }, // Wed
-      { dayOfWeek: 4, slots: [{ startTime: '09:00', endTime: '13:00' }, { startTime: '14:00', endTime: '18:00' }] }, // Thu
-      { dayOfWeek: 5, slots: [{ startTime: '09:00', endTime: '13:00' }, { startTime: '14:00', endTime: '18:00' }] }, // Fri
-      { dayOfWeek: 6, slots: [{ startTime: '10:00', endTime: '16:00' }] }, // Sat
-      // Sunday: no entry = closed
-    ],
-    exceptions: [],
-    bufferTime: 30,
-    advanceBookingDays: 30,
-    minNoticeHours: 2,
-  });
-  console.log('  Created availability schedule');
-
-  return { artisan, services };
+  return results;
 }
 
 // ──────────────────────────────────────────────
@@ -310,7 +473,7 @@ async function seedUser() {
     fullName: 'Rahul Deshmukh',
     email: USER_EMAIL,
     phoneNumber: '+919123456789',
-    password: USER_PASSWORD, // pre-save hook will hash
+    password: USER_PASSWORD,
     emailVerified: true,
   });
   console.log(`  Created user: ${user.fullName}`);
@@ -324,7 +487,7 @@ async function seedAdmin() {
   const admin = await Admin.create({
     fullName: 'KalaSetu Admin',
     email: ADMIN_EMAIL,
-    password: ADMIN_PASSWORD, // pre-save hook will hash
+    password: ADMIN_PASSWORD,
     role: 'super_admin',
     isActive: true,
   });
@@ -333,14 +496,14 @@ async function seedAdmin() {
 }
 
 // ──────────────────────────────────────────────
-// Create sample reviews for the artisan
+// Create sample reviews for all artisans
 // ──────────────────────────────────────────────
-async function seedReviews(artisan, user) {
-  // Create temporary reviewer users for variety (different names)
+async function seedReviews(artisanResults, user) {
+  // Reviewer pool
   const reviewerNames = [
     'Anita Kulkarni', 'Sneha Patil', 'Meera Joshi', 'Kavita Nair', 'Deepa Reddy',
+    'Pooja Mehta', 'Sonal Gupta', 'Nisha Iyer', 'Aarti Bhat',
   ];
-
   const reviewers = [];
   for (let i = 0; i < reviewerNames.length; i++) {
     const r = await User.create({
@@ -352,182 +515,125 @@ async function seedReviews(artisan, user) {
     reviewers.push(r);
   }
 
-  const reviewsData = [
-    {
-      user: reviewers[0]._id,
-      rating: 5,
-      comment: 'Priya did my bridal mehndi and it was absolutely stunning! The designs were intricate and exactly what I wanted. She was patient with all my requests and the stain came out beautifully dark. Everyone at the wedding was asking who did my mehndi. Highly recommended!',
-      tags: ['Excellent Craftsmanship', 'Exceeded Expectations', 'Patient & Helpful'],
-      isVerified: true,
-      response: {
-        text: 'Thank you so much Anita! It was a joy decorating your hands for your special day. Wishing you a lifetime of happiness!',
-        createdAt: new Date(Date.now() - 25 * 86400000),
-      },
-    },
-    {
-      user: reviewers[1]._id,
-      rating: 5,
-      comment: 'Booked Priya for my sister\'s baby shower and she was amazing. The baby-themed designs were so cute! She also did simple designs for all the guests. Very professional and on time.',
-      tags: ['On Time', 'Great Communication', 'Excellent Craftsmanship'],
-      isVerified: true,
-    },
-    {
-      user: reviewers[2]._id,
-      rating: 4,
-      comment: 'Great Arabic mehndi design. Clean lines and beautiful patterns. Took a bit longer than expected but the result was worth the wait. The color lasted for almost two weeks!',
-      tags: ['Excellent Craftsmanship', 'True to Photos'],
-      isVerified: true,
-      response: {
-        text: 'Thanks for your patience, Meera! Arabic designs need extra time for precision. Glad you loved the result!',
-        createdAt: new Date(Date.now() - 15 * 86400000),
-      },
-    },
-    {
-      user: reviewers[3]._id,
-      rating: 5,
-      comment: 'Attended the mehndi workshop with friends and we had so much fun! Priya is a wonderful teacher. She broke down complex patterns into simple steps. We went home with our own henna cones and a design booklet. Great experience!',
-      tags: ['Patient & Helpful', 'Exceeded Expectations'],
-      isVerified: true,
-    },
-    {
-      user: reviewers[4]._id,
-      rating: 4,
-      comment: 'Good party mehndi. Quick and beautiful. The organic henna smell was so nice compared to chemical ones. Would book again for the next festival.',
-      tags: ['On Time', 'Clean Workshop'],
-      isVerified: true,
-    },
-  ];
+  // Reviews per artisan
+  const allReviews = {
+    // Priya (Mehendi)
+    0: [
+      { user: reviewers[0]._id, rating: 5, comment: 'Priya did my bridal mehndi and it was absolutely stunning! The designs were intricate and exactly what I wanted. The stain came out beautifully dark. Everyone at the wedding was asking who did my mehndi.', tags: ['Excellent Craftsmanship', 'Exceeded Expectations', 'Patient & Helpful'], isVerified: true, response: { text: 'Thank you so much Anita! It was a joy decorating your hands for your special day!', createdAt: new Date(Date.now() - 25 * 86400000) } },
+      { user: reviewers[1]._id, rating: 5, comment: 'Booked Priya for my sister\'s baby shower and she was amazing. The baby-themed designs were so cute! Very professional and on time.', tags: ['On Time', 'Great Communication', 'Excellent Craftsmanship'], isVerified: true },
+      { user: reviewers[2]._id, rating: 4, comment: 'Great Arabic mehndi design. Clean lines and beautiful patterns. The color lasted for almost two weeks!', tags: ['Excellent Craftsmanship', 'True to Photos'], isVerified: true },
+    ],
+    // Ravi (Potter)
+    1: [
+      { user: reviewers[3]._id, rating: 5, comment: 'Attended Ravi\'s pottery workshop with my family and we had the best time! He\'s incredibly patient and encouraging. My 10-year-old made a beautiful bowl. The studio vibe is warm and welcoming.', tags: ['Patient & Helpful', 'Exceeded Expectations', 'Great Communication'], isVerified: true, response: { text: 'So glad your family enjoyed it, Kavita! Your daughter is a natural \u2014 that bowl turned out fantastic!', createdAt: new Date(Date.now() - 18 * 86400000) } },
+      { user: reviewers[4]._id, rating: 5, comment: 'Ordered custom planters for my balcony garden. The terracotta work is exquisite \u2014 you can feel the handmade quality. Ravi even suggested the perfect size for my plants. Delivered on time.', tags: ['Excellent Craftsmanship', 'On Time', 'True to Photos'], isVerified: true },
+      { user: reviewers[5]._id, rating: 4, comment: 'Good workshop experience. Learned a lot about centering clay. The piece I made needed some fixing but Ravi helped me finish it. Would come back for the advanced session.', tags: ['Patient & Helpful', 'Clean Workshop'], isVerified: true },
+    ],
+    // Lakshmi (Tailor)
+    2: [
+      { user: reviewers[6]._id, rating: 5, comment: 'Lakshmi is a magician with fabric! Got my wedding lehenga custom-made and it fit like a dream. The zardozi work was museum-quality. She understood my vision perfectly from the first consultation.', tags: ['Excellent Craftsmanship', 'Exceeded Expectations', 'Great Communication'], isVerified: true, response: { text: 'Thank you Sonal! Your wedding lehenga was one of my favorite pieces to work on. Wishing you a beautiful married life!', createdAt: new Date(Date.now() - 12 * 86400000) } },
+      { user: reviewers[7]._id, rating: 5, comment: 'Best blouse fitting I\'ve ever had. Lakshmi measures so precisely \u2014 no alterations needed after the first fitting. She also gave great suggestions for the neckline design. Very reasonable pricing.', tags: ['On Time', 'True to Photos', 'Excellent Craftsmanship'], isVerified: true },
+      { user: reviewers[8]._id, rating: 5, comment: 'Got chikankari embroidery done on a kurta for my husband\'s birthday. The handwork is phenomenal \u2014 you can see each stitch is done with love. Took 3 weeks but absolutely worth the wait.', tags: ['Excellent Craftsmanship', 'Patient & Helpful'], isVerified: true },
+    ],
+  };
 
-  for (let i = 0; i < reviewsData.length; i++) {
-    await Review.create({
-      artisan: artisan._id,
-      ...reviewsData[i],
-      status: 'active',
-      createdAt: new Date(Date.now() - (30 - i * 5) * 86400000), // spread over last month
-    });
+  let totalCreated = 0;
+  for (const [idx, artisanData] of artisanResults.entries()) {
+    const reviews = allReviews[idx] || [];
+    for (let i = 0; i < reviews.length; i++) {
+      await Review.create({
+        artisan: artisanData.artisan._id,
+        ...reviews[i],
+        status: 'active',
+        createdAt: new Date(Date.now() - (30 - i * 7) * 86400000),
+      });
+    }
+    totalCreated += reviews.length;
+
+    // Recalculate artisan stats
+    const reviewStats = await Review.aggregate([
+      { $match: { artisan: artisanData.artisan._id, status: 'active' } },
+      { $group: { _id: '$artisan', avg: { $avg: '$rating' }, count: { $sum: 1 } } }
+    ]);
+    if (reviewStats.length > 0) {
+      await Artisan.findByIdAndUpdate(artisanData.artisan._id, {
+        averageRating: Math.round(reviewStats[0].avg * 10) / 10,
+        totalReviews: reviewStats[0].count
+      });
+    }
   }
 
-  // Recalculate artisan stats after seeding reviews
-  const reviewStats = await Review.aggregate([
-    { $match: { artisan: artisan._id, status: 'active' } },
-    { $group: { _id: '$artisan', avg: { $avg: '$rating' }, count: { $sum: 1 } } }
-  ]);
-  if (reviewStats.length > 0) {
-    await Artisan.findByIdAndUpdate(artisan._id, {
-      averageRating: Math.round(reviewStats[0].avg * 10) / 10,
-      totalReviews: reviewStats[0].count
-    });
-    console.log(`   Updated artisan rating: ${reviewStats[0].avg.toFixed(1)} (${reviewStats[0].count} reviews)`);
-  }
-
-  console.log(`  Created ${reviewsData.length} reviews (avg 4.6 stars)`);
+  console.log(`  Created ${totalCreated} reviews across ${artisanResults.length} artisans`);
 }
 
 // ──────────────────────────────────────────────
-// Create sample bookings (various statuses for UI testing)
+// Create sample bookings for all artisans
 // ──────────────────────────────────────────────
-async function seedBookings(artisan, user, services) {
+async function seedBookings(artisanResults, user) {
   const now = new Date();
-  const day = 86400000; // ms in a day
-
-  // Helper: create a date offset from now at a specific hour
+  const day = 86400000;
   const dateAt = (offsetDays, hour, minute = 0) => {
     const d = new Date(now.getTime() + offsetDays * day);
     d.setHours(hour, minute, 0, 0);
     return d;
   };
 
-  const bridalService = services[0]; // Bridal Mehndi — ₹8000, 270 min
-  const partyService = services[1];  // Party Mehndi — ₹500, 30 min
-  const arabicService = services[2]; // Arabic Mehndi — ₹1500, 60 min
-  const babyService = services[3];   // Baby Shower — ₹5000, 180 min
+  let totalCreated = 0;
 
-  const bookingsData = [
-    // 1. PENDING — Bridal mehndi, booked yesterday for next week
-    {
-      service: bridalService,
-      start: dateAt(7, 10),
-      end: dateAt(7, 14, 30),
-      status: 'pending',
-      notes: 'Wedding on March 5th. Would love traditional Rajasthani motifs with fiancé\'s name.',
-      price: bridalService.price,
-      createdAt: dateAt(-1, 14),
-    },
-    // 2. CONFIRMED — Arabic mehndi, upcoming in 3 days
-    {
-      service: arabicService,
-      start: dateAt(3, 15),
-      end: dateAt(3, 16),
-      status: 'confirmed',
-      notes: 'For my engagement party. Arabic style preferred.',
-      price: arabicService.price,
-      respondedAt: dateAt(-2, 10),
-      createdAt: dateAt(-3, 18),
-    },
-    // 3. COMPLETED — Party mehndi, done 10 days ago
-    {
-      service: partyService,
-      start: dateAt(-10, 11),
-      end: dateAt(-10, 11, 30),
-      status: 'completed',
-      notes: '',
-      price: partyService.price,
-      respondedAt: dateAt(-12, 9),
-      completedAt: dateAt(-10, 12),
-      createdAt: dateAt(-14, 20),
-    },
-    // 4. COMPLETED — Baby shower, done 20 days ago
-    {
-      service: babyService,
-      start: dateAt(-20, 10),
-      end: dateAt(-20, 13),
-      status: 'completed',
-      notes: 'Baby shower theme: elephant and lotus. Mom-to-be plus 4 friends.',
-      price: babyService.price,
-      respondedAt: dateAt(-25, 11),
-      completedAt: dateAt(-20, 14),
-      createdAt: dateAt(-27, 16),
-    },
-    // 5. CANCELLED — Party mehndi, user cancelled
-    {
-      service: partyService,
-      start: dateAt(-3, 16),
-      end: dateAt(-3, 16, 30),
-      status: 'cancelled',
-      notes: 'Quick mehndi for Diwali celebration',
-      price: partyService.price,
-      respondedAt: dateAt(-8, 10),
-      cancellationReason: 'Schedule conflict',
-      cancelledBy: user._id,
-      createdAt: dateAt(-10, 12),
-    },
-    // 6. REJECTED — Bridal mehndi, artisan rejected (already booked)
-    {
-      service: bridalService,
-      start: dateAt(-15, 9),
-      end: dateAt(-15, 13, 30),
-      status: 'rejected',
-      notes: 'Bridal mehndi for sister\'s wedding',
-      price: bridalService.price,
-      respondedAt: dateAt(-17, 8),
-      rejectionReason: 'Sorry, I\'m already booked for a wedding that day. Please check my availability for the day before or after.',
-      createdAt: dateAt(-18, 22),
-    },
-  ];
+  for (const { artisan, services, category } of artisanResults) {
+    const svc0 = services[0]; // Primary service
+    const svc1 = services[1]; // Secondary service
 
-  for (const data of bookingsData) {
-    const { service, ...rest } = data;
-    await Booking.create({
-      artisan: artisan._id,
-      user: user._id,
-      service: service._id,
-      serviceName: service.name,
-      categoryName: 'Wellness & Beauty',
-      ...rest,
-    });
+    const bookingsData = [
+      // PENDING
+      {
+        service: svc0, start: dateAt(7, 10), end: dateAt(7, 10 + Math.ceil(svc0.durationMinutes / 60)),
+        status: 'pending', notes: 'Looking forward to this!', price: svc0.price, createdAt: dateAt(-1, 14),
+      },
+      // CONFIRMED
+      {
+        service: svc1, start: dateAt(3, 15), end: dateAt(3, 16),
+        status: 'confirmed', notes: '', price: svc1.price, respondedAt: dateAt(-2, 10), createdAt: dateAt(-3, 18),
+      },
+      // COMPLETED
+      {
+        service: svc0, start: dateAt(-10, 11), end: dateAt(-10, 14),
+        status: 'completed', notes: '', price: svc0.price, respondedAt: dateAt(-12, 9), completedAt: dateAt(-10, 14), createdAt: dateAt(-14, 20),
+      },
+      // COMPLETED (older)
+      {
+        service: svc1, start: dateAt(-20, 10), end: dateAt(-20, 12),
+        status: 'completed', notes: '', price: svc1.price, respondedAt: dateAt(-25, 11), completedAt: dateAt(-20, 12), createdAt: dateAt(-27, 16),
+      },
+      // CANCELLED
+      {
+        service: svc1, start: dateAt(-3, 16), end: dateAt(-3, 17),
+        status: 'cancelled', notes: '', price: svc1.price, respondedAt: dateAt(-8, 10),
+        cancellationReason: 'Schedule conflict', cancelledBy: user._id, createdAt: dateAt(-10, 12),
+      },
+      // REJECTED
+      {
+        service: svc0, start: dateAt(-15, 9), end: dateAt(-15, 12),
+        status: 'rejected', notes: 'Urgent request', price: svc0.price, respondedAt: dateAt(-17, 8),
+        rejectionReason: 'Sorry, I\'m fully booked that day. Please check my availability.', createdAt: dateAt(-18, 22),
+      },
+    ];
+
+    for (const data of bookingsData) {
+      const { service, ...rest } = data;
+      await Booking.create({
+        artisan: artisan._id,
+        user: user._id,
+        service: service._id,
+        serviceName: service.name,
+        categoryName: category.name,
+        ...rest,
+      });
+    }
+    totalCreated += bookingsData.length;
   }
 
-  console.log(`  Created ${bookingsData.length} sample bookings (pending, confirmed, completed x2, cancelled, rejected)`);
+  console.log(`  Created ${totalCreated} bookings across ${artisanResults.length} artisans`);
 }
 
 // ──────────────────────────────────────────────
@@ -540,22 +646,23 @@ async function run() {
     await wipeAll();
 
     const categories = await seedCategories();
-    const { artisan, services } = await seedArtisan(categories);
+    const artisanResults = await seedArtisans(categories);
     const user = await seedUser();
     await seedAdmin();
-    await seedReviews(artisan, user);
-    await seedBookings(artisan, user, services);
+    await seedReviews(artisanResults, user);
+    await seedBookings(artisanResults, user);
 
     console.log('\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');
     console.log('');
     console.log('\u250C\u2500 Login Credentials \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500');
     console.log('\u2502');
-    console.log(`\u2502  ARTISAN  (Priya Sharma \u2014 Mehendi Artist)`);
-    console.log(`\u2502    Email:    ${ARTISAN_EMAIL}`);
-    console.log(`\u2502    Password: ${ARTISAN_PASSWORD}`);
-    console.log(`\u2502    Login:    /artisan/login`);
-    console.log(`\u2502    Profile:  /artisan/${artisan.publicId}`);
-    console.log('\u2502');
+    for (const { artisan } of artisanResults) {
+      console.log(`\u2502  ARTISAN  (${artisan.fullName} \u2014 ${artisan.craft})`);
+      console.log(`\u2502    Email:    ${artisan.email}`);
+      console.log(`\u2502    Password: ${ARTISAN_PASSWORD}`);
+      console.log(`\u2502    Profile:  /${artisan.publicId}`);
+      console.log('\u2502');
+    }
     console.log(`\u2502  CUSTOMER (Rahul Deshmukh)`);
     console.log(`\u2502    Email:    ${USER_EMAIL}`);
     console.log(`\u2502    Password: ${USER_PASSWORD}`);

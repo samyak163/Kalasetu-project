@@ -96,7 +96,9 @@ Frontend requires: `VITE_API_URL` and various `VITE_*` keys for Firebase, Algoli
 
 ## Demo Accounts (via `npm run seed`)
 
-- Artisan: `priya@kalasetu.demo` / `Demo@1234` (Priya Sharma — Mehendi Artist, publicId: auto-generated)
+- Artisan 1: `priya@kalasetu.demo` / `Demo@1234` (Priya Sharma — Mehendi Art, Kothrud)
+- Artisan 2: `ravi@kalasetu.demo` / `Demo@1234` (Ravi Kumar — Pottery & Ceramics, Shivajinagar)
+- Artisan 3: `lakshmi@kalasetu.demo` / `Demo@1234` (Lakshmi Devi — Tailoring & Embroidery, Swargate)
 - User: `rahul@kalasetu.demo` / `Demo@1234` (Rahul Deshmukh)
 - Admin: `admin@kalasetu.demo` / `Admin@1234` (KalaSetu Admin)
 
