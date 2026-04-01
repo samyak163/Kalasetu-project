@@ -104,7 +104,6 @@ const paymentSchema = new mongoose.Schema(
     },
     webhookEventId: {
       type: String,
-      sparse: true,
     },
   },
   {

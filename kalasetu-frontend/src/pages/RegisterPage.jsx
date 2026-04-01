@@ -2,7 +2,6 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-import axios from 'axios';
 import { ToastContext } from '../context/ToastContext.jsx';
 import { useNotifications } from '../context/NotificationContext.jsx';
 import { captureException } from '../lib/sentry.js';
@@ -20,7 +19,7 @@ const RegisterPage = () => {
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const { login } = useAuth(); // Get login function from context
+    const { artisanRegister } = useAuth();
     const { showToast } = useContext(ToastContext);
     const { refresh: refreshNotifications } = useNotifications();
 
@@ -48,21 +47,15 @@ const RegisterPage = () => {
         try {
             // Prepare registration data based on selected method
             const registrationData = {
-                fullName: formData.fullName,
+                fullName: formData.fullName.trim(),
                 password: formData.password,
-                email: formData.useEmail ? formData.email : undefined,
-                phoneNumber: formData.useEmail ? undefined : formData.phoneNumber
+                email: formData.useEmail ? formData.email.trim() : undefined,
+                phoneNumber: formData.useEmail ? undefined : formData.phoneNumber.trim()
             };
 
-            const response = await axios.post(
-                `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/register`,
-                registrationData,
-                { withCredentials: true }
-            );
+            const response = await artisanRegister(registrationData);
 
-            if (response.data.success) {
-                // Update auth context
-                login(response.data.artisan, 'artisan');
+            if (response.success) {
                 try {
                     await refreshNotifications();
                 } catch (err) {
@@ -73,9 +66,9 @@ const RegisterPage = () => {
                 
                 // Track with PostHog if available
                 if (window.posthog) {
-                    window.posthog.identify(response.data.artisan._id, {
-                        email: response.data.artisan.email,
-                        name: response.data.artisan.fullName,
+                    window.posthog.identify(response.artisan._id, {
+                        email: response.artisan.email,
+                        name: response.artisan.fullName,
                         user_type: 'artisan'
                     });
                     window.posthog.capture('artisan_registration_completed');
@@ -83,7 +76,7 @@ const RegisterPage = () => {
 
                 // Redirect to artisan dashboard quickly
                 setTimeout(() => {
-                    navigate(response.data.redirectTo || '/artisan/dashboard/account', { replace: true });
+                    navigate(response.redirectTo || '/artisan/dashboard/account', { replace: true });
                 }, 800);
             }
         } catch (err) {

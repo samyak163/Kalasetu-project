@@ -100,7 +100,7 @@ export const AuthContextProvider = ({ children }) => {
       const artisanData = res.data?.artisan || res.data;
       setAuth({ user: artisanData, userType: 'artisan' });
       setSentryUser(artisanData);
-      return artisanData;
+      return res.data;
     } catch (error) {
       setAuth(initialAuthState);
       setCsrfToken(null);

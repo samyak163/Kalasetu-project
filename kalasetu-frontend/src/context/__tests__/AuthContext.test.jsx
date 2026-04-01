@@ -128,6 +128,10 @@ describe('AuthContext', () => {
         </AuthContextProvider>
       );
 
+      await waitFor(() => {
+        expect(clearSentryUser).toHaveBeenCalled();
+      });
+
       expect(screen.getByTestId('child')).toBeInTheDocument();
       expect(screen.getByTestId('child').textContent).toBe('Hello');
     });

@@ -283,7 +283,7 @@ describe('Error Middleware', () => {
       errorHandler(err, mockReq(), res, noop);
 
       expect(res.statusCode).toBe(500);
-      expect(res.body.message).toBe('Internal error');
+      expect(res.body.message).toBe('Server Error');
       expect(res.body.stack).toBeUndefined();
 
       process.env.NODE_ENV = originalEnv;
