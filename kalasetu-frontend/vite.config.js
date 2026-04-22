@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '')
@@ -69,8 +69,8 @@ export default defineConfig(({ command, mode }) => {
           changeOrigin: true,
           secure: false,
           // CRITICAL: Forward cookies to backend for authentication
-          configure: (proxy, options) => {
-            proxy.on('proxyReq', (proxyReq, req, res) => {
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq, req) => {
               // Forward cookies from client to backend
               if (req.headers.cookie) {
                 proxyReq.setHeader('cookie', req.headers.cookie);

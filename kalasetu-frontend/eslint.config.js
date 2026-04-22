@@ -26,9 +26,9 @@ export default defineConfig([
       'no-unused-vars': ['warn', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
     },
   },
-  // Node env for config files
+  // Node env for config and utility files
   {
-    files: ['vite.config.js', 'postcss.config.js', 'tailwind.config.js'],
+    files: ['vite.config.js', 'postcss.config.js', 'tailwind.config.js', 'scripts/**/*.js'],
     languageOptions: {
       globals: { ...globals.node },
     },
