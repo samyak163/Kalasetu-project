@@ -54,7 +54,9 @@ export const cache = (keyPrefix = '', ttl = CACHE_CONFIG.upstash?.ttl || CACHE_C
         .map((k) => `${k}=${req.query[k]}`)
         .join('&');
 
-      const key = `cache:${keyPrefix}:${req.path}${queryKey ? '?' + queryKey : ''}`;
+      const authKey = req.user?._id || req.user?.id;
+      const authSegment = authKey ? `:auth:${authKey.toString()}` : '';
+      const key = `cache:${keyPrefix}${authSegment}:${req.path}${queryKey ? '?' + queryKey : ''}`;
 
       const cached = await getCache(key);
       if (cached) {

@@ -41,6 +41,16 @@ vi.mock('../../lib/onesignal.js', () => ({
 import api, { setCsrfToken } from '../../lib/axios.js';
 import { setSentryUser, clearSentryUser } from '../../lib/sentry.js';
 
+const deferred = () => {
+  let resolve;
+  let reject;
+  const promise = new Promise((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
+
 // Test helper component that displays auth state
 const AuthConsumer = () => {
   const { user, userType, isAuthenticated, loading } = useAuth();
@@ -56,7 +66,7 @@ const AuthConsumer = () => {
 
 // Test helper that exposes login/logout functions
 const AuthActions = () => {
-  const { login, logout, artisanLogin, userLogin, user, userType, loading } = useAuth();
+  const { login, logout, artisanLogin, artisanRegister, userLogin, user, userType, loading } = useAuth();
   return (
     <div>
       <span data-testid="loading">{String(loading)}</span>
@@ -67,6 +77,9 @@ const AuthActions = () => {
       </button>
       <button data-testid="artisan-login-btn" onClick={() => artisanLogin({ email: 'a@test.com', password: '1234' }).catch(() => {})}>
         Artisan Login
+      </button>
+      <button data-testid="artisan-register-btn" onClick={() => artisanRegister({ fullName: 'Artisan', email: 'a@test.com', password: 'Password123' }).catch(() => {})}>
+        Artisan Register
       </button>
       <button data-testid="user-login-btn" onClick={() => userLogin({ email: 'u@test.com', password: '1234' }).catch(() => {})}>
         User Login
@@ -227,6 +240,47 @@ describe('AuthContext', () => {
       });
 
       expect(setCsrfToken).toHaveBeenCalledWith('csrf-token-123');
+    });
+
+    it('does not let stale bootstrap clear a newly registered artisan session', async () => {
+      const userMe = deferred();
+      const artisanMe = deferred();
+      api.get.mockReturnValueOnce(userMe.promise);
+      api.get.mockReturnValueOnce(artisanMe.promise);
+
+      const mockArtisan = { _id: 'a1', email: 'a@test.com', fullName: 'Artisan', csrfToken: 'csrf-register' };
+      api.post.mockResolvedValueOnce({
+        data: {
+          success: true,
+          artisan: mockArtisan,
+          csrfToken: 'csrf-register',
+        },
+      });
+
+      render(
+        <AuthContextProvider>
+          <AuthActions />
+        </AuthContextProvider>
+      );
+
+      await act(async () => {
+        screen.getByTestId('artisan-register-btn').click();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('userType').textContent).toBe('artisan');
+      });
+
+      await act(async () => {
+        userMe.reject(new Error('old bootstrap: not a user'));
+      });
+
+      await act(async () => {
+        artisanMe.reject(new Error('old bootstrap: not an artisan'));
+      });
+
+      expect(screen.getByTestId('userType').textContent).toBe('artisan');
+      expect(screen.getByTestId('user').textContent).toContain('a@test.com');
     });
   });
 

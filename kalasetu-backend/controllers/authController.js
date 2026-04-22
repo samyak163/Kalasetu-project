@@ -16,7 +16,7 @@
  * On registration:
  *  - Creates Artisan document (password auto-hashed by pre-save hook)
  *  - Indexes artisan in Algolia (non-blocking)
- *  - Sends welcome + verification emails via Resend (non-blocking)
+ *  - Sends welcome email via Resend (non-blocking)
  *  - Creates onboarding notifications
  *  - Returns JWT in HTTP-only cookie + CSRF token in response body
  *
@@ -96,11 +96,11 @@ export const register = async (req, res, next) => {
         
         // Create artisan with only provided fields
         // Password hashing is handled by the pre-save hook in artisanModel.js
-        const artisanData = { fullName, password };
+        const artisanData = { fullName, password, emailVerified: true };
         if (email) artisanData.email = email;
         if (phoneNumber) artisanData.phoneNumber = phoneNumber;
         
-    const artisan = await Artisan.create(artisanData);
+        const artisan = await Artisan.create(artisanData);
         const token = signJwt(artisan._id);
         setAuthCookie(res, token);
         
@@ -109,33 +109,22 @@ export const register = async (req, res, next) => {
             if (Sentry) Sentry.captureException(err);
         });
 
-        // Send welcome email and verification email
+        // Send welcome email only. Artisan email verification is disabled so
+        // onboarding is not blocked by email delivery.
         if (artisan.email) {
-            const { sendWelcomeEmail, sendVerificationEmail } = await import('../utils/email.js');
-            const verificationToken = crypto.randomBytes(32).toString('hex');
-
-            // Save verification token in main flow (critical - must not be fire-and-forget)
-            await Artisan.findByIdAndUpdate(
-                artisan._id,
-                {
-                    emailVerificationToken: verificationToken,
-                    emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000)
-                },
-                { validateBeforeSave: false }
-            );
-
-            // Send emails (non-blocking with error capture)
-            Promise.allSettled([
-                sendWelcomeEmail(artisan.email, artisan.fullName),
-                sendVerificationEmail(artisan.email, artisan.fullName, verificationToken)
-            ]).catch(err => {
+            sendWelcomeEmail(artisan.email, artisan.fullName).catch(err => {
                 if (Sentry) Sentry.captureException(err);
             });
-        }    // Return response WITHOUT sensitive fields
-    const artisanPublic = artisan.toObject();
-    delete artisanPublic.password;
-    delete artisanPublic.resetPasswordToken;
-    delete artisanPublic.resetPasswordExpire;
+        }
+
+        // Return response WITHOUT sensitive fields
+        const artisanPublic = artisan.toObject();
+        delete artisanPublic.password;
+        delete artisanPublic.resetPasswordToken;
+        delete artisanPublic.resetPasswordExpire;
+        delete artisanPublic.resetPasswordExpires;
+        delete artisanPublic.emailVerificationToken;
+        delete artisanPublic.emailVerificationExpires;
 
         // Track with PostHog if available
         trackEvent(
@@ -153,11 +142,6 @@ export const register = async (req, res, next) => {
                     title: 'Welcome to KalaSetu 🎉',
                     text: `Hi ${artisan.fullName.split(' ')[0]}, welcome aboard! Customize your profile to stand out.`,
                     url: '/artisan/dashboard/account',
-                },
-                {
-                    title: 'Verify your email',
-                    text: 'We have sent you a verification link. Please verify your email to stay active on KalaSetu.',
-                    url: '/artisan/dashboard/account?tab=verification',
                 },
                 {
                     title: 'Complete your profile',
@@ -218,6 +202,9 @@ export const login = async (req, res, next) => {
             const remaining = 5 - artisan.loginAttempts;
             return res.status(401).json({ message: `Invalid credentials. ${remaining > 0 ? `${remaining} login attempt(s) left before lockout.` : 'Account locked.'}` });
         }
+        artisan.emailVerified = true;
+        artisan.emailVerificationToken = undefined;
+        artisan.emailVerificationExpires = undefined;
         await artisan.resetLoginAttempts();
         const token = signJwt(artisan._id);
         setAuthCookie(res, token);
@@ -225,6 +212,7 @@ export const login = async (req, res, next) => {
             _id: artisan._id,
             fullName: artisan.fullName,
             email: artisan.email,
+            emailVerified: artisan.emailVerified,
             publicId: artisan.publicId,
             csrfToken: generateCsrfToken(artisan._id.toString()),
         });
@@ -238,6 +226,12 @@ export const login = async (req, res, next) => {
 
 export const me = async (req, res, next) => {
     try {
+        if (req.user.emailVerified !== true) {
+            req.user.emailVerified = true;
+            req.user.emailVerificationToken = undefined;
+            req.user.emailVerificationExpires = undefined;
+            await req.user.save({ validateBeforeSave: false });
+        }
         const userData = req.user.toObject ? req.user.toObject() : { ...req.user };
         userData.csrfToken = generateCsrfToken(req.user._id.toString());
         res.json(userData);
@@ -350,7 +344,7 @@ export const firebaseLogin = async (req, res, next) => {
                 email: email || undefined,
                 phoneNumber: phoneNumber || undefined,
                 password: randomPass,
-                emailVerified: !!(email && decoded.email_verified),
+                emailVerified: true,
             });
             
             // Index new artisan in Algolia (non-blocking with error capture)

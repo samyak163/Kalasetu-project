@@ -21,9 +21,24 @@ const api = axios.create({
 // State-changing methods that require CSRF protection
 const CSRF_METHODS = new Set(['post', 'put', 'patch', 'delete']);
 
+const normalizeApiPath = (config) => {
+  const baseURL = String(config.baseURL || '').replace(/\/+$/, '');
+  const url = String(config.url || '');
+
+  if (baseURL.endsWith('/api') && url.startsWith('/api/')) {
+    return {
+      ...config,
+      url: url.slice('/api'.length),
+    };
+  }
+
+  return config;
+};
+
 // Request interceptor: attach CSRF token on state-changing requests
 api.interceptors.request.use(
   (config) => {
+    config = normalizeApiPath(config);
     if (csrfToken && CSRF_METHODS.has(config.method)) {
       config.headers['X-CSRF-Token'] = csrfToken;
     }

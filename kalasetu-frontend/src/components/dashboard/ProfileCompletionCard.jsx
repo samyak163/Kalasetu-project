@@ -10,7 +10,6 @@ const STEP_LABELS = {
   hasBio: { label: 'Write your bio (at least 10 characters)', tab: 'profile' },
   hasService: { label: 'Add at least one service', tab: 'services' },
   hasPortfolio: { label: 'Create a portfolio project', tab: 'portfolio' },
-  emailVerified: { label: 'Verify your email address', tab: 'profile' },
 };
 
 /**

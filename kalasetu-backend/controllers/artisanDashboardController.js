@@ -193,7 +193,7 @@ export const getProfileVerificationStatus = asyncHandler(async (req, res) => {
 
   const [artisan, serviceCount] = await Promise.all([
     Artisan.findById(artisanId)
-      .select('profileImageUrl bio portfolioImageUrls emailVerified')
+      .select('profileImageUrl bio portfolioImageUrls')
       .lean(),
     ArtisanService.countDocuments({ artisan: artisanId })
   ]);
@@ -208,7 +208,6 @@ export const getProfileVerificationStatus = asyncHandler(async (req, res) => {
     { name: 'hasBio', completed: !!artisan.bio && artisan.bio.length > 10 },
     { name: 'hasService', completed: serviceCount > 0 },
     { name: 'hasPortfolio', completed: Array.isArray(artisan.portfolioImageUrls) && artisan.portfolioImageUrls.length > 0 },
-    { name: 'emailVerified', completed: !!artisan.emailVerified },
   ];
 
   const completedCount = steps.filter(s => s.completed).length;

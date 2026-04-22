@@ -42,14 +42,14 @@ export const AdminAuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email, password, redirectTo = '/admin/dashboard') => {
     try {
       const response = await api.post('/api/admin/auth/login', { email, password });
       if (response.data.success) {
         if (response.data.csrfToken) setCsrfToken(response.data.csrfToken);
         setAdmin(response.data.admin);
         setIsAuthenticated(true);
-        navigate('/admin/dashboard');
+        navigate(redirectTo, { replace: true });
         return { success: true };
       }
       // Fallback if response doesn't have success flag

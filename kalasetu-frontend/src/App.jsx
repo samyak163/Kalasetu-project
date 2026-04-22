@@ -49,6 +49,8 @@ import RequireAuth from './components/RequireAuth';
 import RedirectIfAuth from './components/RedirectIfAuth';
 import { AdminAuthProvider } from './context/AdminAuthContext';
 import AdminLayout from './components/admin/AdminLayout';
+import RequireAdminAuth from './components/admin/RequireAdminAuth';
+import RedirectIfAdminAuth from './components/admin/RedirectIfAdminAuth';
 import { LoadingState } from './components/ui';
 
 // Admin pages (lazy — only admins load these, keeps main bundle smaller)
@@ -199,25 +201,33 @@ function App() {
 
       </Route>
       {/* Admin Routes (separate from main site layout) */}
-      <Route path="/admin/login" element={<AdminAuthProvider><AdminLogin /></AdminAuthProvider>} />
+      <Route path="/admin/login" element={
+        <AdminAuthProvider>
+          <RedirectIfAdminAuth>
+            <AdminLogin />
+          </RedirectIfAdminAuth>
+        </AdminAuthProvider>
+      } />
       <Route path="/admin/*" element={
         <AdminAuthProvider>
-          <AdminLayout>
-            <Routes>
-              <Route index element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="dashboard" element={<AdminDashboard />} />
-              <Route path="artisans" element={<AdminArtisans />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="reviews" element={<AdminReviews />} />
-              <Route path="payments" element={<AdminPayments />} />
-              <Route path="refunds" element={<AdminRefunds />} />
-              <Route path="support" element={<AdminSupport />} />
-              <Route path="bookings" element={<AdminBookings />} />
-              <Route path="settings" element={<AdminSettings />} />
-              <Route path="profile" element={<AdminProfile />} />
-              <Route path="analytics" element={<AdminAnalytics />} />
-            </Routes>
-          </AdminLayout>
+          <RequireAdminAuth>
+            <AdminLayout>
+              <Routes>
+                <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="artisans" element={<AdminArtisans />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="reviews" element={<AdminReviews />} />
+                <Route path="payments" element={<AdminPayments />} />
+                <Route path="refunds" element={<AdminRefunds />} />
+                <Route path="support" element={<AdminSupport />} />
+                <Route path="bookings" element={<AdminBookings />} />
+                <Route path="settings" element={<AdminSettings />} />
+                <Route path="profile" element={<AdminProfile />} />
+                <Route path="analytics" element={<AdminAnalytics />} />
+              </Routes>
+            </AdminLayout>
+          </RequireAdminAuth>
         </AdminAuthProvider>
       } />
     </Routes>

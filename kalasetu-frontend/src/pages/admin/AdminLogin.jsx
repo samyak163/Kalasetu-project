@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAdminAuth } from '../../context/AdminAuthContext.jsx';
+import { useLocation } from 'react-router-dom';
 import { Lock, Mail, Shield, AlertCircle } from 'lucide-react';
 
 const AdminLogin = () => {
@@ -8,12 +9,14 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAdminAuth();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const result = await login(email, password);
+    const redirectTo = location.state?.from?.pathname || '/admin/dashboard';
+    const result = await login(email, password, redirectTo);
     if (!result.success) setError(result.message);
     setLoading(false);
   };

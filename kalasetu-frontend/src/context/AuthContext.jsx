@@ -1,4 +1,5 @@
 ﻿import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { useRef } from "react";
 // FIX: Using relative path from context/ to lib/
 import api, { setCsrfToken } from "../lib/axios.js";
 import { setSentryUser, clearSentryUser } from "../lib/sentry.js";
@@ -27,13 +28,21 @@ const initialAuthState = {
 export const AuthContextProvider = ({ children }) => {
   const [auth, setAuth] = useState(initialAuthState);
   const [loading, setLoading] = useState(true);
+  const authGenerationRef = useRef(0);
+
+  const markAuthMutation = () => {
+    authGenerationRef.current += 1;
+  };
 
   // This function now checks for BOTH user types when the app loads
   const bootstrapAuth = useCallback(async () => {
+    const generation = authGenerationRef.current;
+    const isCurrentBootstrap = () => authGenerationRef.current === generation;
     setLoading(true);
     try {
       // 1. First, try to get a USER user
       const userRes = await api.get("/api/users/me");
+      if (!isCurrentBootstrap()) return;
       if (userRes.data.csrfToken) setCsrfToken(userRes.data.csrfToken);
       setAuth({ user: userRes.data, userType: 'user' });
       setSentryUser(userRes.data);
@@ -41,14 +50,17 @@ export const AuthContextProvider = ({ children }) => {
       // 2. If no USER, try to get an ARTISAN user
       try {
         const artisanRes = await api.get("/api/auth/me");
+        if (!isCurrentBootstrap()) return;
         if (artisanRes.data.csrfToken) setCsrfToken(artisanRes.data.csrfToken);
         setAuth({ user: artisanRes.data, userType: 'artisan' });
         setSentryUser(artisanRes.data);
       } catch {
         // 3. If neither, we are logged out.
-        setAuth(initialAuthState);
-        setCsrfToken(null);
-        clearSentryUser();
+        if (isCurrentBootstrap()) {
+          setAuth(initialAuthState);
+          setCsrfToken(null);
+          clearSentryUser();
+        }
       }
     } finally {
       setLoading(false);
@@ -82,10 +94,12 @@ export const AuthContextProvider = ({ children }) => {
     try {
       const res = await api.post("/api/auth/login", inputs);
       if (res.data.csrfToken) setCsrfToken(res.data.csrfToken);
+      markAuthMutation();
       setAuth({ user: res.data, userType: 'artisan' });
       setSentryUser(res.data);
       return res.data;
     } catch (error) {
+      markAuthMutation();
       setAuth(initialAuthState);
       setCsrfToken(null);
       clearSentryUser();
@@ -98,10 +112,12 @@ export const AuthContextProvider = ({ children }) => {
       const res = await api.post("/api/auth/register", inputs);
       if (res.data.csrfToken) setCsrfToken(res.data.csrfToken);
       const artisanData = res.data?.artisan || res.data;
+      markAuthMutation();
       setAuth({ user: artisanData, userType: 'artisan' });
       setSentryUser(artisanData);
       return res.data;
     } catch (error) {
+      markAuthMutation();
       setAuth(initialAuthState);
       setCsrfToken(null);
       clearSentryUser();
@@ -114,10 +130,12 @@ export const AuthContextProvider = ({ children }) => {
     try {
       const res = await api.post("/api/users/login", inputs);
       if (res.data.csrfToken) setCsrfToken(res.data.csrfToken);
+      markAuthMutation();
       setAuth({ user: res.data, userType: 'user' });
       setSentryUser(res.data);
       return res.data;
     } catch (error) {
+      markAuthMutation();
       setAuth(initialAuthState);
       setCsrfToken(null);
       clearSentryUser();
@@ -129,10 +147,12 @@ export const AuthContextProvider = ({ children }) => {
     try {
       const res = await api.post("/api/users/register", inputs);
       if (res.data.csrfToken) setCsrfToken(res.data.csrfToken);
+      markAuthMutation();
       setAuth({ user: res.data, userType: 'user' });
       setSentryUser(res.data);
       return res.data;
     } catch (error) {
+      markAuthMutation();
       setAuth(initialAuthState);
       setCsrfToken(null);
       clearSentryUser();
@@ -142,6 +162,8 @@ export const AuthContextProvider = ({ children }) => {
 
   // --- Universal Logout Function ---
   const logout = async () => {
+    const loginPath = auth.userType === 'artisan' ? '/artisan/login' : '/user/login';
+    markAuthMutation();
     try {
       // Call the correct logout endpoint based on user type
       if (auth.userType === 'artisan') {
@@ -152,7 +174,6 @@ export const AuthContextProvider = ({ children }) => {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      const loginPath = auth.userType === 'artisan' ? '/artisan/login' : '/user/login';
       setAuth(initialAuthState);
       setCsrfToken(null);
       clearSentryUser();
@@ -164,6 +185,7 @@ export const AuthContextProvider = ({ children }) => {
 
   // --- Simple login function (for compatibility with guide) ---
   const login = (userData, type) => {
+    markAuthMutation();
     setAuth({ user: userData, userType: type });
     setSentryUser(userData);
 
