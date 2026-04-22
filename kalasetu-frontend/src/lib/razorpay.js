@@ -39,6 +39,7 @@ export const displayRazorpay = async (options) => {
   }
 
   return new Promise((resolve, reject) => {
+    const customOnDismiss = options.modal?.ondismiss;
     const rzpOptions = {
       key: options.keyId || RAZORPAY_CONFIG.keyId,
       amount: options.amount,
@@ -58,7 +59,13 @@ export const displayRazorpay = async (options) => {
       notes: options.notes || {},
       theme: RAZORPAY_CONFIG.theme,
       modal: {
+        backdropclose: true,
+        escape: true,
+        handleback: true,
+        confirm_close: true,
+        ...options.modal,
         ondismiss: function () {
+          customOnDismiss?.();
           reject(new Error('Payment cancelled by user'));
         },
       },

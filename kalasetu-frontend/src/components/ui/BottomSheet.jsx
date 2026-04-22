@@ -9,17 +9,20 @@ import { X } from 'lucide-react';
 export default function BottomSheet({ open, onClose, title, children, className = '', maxWidth = 'md:max-w-lg' }) {
   const titleId = useId();
   const overlayRef = useRef(null);
+  const canClose = typeof onClose === 'function';
 
   useEffect(() => {
     if (!open) return;
-    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    const handleEsc = (e) => {
+      if (e.key === 'Escape' && canClose) onClose();
+    };
     document.addEventListener('keydown', handleEsc);
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', handleEsc);
       document.body.style.overflow = '';
     };
-  }, [open, onClose]);
+  }, [open, canClose, onClose]);
 
   if (!open) return null;
 
@@ -27,7 +30,9 @@ export default function BottomSheet({ open, onClose, title, children, className 
     <div
       ref={overlayRef}
       className="fixed inset-0 z-modal flex items-end md:items-center justify-center bg-black/50 animate-fade-in"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      onClick={(e) => {
+        if (canClose && e.target === overlayRef.current) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -40,7 +45,13 @@ export default function BottomSheet({ open, onClose, title, children, className 
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
           <h3 id={titleId} className="text-lg font-semibold font-display">{title}</h3>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600" aria-label="Close">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={!canClose}
+            className={`p-1.5 rounded-full text-gray-400 ${canClose ? 'hover:bg-gray-100 hover:text-gray-600' : 'cursor-not-allowed opacity-50'}`}
+            aria-label="Close"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
